@@ -1,0 +1,217 @@
+;Criterias;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;All the means used to advise, guide, inform and lead the user during his interaction with the computer.;;;;All the elements of the interface which has a role in reducing the perceptual or mnemic user load, as well as in increasing the efficiency of the dialogue.;;;;Consideration by the system of explicit user actions and control that users have over the treatment of their actions.;;;;Ability to react depending on the context and the needs and user preferences.;;;;Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts. For example, always displayed in the same place the incentive for entering data or commands.;;;;Means firstly to avoid or reduce errors, secondly to correct them when they occur.;;;;There must be balance between the object or the information displayed or entered, and its referent. Codes and names are significant to the users when there is a strong semantic relationship between such codes and the items or actions they refer to.  ;;;;There must be agreement between the characteristics of users and tasks, on the one hand, and the organization of outputs, inputs and dialogue of a given application, on the other. For example, the language should be familiar to users, and related to the task at hand.;;;;;
+Guidance;Guidance;;;Workload;Workload;;;Explicit_Control;Explicit_control;;;Adaptability;Adaptability;;;Consistency;Consistency;;;Errors_Management; Errors_management;;;Significances_of_Codes;Significance_of_Codes;;;Compatibility;Compatibility;;;Opt_for_perfect_visual_design;Opt_for_perfect_visual_design;
+;"Prompting
+(Bastien & Scapin)";"Encourage the user to perform specific actions by providing indices. For example, guide data entries indicating the correct format and acceptable values: Date (dd / mm / yy) _ _ / _ _ / _ _. See this example of incitement ... missed! But as another example, successful.
+
+Can also see this example where the incentive is so bad that we must tell the user where to click!
+";"Is a title given to each page?
+Are the titles concise and relevant to the content?
+Is the navigation menu present on every page?
+Are action elements (links, call-to-action buttons, tabs, etc.) easily identifiable?
+Do action elements change appearance when hovered over or when they are active?
+Are key elements placed above the fold?
+Are back buttons/icons available for easy navigation?
+Are unavailable functions visually deactivated (e.g., grayed out) and non-clickable?
+Etc...
+";;"Concision
+(Bastien & Scapin)";"Reduce workload perceptive and mnemonic level in terms of individual elements of input or output. 
+For example, when measuring unit is associated with a data field, it should be part of the label of the field rather than being entered by the user.
+";"Is memorization minimized?
+Is the amount of information to enter reduced to a minimum?
+Are the mandatory steps for the user brief?
+Is the number of steps in a procedure minimized?
+Are shortcuts provided?
+Does the system anticipate user needs by highlighting the most frequent or relevant choices?
+On long pages, is there an anchor to return to the top of the page?
+Is the page width adapted to different devices?
+Etc...";;"Actions Explicit
+(Bastien & Scapin)";"Clarify the relationship between the operation of the application and user actions. This relationship must be explicit, i.e., the computer must process only those actions requested by the users and only when requested to do so.
+For example, entering commands must end with an end indication (""Enter"", ""OK"") to which publishing opportunities should be prerequisites.
+";"Do operations trigger with explicit consent from the user?
+Does processing start immediately after the user's action?
+When an operation doesn't start immediately after the user's action, is it indicated that it will be delayed or cannot be performed?
+Do actions with significant and/or irreversible consequences require explicit confirmation from the user?
+Etc...";;"Flexibility
+(Bastien & Scapin)";"Make available to users the means to customize the interface to reflect their strategies or work habits and requirements of the task. 
+For example, users should be able to disable unnecessary displays.";"Are different means provided to trigger the same command (e.g., icon, keyboard shortcut)?
+Can primary actions be performed both with the keyboard and the mouse?
+Is the system configurable according to the user's preferences?
+Are displays that are not useful to the user deactivatable?
+Is it possible for the user to create custom shortcuts?
+Are means provided for visually impaired and blind individuals?
+Etc...";;"Consistency & Standard
+(Bastien & Scapin)
+(Nielsen)
+(Kaniasty CARMEL) ";"Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts.
+
+Users should not have to wonder whether different words, situations, or actions mean the same thing. Follow platform and industry conventions.
+
+The consistency between the following elements could be checjked:
+1) Style guides 
+2) Design patterns
+3) Naming conventions
+4) Look & Feel
+5) Interactions";"Is the interface visually stable from one page to another?
+Are typography, colors, alignments, spacing, and call-to-action elements consistent from one page to another?
+Is the placement of key elements the same on all pages (e.g., the menu)?
+Are state changes and click consequences consistent for identical elements?
+Does the same word have the same meaning throughout the interface?
+Do the same sequences of actions have the same effects from one page to another?
+Etc...";;"Protection Against Errors
+(Bastien & Scapin)";"Establish ways to detect and prevent errors and recover from them when occuring.  Errors are defined in this context as invalid data entry, invalid format for data entry, incorrect command syntax, etc.
+For example, all possible actions on an interface should be considered especially accidental button presses of the keyboard so that non-expected inputs are detected.";"Are measures in place to prevent user errors (e.g., indicating data format to input)?
+Does the system provide a help section (e.g., assistance, chat, tooltips)?
+Are manual inputs minimized to the bare essentials?
+Is confirmation requested from the user before triggering an irreversible action?
+Are mandatory or optional input fields clearly marked?
+Are input fields accompanied by clear labels and, if necessary, examples of content?
+Etc...
+‍";;"Significance of Codes
+(Bastien & Scapin)";"The criterion Significance of Codes qualifies the relationship between a term and/or a sign and its reference. Codes and names are significant to the users when there is a strong semantic relationship between such codes and the items or actions they refer to.
+For example, make the explicit rules of abbreviation.";"Do the labels of clickable links reflect the content of the destination page?
+Are button labels explicit about the consequences of clicking?
+Are the icons used understandable and appropriate?
+Are abbreviations limited and explained?
+Is the language used understandable to the user?
+Are technical terms specific to your company/domain defined?
+Are the colors, symbols, and terms used adapted to the cultural codes of the target audience (e.g., green for validation and red for errors)?
+etc...
+‍";;"Compatibility & Correspondance between the system and the real world
+(Bastien & Scapin)
+(Nielsen)";"The criterion Compatibility refers to the match between users’ characteristics (memory, perceptions, customs, skills, age, expectations, etc.) and task characteristics on the one hand, and the organization of the output, input, and dialogue for a given application, on the other hand.
+
+The design should speak the users’ language. Use words, phrases, and concepts familiar to the user, rather than internal jargon. Follow real-world conventions, making information appear in a natural and logical order.
+Reuse common codes and habits from real life in the systems to promote recognition.";"Is the interface adapted to the target user?
+Is the language of the interface understandable?
+Is the vocabulary relevant to the target audience?
+Is access to commands adapted to the context of task completion?
+Is the interface compatible across different devices, browsers, and screen sizes without distortion or loss of content?
+Is the target interface consistent with the primary context and device of use (mobile-first, responsive, or adaptive)?
+Is data input in forms done in a logical order for the user?
+Can the user choose their own display and sorting criteria?
+Etc...";;"Opt for a perfect visual design 1
+(Arhippainen)";From a UX perspective, visual aspects have two intentions. The first is that visual design can improve usability by making the user interface more understandable, consistent and guiding. 
+;"Grouping / Distinction between Items
+(Bastien & Scapin)";"Position the items against each other in order to indicate their affiliation or not to a particular object class. For example, according to group menu options objects on which they apply.
+
+Give specific elements graphic features to indicate their belonging or not to a particular object class. For example: use a symbol and the red color for alert dialog boxes or error.";"Is it easy for the user to distinguish between elements and identify information of the same type?
+Are pieces of information of the same type graphically similar?
+Are pieces of information of the same type grouped and located in the same place?
+Are distinct pieces of information presented differently?
+Do distinct pieces of information have a different placement?
+Do navigation menus include separators to visually distinguish different elements?
+Etc...";;"Recognition rather than recall
+(Nielsen)";Minimize the user’s memory load by making elements, actions, and options visible. The user should not have to remember information from one part of the interface to another. Information required to use the design (e.g. field labels or menu items) should be visible or easily retrievable when needed.;"Example: 
+Does the design keep important 
+information visible, so that users 
+do not have to memorize it?
+Does the design offer help 
+in-context? 
+
+For more information;
+https://www.nngroup.com/articles/recognition-and-recall/";;"User Control & Freedom
+(Bastien & Scapin)
+(Nielsen)
+(Colombo & Pasch)";"The criterion User Control refers to the fact that the users should always be in control of the system processing (e.g., interrupt, cancel, pause and continue). Every possible action by a user should be anticipated and appropriate options should be provided.
+
+The system should not make users feel trapped. Avoid (as far as possible) constraining users’ actions, provide them an exit strategy and make the actions easily reversible.The system should make users feel “free” of constraints and, at the same time, in control of the experience.";"Can reversible actions be canceled at any time by the user?
+Can an ongoing operation (e.g., filling out a form) be paused and resumed by the user?
+Is it easy for the user to go back?
+Is the opening of new windows explicitly controllable by the user?
+Do multimedia elements leave control to the user (play, rewind, volume, pause, etc.)?
+Etc...";;"Universal Usability & User Experience  (Expertise)
+(Bastien & Scapin)
+(Shneiderman)
+(Arhippainen)";"The system must respect the experience level of the user. 
+Experienced and inexperienced users have different information needs. It may be desirable to provide inexperienced users with prompted modes of transactions allowing simple step-by-step actions. For experienced users, computer-initiated dialogues may be boring and slow down their interactions; short-cuts may allow them to access system functions more rapidly. Different levels of interaction should take users’ experience into account.
+However, most systems will have users with varying levels of experience. Users may become more expert with increased experience, or perhaps less expert after a long period of disuse. The interface should also be designed so as to accommodate the varying users’ levels of experience.";"Are the contents adapted to all users (e.g., explanation of technical terms)?
+Do search functions offer basic and advanced options?
+Is task completion guided for the user?
+Is access to shortcuts for quickly achieving goals available to the user?
+Do error messages provide a more in-depth version for experts?
+Is the overall usability level acceptable to complete users' tasks?
+Etc...";;;;;;"Quality of Error Messages
+(Bastien & Scapin)";"Ensure that the information given to users about the nature of errors (syntax, format, etc.) and the actions to correct them, is relevant, easy to read and accurate. 
+For example, using a neutral vocabulary, non-personal, non-condemnatory in error messages; avoid humor.";"Are error messages understandable, self-contained, and explicit?
+Are error messages concise, readable, and placed in a suitable location?
+Do error messages indicate the origin and nature of the error?
+Do error messages provide guidance on how to correct the issue?
+Are error messages non-blaming?
+Do error messages remain displayed until the issue is resolved or corrected?
+Are error messages accompanied by elements to resume navigation (e.g., a call-to-action to return to the homepage)?
+Etc...";;;;;;"Design the Product or Service to Fit the Intended Contexts
+(Arhippainen)";The service or product is always used in particular contextual circumstances: the user is using a product in a physical situation, with a company or alone through the specific cultural habits and way of life in a certain temporal moment. All these context factors have impacts on user experience.;"
+";;"Opt for a perfect visual design 2
+(Arhippainen)";The second is to make the user interface aesthetically pleasing through good visual design. In addition, the choices made in visual design, for example, the use of colours, can have an impact on the UX
+;"Immediate Feedback
+(Bastien & Scapin)";"The system should always inform the user about what is happening, using appropriate feedback.In all cases, the computer must meet the user based on the actions and requests of the latter. For example, in cases where treatment is long, information indicating the user that the operations are in progress should be provided to him.
+";"Do user actions result in a visible and understandable system response (e.g., confirmation message)?
+Are user inputs always visible?
+Is information displayed during the loading of an action, file, or page (e.g., hourglass, loading wheel)?
+Do clickable elements exhibit a ""hover"" effect upon mouseover (e.g., color change)?
+Is the delay between the action performed and the feedback reasonable?
+Are long processes indicated by a waiting indication (e.g., progress bar, remaining time)?
+Is the failure of computer processes clearly indicated and understandable?
+Etc...";;"Minimal Actions
+(Bastien & Scapin)";"Reduce the workload with respect to the number of actions necessary to accomplish a goal or a task. It is here a matter of limiting as much as possible the steps users must go through.
+For example, do not require users to enter data that can be deducted by the system.";"Is memorization minimized?
+Is the amount of information to enter reduced to a minimum?
+Are the mandatory steps for the user brief?
+Is the number of steps in a procedure minimized?
+Are shortcuts provided?
+Does the system anticipate user needs by highlighting the most frequent or relevant choices?
+On long pages, is there an anchor to return to the top of the page?
+Is the page width adapted to different devices?
+Etc...";;;;;;;;;;;;;;"Error Correction
+(Bastien & Scapin)";"Make available to users the means to correct their mistakes.
+For example, providing the ability to modify orders during capture.";"Does the system correctly detect user input errors?
+Is an error promptly communicated to the user?
+Do error messages provide guidance on how to correct the error?
+In the case of a form, is an error easily noticeable by the user?
+Can users easily undo input errors or unintended actions?
+Are means available for reporting a system error (e.g., a reporting call-to-action)?
+Does the system offer alternatives (e.g., alternative search) in case of errors?
+Etc...";;;;;;"Utility & Clear Goals
+(Colombo & Pasch)";"The objective of the system must be clear. The system has to fulfill users' needs and expectations.
+1a) The system must be designed with the right affordances to explicitly inform users of its use(s)
+1b) The system must be functional, i.e. it must fulfil the objectives put forward by the affordances and meet the users' expectations
+1c) Additional (non-core) functionality is welcome, even more so if it provides for alternative uses of the system: exceeding user expectations is often a predictor of a good user experience";;;;
+;"Leagibility/Readability
+(Bastien & Scapin)";Legibility concerns the lexical characteristics of the information presented on the screen that may hamper or facilitate the reading of this information (character brightness, contrast between the letter and the background, font size, interword spacing, line spacing, paragraphs spacing, line length, etc.). By definition, the criterion Legibility does not concern feedback or error messages.;"Does the text adhere to WCAG or RGAA accessibility guidelines?
+Is the font readable and of an adequate size (e.g., avoiding italics and all caps)?
+Is there sufficient contrast between text and background colors?
+Are clickable elements visually prominent?
+Are line spacing and line height sufficient?
+Is the use of colors harmonious?
+Do colors and shapes serve as visual cues for different page elements (e.g., sections, menus, text, headings)?
+Etc...";;"Focused attention
+(Colombo & Pasch)";"The system should be simple and intuitive to use. It should facilitate the user's concentration on the task in hand by providing meaningful feedback and avoiding irrelevant distractions.
+3a) The system should be usable
+3b) The system should provide feedback that is relevant and meaningful to the task in hand
+3c) The system should avoid distractions, i.e. stimuli that are not relevant to the task at hand.";;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;"Help & Documentation
+(Nielsen)";"The system helps and guide the user.
+It’s best if the system doesn’t need any additional explanation. However, it may be necessary to provide documentation to help users understand how to complete their tasks (e.g., Tooltypes)";"Is there  for example, an FAQ  or documention available in order to help users?
+Is there a contact to a support team available?
+Is help documentation easy 
+to search?
+Is help provided in context right 
+at the moment when the user 
+requires it? ";;"Information density
+(Bastien & Scapin)";Reduce the workload of perceptive and mnemonic terms, for sets of items and not for items. For example, limit the informational density of the screen, to display only the necessary information;"Are the perceptual efforts required of the user acceptable?
+Are the animations discreet, limited in number, and controllable?
+Is the quantity of information displayed simultaneously and the number of choices available acceptable?
+Are the different information blocks sufficiently spaced apart?
+Are filtering and sorting features provided?
+Do illustrations and icons serve a purpose for the user or their experience?
+Is the span of attention considered (average short-term memory storage of 5±2 items)?
+Do text lines contain an average of 55-75 characters (including spaces) on the computer and 30-40 on mobile devices?
+Etc...";;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

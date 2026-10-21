@@ -1,0 +1,1091 @@
+{
+  "grid": [
+    {
+      "id": "guidance",
+      "label": "Guidance",
+      "definition": "All the means used to advise, guide, inform and lead the user during his interaction with the computer.",
+      "criteria": [
+        {
+          "id": "guidance.prompting",
+          "name": "Prompting",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Encourage the user to perform specific actions by providing indices. For example, guide data entries indicating the correct format and acceptable values: Date (dd / mm / yy) _ _ / _ _ / _ _. See this example of incitement ... missed! But as another example, successful.\n\nCan also see this example where the incentive is so bad that we must tell the user where to click!",
+          "checklist": [
+            "Is a title given to each page?",
+            "Are the titles concise and relevant to the content?",
+            "Is the navigation menu present on every page?",
+            "Are action elements (links, call-to-action buttons, tabs, etc.) easily identifiable?",
+            "Do action elements change appearance when hovered over or when they are active?",
+            "Are key elements placed above the fold?",
+            "Are back buttons/icons available for easy navigation?",
+            "Are unavailable functions visually deactivated (e.g., grayed out) and non-clickable?"
+          ]
+        },
+        {
+          "id": "guidance.grouping_distinction_between_items",
+          "name": "Grouping / Distinction between Items",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Position the items against each other in order to indicate their affiliation or not to a particular object class. For example, according to group menu options objects on which they apply.\n\nGive specific elements graphic features to indicate their belonging or not to a particular object class. For example: use a symbol and the red color for alert dialog boxes or error.",
+          "checklist": [
+            "Is it easy for the user to distinguish between elements and identify information of the same type?",
+            "Are pieces of information of the same type graphically similar?",
+            "Are pieces of information of the same type grouped and located in the same place?",
+            "Are distinct pieces of information presented differently?",
+            "Do distinct pieces of information have a different placement?",
+            "Do navigation menus include separators to visually distinguish different elements?"
+          ]
+        },
+        {
+          "id": "guidance.immediate_feedback",
+          "name": "Immediate Feedback",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "The system should always inform the user about what is happening, using appropriate feedback.In all cases, the computer must meet the user based on the actions and requests of the latter. For example, in cases where treatment is long, information indicating the user that the operations are in progress should be provided to him.",
+          "checklist": [
+            "Do user actions result in a visible and understandable system response (e.g., confirmation message)?",
+            "Are user inputs always visible?",
+            "Is information displayed during the loading of an action, file, or page (e.g., hourglass, loading wheel)?",
+            "Do clickable elements exhibit a \"hover\" effect upon mouseover (e.g., color change)?",
+            "Is the delay between the action performed and the feedback reasonable?",
+            "Are long processes indicated by a waiting indication (e.g., progress bar, remaining time)?",
+            "Is the failure of computer processes clearly indicated and understandable?"
+          ]
+        },
+        {
+          "id": "guidance.leagibility_readability",
+          "name": "Leagibility/Readability",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Legibility concerns the lexical characteristics of the information presented on the screen that may hamper or facilitate the reading of this information (character brightness, contrast between the letter and the background, font size, interword spacing, line spacing, paragraphs spacing, line length, etc.). By definition, the criterion Legibility does not concern feedback or error messages.",
+          "checklist": [
+            "Does the text adhere to WCAG or RGAA accessibility guidelines?",
+            "Is the font readable and of an adequate size (e.g., avoiding italics and all caps)?",
+            "Is there sufficient contrast between text and background colors?",
+            "Are clickable elements visually prominent?",
+            "Are line spacing and line height sufficient?",
+            "Is the use of colors harmonious?",
+            "Do colors and shapes serve as visual cues for different page elements (e.g., sections, menus, text, headings)?"
+          ]
+        },
+        {
+          "id": "guidance.help_documentation",
+          "name": "Help & Documentation",
+          "sources": [
+            "Nielsen"
+          ],
+          "definition": "The system helps and guide the user.\nIt’s best if the system doesn’t need any additional explanation. However, it may be necessary to provide documentation to help users understand how to complete their tasks (e.g., Tooltypes)",
+          "checklist": [
+            "Is there for example, an FAQ or documention available in order to help users?",
+            "Is there a contact to a support team available?",
+            "Is help documentation easy to search?",
+            "Is help provided in context right at the moment when the user requires it?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "workload",
+      "label": "Workload",
+      "definition": "All the elements of the interface which has a role in reducing the perceptual or mnemic user load, as well as in increasing the efficiency of the dialogue.",
+      "criteria": [
+        {
+          "id": "workload.concision",
+          "name": "Concision",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Reduce workload perceptive and mnemonic level in terms of individual elements of input or output. \nFor example, when measuring unit is associated with a data field, it should be part of the label of the field rather than being entered by the user.",
+          "checklist": [
+            "Is memorization minimized?",
+            "Is the amount of information to enter reduced to a minimum?",
+            "Are the mandatory steps for the user brief?",
+            "Is the number of steps in a procedure minimized?",
+            "Are shortcuts provided?",
+            "Does the system anticipate user needs by highlighting the most frequent or relevant choices?",
+            "On long pages, is there an anchor to return to the top of the page?",
+            "Is the page width adapted to different devices?"
+          ]
+        },
+        {
+          "id": "workload.recognition_rather_than_recall",
+          "name": "Recognition rather than recall",
+          "sources": [
+            "Nielsen"
+          ],
+          "definition": "Minimize the user’s memory load by making elements, actions, and options visible. The user should not have to remember information from one part of the interface to another. Information required to use the design (e.g. field labels or menu items) should be visible or easily retrievable when needed.",
+          "checklist": [
+            "Does the design keep important information visible, so that users do not have to memorize it?",
+            "Does the design offer help in-context?"
+          ]
+        },
+        {
+          "id": "workload.minimal_actions",
+          "name": "Minimal Actions",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Reduce the workload with respect to the number of actions necessary to accomplish a goal or a task. It is here a matter of limiting as much as possible the steps users must go through.\nFor example, do not require users to enter data that can be deducted by the system.",
+          "checklist": [
+            "Is memorization minimized?",
+            "Is the amount of information to enter reduced to a minimum?",
+            "Are the mandatory steps for the user brief?",
+            "Is the number of steps in a procedure minimized?",
+            "Are shortcuts provided?",
+            "Does the system anticipate user needs by highlighting the most frequent or relevant choices?",
+            "On long pages, is there an anchor to return to the top of the page?",
+            "Is the page width adapted to different devices?"
+          ]
+        },
+        {
+          "id": "workload.focused_attention",
+          "name": "Focused attention",
+          "sources": [
+            "Colombo & Pasch"
+          ],
+          "definition": "The system should be simple and intuitive to use. It should facilitate the user's concentration on the task in hand by providing meaningful feedback and avoiding irrelevant distractions.\n3a) The system should be usable\n3b) The system should provide feedback that is relevant and meaningful to the task in hand\n3c) The system should avoid distractions, i.e. stimuli that are not relevant to the task at hand.",
+          "checklist": []
+        },
+        {
+          "id": "workload.information_density",
+          "name": "Information density",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Reduce the workload of perceptive and mnemonic terms, for sets of items and not for items. For example, limit the informational density of the screen, to display only the necessary information",
+          "checklist": [
+            "Are the perceptual efforts required of the user acceptable?",
+            "Are the animations discreet, limited in number, and controllable?",
+            "Is the quantity of information displayed simultaneously and the number of choices available acceptable?",
+            "Are the different information blocks sufficiently spaced apart?",
+            "Are filtering and sorting features provided?",
+            "Do illustrations and icons serve a purpose for the user or their experience?",
+            "Is the span of attention considered (average short-term memory storage of 5±2 items)?",
+            "Do text lines contain an average of 55-75 characters (including spaces) on the computer and 30-40 on mobile devices?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "explicit_control",
+      "label": "Explicit control",
+      "definition": "Consideration by the system of explicit user actions and control that users have over the treatment of their actions.",
+      "criteria": [
+        {
+          "id": "explicit_control.actions_explicit",
+          "name": "Actions Explicit",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Clarify the relationship between the operation of the application and user actions. This relationship must be explicit, i.e., the computer must process only those actions requested by the users and only when requested to do so.\nFor example, entering commands must end with an end indication (\"Enter\", \"OK\") to which publishing opportunities should be prerequisites.",
+          "checklist": [
+            "Do operations trigger with explicit consent from the user?",
+            "Does processing start immediately after the user's action?",
+            "When an operation doesn't start immediately after the user's action, is it indicated that it will be delayed or cannot be performed?",
+            "Do actions with significant and/or irreversible consequences require explicit confirmation from the user?"
+          ]
+        },
+        {
+          "id": "explicit_control.user_control_freedom",
+          "name": "User Control & Freedom",
+          "sources": [
+            "Bastien & Scapin",
+            "Nielsen",
+            "Colombo & Pasch"
+          ],
+          "definition": "The criterion User Control refers to the fact that the users should always be in control of the system processing (e.g., interrupt, cancel, pause and continue). Every possible action by a user should be anticipated and appropriate options should be provided.\n\nThe system should not make users feel trapped. Avoid (as far as possible) constraining users’ actions, provide them an exit strategy and make the actions easily reversible.The system should make users feel “free” of constraints and, at the same time, in control of the experience.",
+          "checklist": [
+            "Can reversible actions be canceled at any time by the user?",
+            "Can an ongoing operation (e.g., filling out a form) be paused and resumed by the user?",
+            "Is it easy for the user to go back?",
+            "Is the opening of new windows explicitly controllable by the user?",
+            "Do multimedia elements leave control to the user (play, rewind, volume, pause, etc.)?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "adaptability",
+      "label": "Adaptability",
+      "definition": "Ability to react depending on the context and the needs and user preferences.",
+      "criteria": [
+        {
+          "id": "adaptability.flexibility",
+          "name": "Flexibility",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Make available to users the means to customize the interface to reflect their strategies or work habits and requirements of the task. \nFor example, users should be able to disable unnecessary displays.",
+          "checklist": [
+            "Are different means provided to trigger the same command (e.g., icon, keyboard shortcut)?",
+            "Can primary actions be performed both with the keyboard and the mouse?",
+            "Is the system configurable according to the user's preferences?",
+            "Are displays that are not useful to the user deactivatable?",
+            "Is it possible for the user to create custom shortcuts?",
+            "Are means provided for visually impaired and blind individuals?"
+          ]
+        },
+        {
+          "id": "adaptability.universal_usability_user_experience_expertise",
+          "name": "Universal Usability & User Experience (Expertise)",
+          "sources": [
+            "Bastien & Scapin",
+            "Shneiderman",
+            "Arhippainen"
+          ],
+          "definition": "The system must respect the experience level of the user. \nExperienced and inexperienced users have different information needs. It may be desirable to provide inexperienced users with prompted modes of transactions allowing simple step-by-step actions. For experienced users, computer-initiated dialogues may be boring and slow down their interactions; short-cuts may allow them to access system functions more rapidly. Different levels of interaction should take users’ experience into account.\nHowever, most systems will have users with varying levels of experience. Users may become more expert with increased experience, or perhaps less expert after a long period of disuse. The interface should also be designed so as to accommodate the varying users’ levels of experience.",
+          "checklist": [
+            "Are the contents adapted to all users (e.g., explanation of technical terms)?",
+            "Do search functions offer basic and advanced options?",
+            "Is task completion guided for the user?",
+            "Is access to shortcuts for quickly achieving goals available to the user?",
+            "Do error messages provide a more in-depth version for experts?",
+            "Is the overall usability level acceptable to complete users' tasks?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "consistency",
+      "label": "Consistency",
+      "definition": "Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts. For example, always displayed in the same place the incentive for entering data or commands.",
+      "criteria": [
+        {
+          "id": "consistency.consistency_standard",
+          "name": "Consistency & Standard",
+          "sources": [
+            "Bastien & Scapin",
+            "Nielsen",
+            "Kaniasty CARMEL"
+          ],
+          "definition": "Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts.\n\nUsers should not have to wonder whether different words, situations, or actions mean the same thing. Follow platform and industry conventions.\n\nThe consistency between the following elements could be checjked:\n1) Style guides \n2) Design patterns\n3) Naming conventions\n4) Look & Feel\n5) Interactions",
+          "checklist": [
+            "Is the interface visually stable from one page to another?",
+            "Are typography, colors, alignments, spacing, and call-to-action elements consistent from one page to another?",
+            "Is the placement of key elements the same on all pages (e.g., the menu)?",
+            "Are state changes and click consequences consistent for identical elements?",
+            "Does the same word have the same meaning throughout the interface?",
+            "Do the same sequences of actions have the same effects from one page to another?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "errors_management",
+      "label": "Errors management",
+      "definition": "Means firstly to avoid or reduce errors, secondly to correct them when they occur.",
+      "criteria": [
+        {
+          "id": "errors_management.protection_against_errors",
+          "name": "Protection Against Errors",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Establish ways to detect and prevent errors and recover from them when occuring. Errors are defined in this context as invalid data entry, invalid format for data entry, incorrect command syntax, etc.\nFor example, all possible actions on an interface should be considered especially accidental button presses of the keyboard so that non-expected inputs are detected.",
+          "checklist": [
+            "Are measures in place to prevent user errors (e.g., indicating data format to input)?",
+            "Does the system provide a help section (e.g., assistance, chat, tooltips)?",
+            "Are manual inputs minimized to the bare essentials?",
+            "Is confirmation requested from the user before triggering an irreversible action?",
+            "Are mandatory or optional input fields clearly marked?",
+            "Are input fields accompanied by clear labels and, if necessary, examples of content?"
+          ]
+        },
+        {
+          "id": "errors_management.quality_of_error_messages",
+          "name": "Quality of Error Messages",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Ensure that the information given to users about the nature of errors (syntax, format, etc.) and the actions to correct them, is relevant, easy to read and accurate. \nFor example, using a neutral vocabulary, non-personal, non-condemnatory in error messages; avoid humor.",
+          "checklist": [
+            "Are error messages understandable, self-contained, and explicit?",
+            "Are error messages concise, readable, and placed in a suitable location?",
+            "Do error messages indicate the origin and nature of the error?",
+            "Do error messages provide guidance on how to correct the issue?",
+            "Are error messages non-blaming?",
+            "Do error messages remain displayed until the issue is resolved or corrected?",
+            "Are error messages accompanied by elements to resume navigation (e.g., a call-to-action to return to the homepage)?"
+          ]
+        },
+        {
+          "id": "errors_management.error_correction",
+          "name": "Error Correction",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "Make available to users the means to correct their mistakes.\nFor example, providing the ability to modify orders during capture.",
+          "checklist": [
+            "Does the system correctly detect user input errors?",
+            "Is an error promptly communicated to the user?",
+            "Do error messages provide guidance on how to correct the error?",
+            "In the case of a form, is an error easily noticeable by the user?",
+            "Can users easily undo input errors or unintended actions?",
+            "Are means available for reporting a system error (e.g., a reporting call-to-action)?",
+            "Does the system offer alternatives (e.g., alternative search) in case of errors?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "significance_of_codes",
+      "label": "Significance of Codes",
+      "definition": "There must be balance between the object or the information displayed or entered, and its referent. Codes and names are significant to the users when there is a strong semantic relationship between such codes and the items or actions they refer to.",
+      "criteria": [
+        {
+          "id": "significance_of_codes.significance_of_codes",
+          "name": "Significance of Codes",
+          "sources": [
+            "Bastien & Scapin"
+          ],
+          "definition": "The criterion Significance of Codes qualifies the relationship between a term and/or a sign and its reference. Codes and names are significant to the users when there is a strong semantic relationship between such codes and the items or actions they refer to.\nFor example, make the explicit rules of abbreviation.",
+          "checklist": [
+            "Do the labels of clickable links reflect the content of the destination page?",
+            "Are button labels explicit about the consequences of clicking?",
+            "Are the icons used understandable and appropriate?",
+            "Are abbreviations limited and explained?",
+            "Is the language used understandable to the user?",
+            "Are technical terms specific to your company/domain defined?",
+            "Are the colors, symbols, and terms used adapted to the cultural codes of the target audience (e.g., green for validation and red for errors)?"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "compatibility",
+      "label": "Compatibility",
+      "definition": "There must be agreement between the characteristics of users and tasks, on the one hand, and the organization of outputs, inputs and dialogue of a given application, on the other. For example, the language should be familiar to users, and related to the task at hand.",
+      "criteria": [
+        {
+          "id": "compatibility.compatibility_correspondance_between_the_system_and_the_real_world",
+          "name": "Compatibility & Correspondance between the system and the real world",
+          "sources": [
+            "Bastien & Scapin",
+            "Nielsen"
+          ],
+          "definition": "The criterion Compatibility refers to the match between users’ characteristics (memory, perceptions, customs, skills, age, expectations, etc.) and task characteristics on the one hand, and the organization of the output, input, and dialogue for a given application, on the other hand.\n\nThe design should speak the users’ language. Use words, phrases, and concepts familiar to the user, rather than internal jargon. Follow real-world conventions, making information appear in a natural and logical order.\nReuse common codes and habits from real life in the systems to promote recognition.",
+          "checklist": [
+            "Is the interface adapted to the target user?",
+            "Is the language of the interface understandable?",
+            "Is the vocabulary relevant to the target audience?",
+            "Is access to commands adapted to the context of task completion?",
+            "Is the interface compatible across different devices, browsers, and screen sizes without distortion or loss of content?",
+            "Is the target interface consistent with the primary context and device of use (mobile-first, responsive, or adaptive)?",
+            "Is data input in forms done in a logical order for the user?",
+            "Can the user choose their own display and sorting criteria?"
+          ]
+        },
+        {
+          "id": "compatibility.design_the_product_or_service_to_fit_the_intended_contexts",
+          "name": "Design the Product or Service to Fit the Intended Contexts",
+          "sources": [
+            "Arhippainen"
+          ],
+          "definition": "The service or product is always used in particular contextual circumstances: the user is using a product in a physical situation, with a company or alone through the specific cultural habits and way of life in a certain temporal moment. All these context factors have impacts on user experience.",
+          "checklist": []
+        },
+        {
+          "id": "compatibility.utility_clear_goals",
+          "name": "Utility & Clear Goals",
+          "sources": [
+            "Colombo & Pasch"
+          ],
+          "definition": "The objective of the system must be clear. The system has to fulfill users' needs and expectations.\n1a) The system must be designed with the right affordances to explicitly inform users of its use(s)\n1b) The system must be functional, i.e. it must fulfil the objectives put forward by the affordances and meet the users' expectations\n1c) Additional (non-core) functionality is welcome, even more so if it provides for alternative uses of the system: exceeding user expectations is often a predictor of a good user experience",
+          "checklist": []
+        }
+      ]
+    },
+    {
+      "id": "opt_for_perfect_visual_design",
+      "label": "Opt for perfect visual design",
+      "definition": "",
+      "criteria": [
+        {
+          "id": "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_1",
+          "name": "Opt for a perfect visual design 1",
+          "sources": [
+            "Arhippainen"
+          ],
+          "definition": "From a UX perspective, visual aspects have two intentions. The first is that visual design can improve usability by making the user interface more understandable, consistent and guiding.",
+          "checklist": []
+        },
+        {
+          "id": "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_2",
+          "name": "Opt for a perfect visual design 2",
+          "sources": [
+            "Arhippainen"
+          ],
+          "definition": "The second is to make the user interface aesthetically pleasing through good visual design. In addition, the choices made in visual design, for example, the use of colours, can have an impact on the UX",
+          "checklist": []
+        }
+      ]
+    }
+  ],
+  "frameworks": [
+    {
+      "framework": "Bastien & Scapin",
+      "heuristics": [
+        {
+          "criterion": "1. Guidance",
+          "details": "User Guidance refers to the means available to advise, orient, inform, instruct, and guide the users throughout their interactions with a computer (messages, alarms, labels, etc.), including from a lexical point of view.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "1.1 Prompting",
+          "details": "As it is used here, Prompting has a broader definition than usual. Here it refers to the means available in order to lead the users to making specific actions whether it be data entry or other tasks. This criterion also refers to all the means that help users to know the alternatives when several actions are possible depending on the contexts. Prompting also concerns status information, that is information about the actual state or context of the system, as well as information concerning help facilities and their accessibility.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "1.2 Grouping/Distinction of items",
+          "details": "The criterion Grouping/Distinction of Items concerns the visual organisation of information items in relation to one another. This criterion takes into account the topology (location) and some graphical characteristics. (format) in order to indicate the relationships between the various items displayed, to indicate whether or not they belong to a given class, or else to indicate differences between classes. This criterion also concerns the organisation of items within a class. The criterion Grouping/Distinction of Items is subdivided into two criteria: Grouping/Distinction by Location and Grouping/Distinction by Format.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "1.2.1 Grouping/Distinction by location",
+          "details": "The criterion Grouping/Distinction by Location concerns the relative positioning of items in order to indicate whether or not they belong to a given class, or else to indicate differences between classes. This criterion also concerns the relative positioning of items within a class.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "1.2.2 Grouping/Distinction by format",
+          "details": "The criterion Grouping/Distinction by Format concerns more precisely graphical features (format, colour, etc.) that indicate whether or not items belong to a given class, or that indicate distinctions.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "1.3 Immediate Feedback",
+          "details": "Immediate Feedback concerns system responses to users’ actions. These actions may be simple keyed entries or more complex transactions such as stacked commands. In all cases computer responses must be provided, they should be fast, with appropriate and consistent timing for different types of transactions. In all cases, a fast response from the computer should be provided with information on the requested transaction and its result.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "1.4 Legibility",
+          "details": "Legibility concerns the lexical characteristics of the information presented on the screen that may hamper or facilitate the reading of this information (character brightness, contrast between the letter and the background, font size, interword spacing, line spacing, paragraphs spacing, line length, etc.). By definition, the criterion Legibility does not concern feedback or error messages.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "2. Workload",
+          "details": "The criterion Workload concerns all interface elements that play a role in the reduction of the users’ perceptual or cognitive load, and in the increase of the dialogue efficiency.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "2.1 Brevity",
+          "details": "The criterion Brevity concerns the perceptual and cognitive workload both for individual inputs and outputs, and for sets of inputs (i.e., sets of actions needed to accomplish a goal or a task). Brevity corresponds to the -goal of limiting the reading and input workload and the number of action steps.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "2.1.1 Concision",
+          "details": "The criterion Concision concerns perceptual and cognitive workload for individual inputs or outputs. \nBy definition, Concision does not concern feedback or error messages.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "2.1.2 Minimal actions",
+          "details": "The criterion Minimal Actions concern workload with respect to the number of actions necessary to accomplish a goal or a task. It is here a matter of limiting as much as possible the steps users must go through.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "2.2 Information Density",
+          "details": "The criterion Information Density concerns the users’ workload from a perceptual and cognitive point of view with regard to the whole set of information presented to the users rather than each individual element or item.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "3. Explicit control",
+          "details": "The criterion Explicit Control concerns both the system processing of explicit user actions, and the control users have on the processing of their actions by the system.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "3.1 Explicit user actions",
+          "details": "The criterion Explicit User Action refers to the relationship between the computer processing and the actions of the users. This relationship must be explicit, i.e., the computer must process only those actions requested by the users and only when requested to do so.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "3.2 User control",
+          "details": "The criterion User Control refers to the fact that the users should always be in control of the system processing (e.g., interrupt, cancel, pause and continue). Every possible action by a user should be anticipated and appropriate options should be provided.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "4 Adaptability",
+          "details": "The adaptability of a system refers to its capacity to behave contextually and according to the users’ needs and preferences.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "4.1 Flexibility",
+          "details": "The criterion Flexibility refers to the means available to the users to customise the interface in order to take into account their working. strategies and/or their habits, and the task requirements. Flexibility is reflected in the number of possible ways of achieving a given goal. In other words, it is the capacity of the interface to adapt to the users’ particular needs.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "4.2 User experience",
+          "details": "The criterion User Experience refers to the means available to take into account the level of user experience.",
+          "quality_component": "Satisfaction"
+        },
+        {
+          "criterion": "5. Error management",
+          "details": "The criterion Error Management refers to the means available to prevent or reduce errors and to recover from them when they occur. Errors are defined in this context as invalid data entry, invalid format for data entry, incorrect command syntax, etc.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "5.1 Error Protection",
+          "details": "The criterion Error Protection refers to the means available to detect and prevent data entry errors, command errors, or actions with destructive consequences.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "5.2 Quality of error messages",
+          "details": "The criterion Quality of Error Messages refers to the phrasing and the content of error messages, that is: their relevance, readability, and specificity about the nature of the errors (syntax, format, etc.) and the actions needed to correct them.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "5.3 Error Correction",
+          "details": "The criterion Error Correction refers to the means available to the users to correct their errors.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "6. Consistency",
+          "details": "The criterion Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "7. Significance of codes",
+          "details": "The criterion Significance of Codes qualifies the relationship between a term and/or a sign and its reference. Codes and names are significant to the users when there is a strong semantic relationship between such codes and the items or actions they refer to.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "8. Compatibility",
+          "details": "The criterion Compatibility refers to the match between users’ characteristics (memory, perceptions, customs, skills, age, expectations, etc.) and task characteristics on the one hand, and the organization of the output, input, and dialogue for a given application, on the other hand.",
+          "quality_component": "Satisfaction"
+        }
+      ]
+    },
+    {
+      "framework": "Nielsen's",
+      "heuristics": [
+        {
+          "criterion": "1: Visibility of System Status",
+          "details": "The design should always keep users informed about what is going on, through appropriate feedback within a reasonable amount of time.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "2: Match Between the System and the Real World",
+          "details": "The design should speak the users’ language. Use words, phrases, and concepts familiar to the user, rather than internal jargon. Follow real-world conventions, making information appear in a natural and logical order.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "3: User Control and Freedom",
+          "details": "Users often perform actions by mistake. They need a clearly marked “emergency exit” to leave the unwanted action without having to go through an extended process.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "4: Consistency and Standards",
+          "details": "Users should not have to wonder whether different words, situations, or actions mean the same thing. Follow platform and industry conventions.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "5: Error Prevention",
+          "details": "Good error messages are important, but the best designs carefully prevent problems from occurring in the first place. Either eliminate error-prone conditions, or check for them and present users with a confirmation option before they commit to the action.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "6: Recognition Rather than Recall",
+          "details": "Minimize the user’s memory load by making elements, actions, and options visible. The user should not have to remember information from one part of the interface to another. Information required to use the design (e.g. field labels or menu items) should be visible or easily retrievable when needed.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "7: Flexibility and Efficiency of Use",
+          "details": "Shortcuts — hidden from novice users — may speed up the interaction for the expert user such that the design can cater to both inexperienced and experienced users. Allow users to tailor frequent actions.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "8: Aesthetic and Minimalist Design",
+          "details": "Interfaces should not contain information which is irrelevant or rarely needed. Every extra unit of information in an interface competes with the relevant units of information and diminishes their relative visibility.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "9: Help Users Recognize, Diagnose, and Recover from Errors",
+          "details": "Error messages should be expressed in plain language (no error codes), precisely indicate the problem, and constructively suggest a solution.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "10: Help and Documentation",
+          "details": "It’s best if the system doesn’t need any additional explanation. However, it may be necessary to provide documentation to help users understand how to complete their tasks.",
+          "quality_component": "Learnability"
+        }
+      ]
+    },
+    {
+      "framework": "Amélie Boucher",
+      "heuristics": [
+        {
+          "criterion": "Architecture_The site is well organized.",
+          "details": "",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Visual Organization_The page is well organized.",
+          "details": "",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Logic_The site capitalizes on internal learning.",
+          "details": "",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Conventions_The site capitalizes on external learning.",
+          "details": "",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Information_The site informs the user and responds to them.",
+          "details": "",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Understanding_The words and symbols are carefully chosen.",
+          "details": "",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Help_The site helps and guides the user.",
+          "details": "",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Error Control_The site expects the user to make mistakes.",
+          "details": "",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Speed_The user does not lose time.",
+          "details": "",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Freedom_The user is in command.",
+          "details": "",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Accessibility_A site that is easy for all to use.",
+          "details": "",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "User Satisfaction_The navigation is pleasant and meets the expectations of the user.",
+          "details": "",
+          "quality_component": "Satisfaction"
+        }
+      ]
+    },
+    {
+      "framework": "Colombo & Pasch's",
+      "heuristics": [
+        {
+          "criterion": "Clear goals_The system should be designed with the right affordances to explicitly tell users its purpose(s).",
+          "details": "The purpose of the system should be clear. The system has to fulfill, or even better exceed, user’s expectations.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Clear goals_The system must be functional, meaning that it must fulfill the purposes highlighted by the affordances and meet users’ expectations.",
+          "details": "The purpose of the system should be clear. The system has to fulfill, or even better exceed, user’s expectations.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Clear goals_Additional features (other than the core ones) are welcome, even better if they foresee possible alternative uses of the system: a product that is actually exceeding users’ expectations is often a predictor of a good user experience.",
+          "details": "The purpose of the system should be clear. The system has to fulfill, or even better exceed, user’s expectations.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Appropriate Feedback_The system should provide steady and prompt feedback.",
+          "details": "The user-system interaction should be sustained through steady, prompt and unobtrusive feedback.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Appropriate Feedback_The feedback should be as less obtrusive as possible.",
+          "details": "The user-system interaction should be sustained through steady, prompt and unobtrusive feedback.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Appropriate Feedback_The “obtrusiveness” of the feedback should be proportional to the level of priority (to establish a sort of hierarchy).",
+          "details": "The user-system interaction should be sustained through steady, prompt and unobtrusive feedback.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Focused Concentration_The system must be usable",
+          "details": "The system should be simple and intuitive in its use; it should facilitate user concentration on the task at hand by providing meaningful feedback and avoiding non-relevant distractions.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Focused Concentration_The system should provide feedback that is relevant and meaningful for the task at hand.",
+          "details": "The system should be simple and intuitive in its use; it should facilitate user concentration on the task at hand by providing meaningful feedback and avoiding non-relevant distractions.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Focused Concentration_The system should avoid distractions, namely stimuli that are not relevant for the task at hand.",
+          "details": "The system should be simple and intuitive in its use; it should facilitate user concentration on the task at hand by providing meaningful feedback and avoiding non-relevant distractions.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Ergonomical Transparency_The system should be ergonomic, it should fit users’ skills and activity purposes.",
+          "details": "The system should almost disappear, be transparent, while used to allow users to focus on the activity and to engage in the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Ergonomical Transparency_The system behavior should be consistent and predictable.",
+          "details": "The system should almost disappear, be transparent, while used to allow users to focus on the activity and to engage in the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Ergonomical Transparency_The system should be designed with aesthetic integrity, in other words the design should be visually appealing and common principles of good design should be followed: it should also provide a graceful flow, namely the interaction between users and the system should be smooth and graceful.",
+          "details": "The system should almost disappear, be transparent, while used to allow users to focus on the activity and to engage in the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Technology Appropriation_The system should be, to a certain extent, customizable and manipulable by users in both its appearance and its functionality.",
+          "details": "Users should be allowed to customize and manipulate the system according to their peculiarities and preferences, to feel familiar with the system, as if the system was tailored specifically for them.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Technology Appropriation_The customization process should be easily accessible, and with a predictable outcome.",
+          "details": "Users should be allowed to customize and manipulate the system according to their peculiarities and preferences, to feel familiar with the system, as if the system was tailored specifically for them.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Technology Appropriation_Provide users with multiple choices for interacting with the system (doing the same activity in many different ways).",
+          "details": "Users should be allowed to customize and manipulate the system according to their peculiarities and preferences, to feel familiar with the system, as if the system was tailored specifically for them.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Challenges/Skills Balance_The system should have a steep learning curve to help novice users.",
+          "details": "The system should adapt to the user in that it should be designed to dynamically provide adequate challenges for both novice, average and experienced users.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Challenges/Skills Balance_The system should encourage users to explore it and to discover all the features and opportunities for interaction.",
+          "details": "The system should adapt to the user in that it should be designed to dynamically provide adequate challenges for both novice, average and experienced users.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Challenges/Skills Balance_The system should provide advanced features or extra functions (e.g. accelerators, macros, advanced settings, etc.) and make them accessible for intermediate/advanced users.",
+          "details": "The system should adapt to the user in that it should be designed to dynamically provide adequate challenges for both novice, average and experienced users.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Potential control_The system should help users to improve their skills and to reduce the margin of error in performing the activity.",
+          "details": "The system should make users feel “free” of constraints and, at the same time, in control of the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Potential control_The system should not make users feel trapped. Avoid (as far as possible) constraining users’ actions, provide them an exit strategy and make the actions easily reversible.",
+          "details": "The system should make users feel “free” of constraints and, at the same time, in control of the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Potential control_Users should be always allowed to enable or disable automatic processes or system aids.",
+          "details": "The system should make users feel “free” of constraints and, at the same time, in control of the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Follow the Rhythm_The system’s pace should be suitable for the activity for which it was designed.",
+          "details": "The pace of the system should adapt to the user and to the rhythm of the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Follow the Rhythm_The experience should not be interrupted by the system but users should be allowed to suspend the interaction and to restart it from the point of achievement he reached.",
+          "details": "The pace of the system should adapt to the user and to the rhythm of the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Follow the Rhythm_Users should be allowed to speed up or slow down the rhythm of the interaction.",
+          "details": "The pace of the system should adapt to the user and to the rhythm of the experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Know Thy User’s Motivations_The system should be designed by looking at final users and the activity they seek to accomplish, this means that you should know them first.",
+          "details": "The system should help users to fulfill the motivations behind its use and to satisfy basic psychological needs.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Know Thy User’s Motivations_ Knowing all the possible users and activities is impossible, so the system should be flexible in order to adapt to various users for various activities and in different contexts.",
+          "details": "The system should help users to fulfill the motivations behind its use and to satisfy basic psychological needs.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Know Thy User’s Motivations_When applicable, the system should help users to satisfy the three basic psychological needs (in a broad sense): need for competence, autonomy, and relatedness.",
+          "details": "The system should help users to fulfill the motivations behind its use and to satisfy basic psychological needs.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Conservative Innovation_The system should provide a certain degree of novelty and variety to users.",
+          "details": "The system should be innovative (and conservative at the same time).",
+          "quality_component": "Satisfaction"
+        },
+        {
+          "criterion": "Conservative Innovation_The system should be the result of a trade off between innovation and tradition, where tradition is meant as consistency with familiar systems and compliance to standards.",
+          "details": "The system should be innovative (and conservative at the same time).",
+          "quality_component": "Satisfaction"
+        },
+        {
+          "criterion": "Conservative Innovation_The system should ensure interoperability to seamlessly integrate into the existing content.",
+          "details": "The system should be innovative (and conservative at the same time).",
+          "quality_component": "Satisfaction"
+        }
+      ]
+    },
+    {
+      "framework": "Shneiderman’s Eight Golden Rules of Interface Design",
+      "heuristics": [
+        {
+          "criterion": "Strive for consistency",
+          "details": "Consistent sequences of actions should be required in similar situations; identical terminology should be used in prompts, menus, and help screens; and consistent color, layout, capitalization, fonts, and so on, should be employed throughout. Exceptions, such as required confirmation of the delete command or no echoing of passwords, should be comprehensible and limited in number",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Seek universal usability",
+          "details": "Recognize the needs of diverse users and design for plasticity, facilitating transformation of content. Novice to expert differences, age ranges, disabilities, international variations, and technological diversity each enrich the spectrum of requirements that guides design. Adding features for novices, such as explanations, and features for experts, such as shortcuts and faster pacing, enriches the interface design and improves perceived quality.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Offer informative feedback",
+          "details": "For every user action, there should be an interface feedback. For frequent and minor actions, the response can be modest, whereas for infrequent and major actions, the response should be more substantial. Visual presentation of the objects of interest provides a convenient environment for showing changes explicitly (see the discussion of direct manipulation in Chapter 7).",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Design dialogs to yield closure",
+          "details": "Sequences of actions should be organized into groups with a beginning, middle, and end. Informative feedback at the completion of a group of actions gives users the satisfaction of accomplishment, a sense of relief, a signal to drop contingency plans from their minds, and an indicator to prepare for the next group of actions. For example, e-commerce websites move users from selecting products to the checkout, ending with a clear confirmation page that completes the transaction.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Prevent errors",
+          "details": "As much as possible, design the interface so that users cannot make serious errors; for example, gray out menu items that are not appropriate and do not allow alphabetic characters in numeric entry fields (Section 3.3.5). If users make an error, the interface should offer simple, constructive, and specific instructions for recovery. For example, users should not have to retype an entire name-address form if they enter an invalid zip code but rather should be guided to repair only the faulty part. Erroneous actions should leave the interface state unchanged, or the interface should give instructions about restoring the state.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Permit easy reversal of actions",
+          "details": "As much as possible, actions should be reversible. This feature relieves anxiety, since users know that errors can be undone, and encourages exploration of unfamiliar options. The units of reversibility may be a single action, a data-entry task, or a complete group of actions, such as entry of a name-address block.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Keep users in control",
+          "details": "Experienced users strongly desire the sense that they are in charge of the interface and that the interface responds to their actions. They don’t want surprises or changes in familiar behavior, and they are annoyed by tedious data-entry sequences, difficulty in obtaining necessary information, and inability to produce their desired result.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Reduce short-term memory load",
+          "details": "Humans’ limited capacity for information processing in short-term memory (the rule of thumb is that people can remember “seven plus or minus two chunks” of information) requires that designers avoid interfaces in which users must remember information from one display and then use that information on another display. It means that cellphones should not require reentry of phone numbers, website locations should remain visible, and lengthy forms should be compacted to fit a single display.",
+          "quality_component": "Memorability"
+        }
+      ]
+    },
+    {
+      "framework": "Arhippainen's",
+      "heuristics": [
+        {
+          "criterion": "Ensure Usability",
+          "details": "Users experience usability. It is important to ensure that the designed service or product is usable.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Provide Utility Matching with the User’s Values",
+          "details": "Utility of the product or service affects the user experience. Perceived utility forgive lacks in usability or other product qualities. Utility is related closely to the user’s values. The user compares the utility of the product against his/her values when choosing to use it.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Surpass the User’s Expectations",
+          "details": "Often, the user’s expectations are negative for no reason. Expectations have been formulated via prior experiences or rumor of the product, and thus expectation may have nothing to do with the product in question. The product should be able to catch the user’s attention in a positive way and get a user start to use the product, and then surpass his expectations by easiness, pleasure, utility, whatever quality could fit in the case.",
+          "quality_component": "Satisfaction"
+        },
+        {
+          "criterion": "Respect the User",
+          "details": "Know the target user groups. A user’s background has a strong impact on how he/she will perceive the product or system. In addition to the user’s needs and actions, designers are required to understand the user’s values, prior experiences, user type, skills, restrictions, etc. The better the service fits the user’s world, the better experiences the user will have.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Design the Product or Service to Fit the Intended Contexts",
+          "details": "The service or product is always used in particular contextual circumstances: the user is using a product in a physical situation, with a company or alone through the specific cultural habits and way of life in a certain temporal moment. All these context factors have impacts on user experience.",
+          "quality_component": "Utility"
+        },
+        {
+          "criterion": "Provide Several Ways to Interact, Leave Choice for the User",
+          "details": "People are different and prefer several ways to interact with products and services. It is important to provide several ways to interact. Provide manual and adaptive controls and, touch, gestures and voice based controlling when possible.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Respect the User’s Privacy and Security",
+          "details": "The world is digital and technologically oriented. Even though attitudes have changed to be more open for technological solutions, people are still concerned about privacy and security issues. User experience is always dependent on the uncertainty of how reliable the service is in terms of privacy and security.",
+          "quality_component": "Satisfaction"
+        },
+        {
+          "criterion": "Support the User’s Activities - Do Not Force",
+          "details": "All services should be shown from a supportive perspective, e.g. how does this service support me in my actions and everyday life. The service is not allowed to force a user. Forcing will have a negative impact on user experience.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Go for a Perfect Visual Design",
+          "details": "From a user experience point of view, visual aspects have two meanings. The first is that the visual design can improve usability by making the user interface more understandable, consistent and guiding. The other meaning is to make the user interface aesthetically pleasurable by designing visual aspects. Moreover, selections in visual design, for instance, use of colors, can have an impact on user experience by the values one respect (such as health, fitness, nature, beauty).",
+          "quality_component": "Satisfaction"
+        },
+        {
+          "criterion": "Give a Surprise Gift",
+          "details": "This means that people want more. Usability is not enough. “Jackknife phone” is not enough. Users need some extra, which makes them happy: surpass expectations, increase and improve user’s experiences. Breadth of experience is not allowed to decrease. User experience is the seventh sense that people use for sensing technology — sensing life within technology.",
+          "quality_component": "Satisfaction"
+        }
+      ]
+    },
+    {
+      "framework": "Kaniasty's CARMEL Guidelines",
+      "heuristics": [
+        {
+          "criterion": "Consistency_Style guides",
+          "details": "The design follows branding or style guides that dictate the use of logos, color, and typography.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Consistency_Design patterns",
+          "details": "The design follows a cohesive set of human interface guidelines or design patterns.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Consistency_Naming Conventions",
+          "details": "Naming conventions are consistent across pages and widgets.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Consistency_Look and feel",
+          "details": "Layouts and page elements have a cohesive look and feel.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Consistency_Interactions",
+          "details": "Similar interactions and design patterns behave consistently.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Accessibility_Font size",
+          "details": "The design meets minimum font size legibility guidelines.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Accessibility_Contrast",
+          "details": "The design meets guidelines for minimum contrast between foreground, text and background.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Accessibility_Double coding",
+          "details": "Visual information is ‘double-coded’ for accessibility by users with color blindness or other visual impairments.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Accessibility_Target Size",
+          "details": "The design meets guidelines for minimum target size for mouse and touch targets.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Accessibility_Screen Readers",
+          "details": "The design meets W3C’s Web Content Accessibility Guidelines (WCAG) for users of screen readers.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Recovery_Confirmation dialogs",
+          "details": "The design meets minimum font size legibility guidelines.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Recovery_Undo functions",
+          "details": "Undo functions prevent major data loss and unintended consequences.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Recovery_Error messages",
+          "details": "Error messages include instructions for recovery.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Recovery_Version control",
+          "details": "Version control, history or archiving functions are built into data intensive or collaborative workflows.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Recovery_System recovery",
+          "details": "The system mitigates impact of catastrophic errors, crashes, and network outages.",
+          "quality_component": "Errors"
+        },
+        {
+          "criterion": "Memory_Limited choices",
+          "details": "Lists of critical choices (menu options, navigation categories) are visible in a single view, or limited to <10 items.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "Memory_Automatic calculations",
+          "details": "The system ‘does the math’ for the user.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "Memory_Feedback",
+          "details": "Microcopy and microinteractions provide ongoing feedback to the user.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "Memory_Chunking and masking",
+          "details": "Long strings of text or numbers (security codes, phone numbers) are visually chunked or masked.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "Memory_Security practices",
+          "details": "Security systems reduce need for spontaneous recall by utilizing password best practices, 2-step-authentication, or single sign-on.",
+          "quality_component": "Memorability"
+        },
+        {
+          "criterion": "Efficiency_Shallow navigation",
+          "details": "Navigation hierarchy is no more than 3 or 4 levels deep.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Efficiency_Responsive layouts",
+          "details": "Layouts are responsive, or optimized for the screen size of target devices.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Efficiency_Navigation shortcuts",
+          "details": "Navigation breadcrumbs, progress trackers, and keyboard shortcuts improve findability.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Efficiency_Accelerators",
+          "details": "Autocomplete, auto-detect and other accelerators improve task speed.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Efficiency_Autosave",
+          "details": "Auto-save and/or cookies maintain session state and prevent accidental data loss.",
+          "quality_component": "Efficiency"
+        },
+        {
+          "criterion": "Language_Internal language",
+          "details": "Branded vocabulary, internal language, and marketing jargon is used sparingly, and absent from navigation, menus, and buttons.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Language_Technical jargon",
+          "details": "Technical or system jargon is absent from error messages and other microcopy.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Language_Acronyms",
+          "details": "Acronyms include access to definitions, and appear in narrative content only.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Language_Plain language",
+          "details": "Technical, legal, and other potentially difficult-to-understand content is written in plain language.",
+          "quality_component": "Learnability"
+        },
+        {
+          "criterion": "Language_Readability level",
+          "details": "Content readability level is appropriate for the target audience(s).",
+          "quality_component": "Learnability"
+        }
+      ]
+    }
+  ]
+}
