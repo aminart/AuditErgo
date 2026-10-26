@@ -1,0 +1,49 @@
+import sys
+from pathlib import Path
+
+import pytest
+from openpyxl import load_workbook
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from audit_ergo import Referentiel  # noqa: E402
+
+TEMPLATE = ROOT / "template" / "Audit_ergonomique_template.xlsx"
+COLONNES = {"ecran": "B", "parcours": "C", "capture": "D", "type": "E", "constat": "F", "categorie": "G",
+            "critere": "H", "secondaires": "I", "regle": "J", "gravite": "K", "frequence": "L", "impact": "M",
+            "recommandation": "N", "priorite": "O"}
+
+CONSTAT_VALIDE = {
+    "ecran": "Paiement", "type": "Problème",
+    "constat": "Aucun indicateur de chargement après le clic sur « Payer ».",
+    "categorie": "GUI – Guidage", "critere": "GUI-03 – Feedback immédiat (Immediate Feedback)",
+    "gravite": 3, "impact": "Fort", "frequence": "Systématique", "priorite": "P1",
+    "recommandation": "Afficher un indicateur de chargement dans le bouton et le désactiver.",
+}
+
+
+@pytest.fixture(scope="session")
+def ref():
+    return Referentiel.charger()
+
+
+@pytest.fixture
+def audit_xlsx(tmp_path):
+    """Fabrique un audit à partir du template : audit_xlsx([{champ: valeur}, ...], contexte={...})."""
+    def fabriquer(constats, contexte=None, nom="audit.xlsx"):
+        wb = load_workbook(TEMPLATE)
+        ws = wb["Audit"]
+        for i, valeurs in enumerate(constats):
+            for champ, valeur in valeurs.items():
+                ws[f"{COLONNES[champ]}{5 + i}"] = valeur
+        ctx = {"Produit / interface auditée *": "Produit test", "Cible utilisateurs *": "Tous",
+               "Plateforme *": "Web desktop", "Parcours audités *": "Commande", "Designer *": "Test",
+               "Date de l'audit *": "20/10/2026", **(contexte or {})}
+        for row in wb["Contexte"].iter_rows(min_col=1, max_col=2):
+            if row[0].value in ctx:
+                row[1].value = ctx[row[0].value]
+        chemin = tmp_path / nom
+        wb.save(chemin)
+        return chemin
+    return fabriquer
