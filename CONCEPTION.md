@@ -49,6 +49,8 @@ L'application sera aussi fiable que son référentiel. Voici ce que j'ai relevé
 | 6 | Bastien & Scapin distingue *Grouping by location* et *by format*, alors que la grille les fusionne | Perte de précision | Garder un critère et ajouter un sous-type facultatif |
 | 7 | Colombo & Pasch : « *steep* learning curve to help novice users » | Formulation ambiguë (contresens fréquent) | Remplacer par « courbe d'apprentissage douce » |
 
+> **Statut :** les corrections 1 à 5 et 7 sont proposées dans `referentiel/corrections.json` (les CSV d'origine restent intacts). Elles sont listées pour validation dans `referentiel/CHANGEMENTS.md`. La correction 6 est traitée par une note sur le critère `GUI-02`.
+
 ---
 
 ## 3. Le fichier d'entrée : ce que remplit le ou la designer
@@ -72,6 +74,8 @@ Le fichier d'audit rempli ne figure pas dans les fichiers fournis. Pour qu'il pu
 | `Priorité` | P1 / P2 / P3 | recommandé | cohérente avec la gravité |
 
 Avec des listes déroulantes dépendantes dans Excel (validation de données), la moitié des erreurs disparaît avant même l'analyse.
+
+> **Statut :** ce template existe : `template/Audit_ergonomique_template.xlsx`, généré par `scripts/build_template.py`. Il ajoute deux colonnes au tableau ci-dessus : `Règle de départage` (R1 à R9, facultative) et `Contrôle`, une formule qui signale directement dans Excel les champs manquants, un critère hors catégorie, une recommandation absente, une priorité incohérente avec la gravité ou un constat trop court.
 
 **Échelle de gravité commune** (indispensable pour le standard) :
 - **0** : pas un problème d'utilisabilité
@@ -158,9 +162,9 @@ Si les captures sont jointes, le modèle (multimodal) peut confirmer que le cons
   "finding_id": "F-012",
   "criterion_check": {
     "verdict": "a_revoir",
-    "designer_criterion": "guidance.prompting",
-    "suggested_criterion": "guidance.immediate_feedback",
-    "secondary_criteria": ["workload.information_density"],
+    "designer_criterion": "GUI-01",
+    "suggested_criterion": "GUI-03",
+    "secondary_criteria": ["WKL-05"],
     "confidence": 0.82,
     "justification": "Le constat décrit l'absence de réaction APRÈS le clic (règle de départage R1).",
     "checklist_reference": "Is information displayed during the loading of an action, file, or page?"
@@ -178,7 +182,7 @@ Si les captures sont jointes, le modèle (multimodal) peut confirmer que le cons
 ```
 
 ### 5.3 Règles de départage : le cœur du « même standard »
-Ce sont les cas où deux designers choisissent des critères différents pour le même problème. Ces règles sont intégrées au référentiel et au prompt :
+Ce sont les cas où deux designers choisissent des critères différents pour le même problème. Ces règles sont intégrées au référentiel et au prompt. La version complète (9 règles, avec une question à se poser et un exemple par cas) se trouve dans `referentiel/regles_departage.json` et dans l'onglet « Règles de départage » du template. En voici l'essentiel :
 
 | Règle | Si le problème concerne… | Critère |
 |---|---|---|

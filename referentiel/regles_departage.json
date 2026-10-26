@@ -1,0 +1,106 @@
+{
+  "_lisez_moi": "Règles pour choisir entre des critères proches. Elles sont lues par l'IA (qui doit citer la règle appliquée) et reprises dans le template Excel. Statut 'proposee' : à valider par les designers seniors.",
+  "principes": [
+    "Un constat a UN critère principal : celui qui correspond à la cause du problème, pas à son symptôme.",
+    "Les autres critères touchés vont dans « Critères secondaires ».",
+    "En cas de doute, poser la question discriminante de la règle concernée."
+  ],
+  "regles": [
+    {
+      "id": "R1",
+      "theme": "Guider ou répondre",
+      "question": "Le problème se situe-t-il AVANT l'action de l'utilisateur ou APRÈS ?",
+      "cas": [
+        { "si": "Ce qui guide ou signale une action possible avant que l'utilisateur agisse (format attendu, élément cliquable, état de survol, titre)", "critere": "GUI-01", "exemple": "Aucun exemple de format sous le champ date de naissance." },
+        { "si": "La réponse du système après l'action (confirmation, chargement, progression, échec d'un traitement)", "critere": "GUI-03", "exemple": "Après clic sur « Payer », rien ne bouge pendant 5 secondes." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R2",
+      "theme": "Moment de l'erreur",
+      "question": "Le problème concerne-t-il la prévention de l'erreur, le message affiché, ou le moyen de la réparer ?",
+      "cas": [
+        { "si": "Empêcher l'erreur de se produire (contraintes de saisie, champs obligatoires signalés, confirmation avant action irréversible)", "critere": "ERR-01", "exemple": "Le bouton « Supprimer le compte » agit sans confirmation." },
+        { "si": "Le contenu ou la forme du message d'erreur (clarté, emplacement, ton, indication de la solution)", "critere": "ERR-02", "exemple": "Message « Erreur 500 » sans explication." },
+        { "si": "Le moyen de corriger ou d'annuler une fois l'erreur commise (annulation, modification sans tout ressaisir)", "critere": "ERR-03", "exemple": "Le formulaire se vide entièrement après une erreur sur un seul champ." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R3",
+      "theme": "Niveau de la charge de travail",
+      "question": "Le problème concerne-t-il un élément isolé, l'écran dans son ensemble, ou le nombre d'étapes ?",
+      "cas": [
+        { "si": "Un élément isolé trop long ou trop exigeant (libellé, champ, texte)", "critere": "WKL-01", "exemple": "Unité « kg » à saisir dans le champ au lieu d'être dans le libellé." },
+        { "si": "L'écran dans son ensemble trop chargé", "critere": "WKL-05", "exemple": "Tableau de bord avec 14 widgets affichés simultanément." },
+        { "si": "Le nombre d'étapes, de clics ou de saisies pour accomplir la tâche", "critere": "WKL-03", "exemple": "7 écrans pour modifier une adresse de livraison." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R4",
+      "theme": "Qui a la main",
+      "question": "Le système agit-il sans que l'utilisateur l'ait demandé, ou l'utilisateur ne peut-il pas reprendre la main ?",
+      "cas": [
+        { "si": "Le système déclenche une action sans demande explicite (enregistrement, envoi, navigation automatique)", "critere": "CTL-01", "exemple": "Le formulaire est envoyé dès la sélection d'une option." },
+        { "si": "L'utilisateur ne peut pas interrompre, annuler, revenir en arrière ou reprendre plus tard", "critere": "CTL-02", "exemple": "Pas de bouton « Retour » dans le tunnel de commande." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R5",
+      "theme": "Référence de comparaison",
+      "question": "Le problème est-il une incohérence interne au produit, un écart avec les conventions extérieures, ou un libellé qui ne dit pas ce qu'il fait ?",
+      "cas": [
+        { "si": "Incohérence interne au produit (même action, mot ou composant traité différemment d'un écran à l'autre)", "critere": "CON-01", "exemple": "Le bouton principal est vert sur une page et gris sur la suivante." },
+        { "si": "Écart avec les habitudes des utilisateurs, les conventions du domaine ou du monde réel", "critere": "CPT-01", "exemple": "Champs d'adresse dans un ordre inhabituel (ville avant rue)." },
+        { "si": "Un libellé, une icône ou un code dont le sens ne correspond pas à ce qu'il désigne", "critere": "COD-01", "exemple": "Icône d'engrenage qui ouvre l'historique des commandes." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R6",
+      "theme": "Nature du problème visuel",
+      "question": "Le problème touche-t-il la lecture, l'organisation des éléments, la hiérarchie visuelle ou l'esthétique ?",
+      "cas": [
+        { "si": "La lecture du texte (taille, contraste, interligne, longueur de ligne)", "critere": "GUI-04", "exemple": "Texte gris clair 11 px sur fond blanc." },
+        { "si": "Le regroupement ou la distinction des éléments (proximité, séparation, format commun)", "critere": "GUI-02", "exemple": "Les filtres et les résultats ne sont pas séparés visuellement." },
+        { "si": "La hiérarchie visuelle, la grille, l'usage de l'espace et de la couleur comme support de compréhension", "critere": "VIS-01", "exemple": "Trois boutons de même poids visuel, aucune action principale identifiable." },
+        { "si": "L'esthétique, l'harmonie, l'image de marque et l'émotion", "critere": "VIS-02", "exemple": "Mélange d'illustrations de styles incompatibles." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R7",
+      "theme": "Adaptation à l'utilisateur",
+      "question": "Le problème concerne-t-il la personnalisation, ou la prise en compte du niveau d'expertise ?",
+      "cas": [
+        { "si": "L'utilisateur ne peut pas adapter l'interface à ses préférences ou utiliser plusieurs moyens (clavier, souris, réglages)", "critere": "ADA-01", "exemple": "Impossible de masquer les colonnes inutiles du tableau." },
+        { "si": "L'interface ne s'adapte pas aux débutants ou aux experts (guidage pas à pas, mode avancé)", "critere": "ADA-02", "exemple": "Aucune recherche avancée pour les utilisateurs réguliers." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R8",
+      "theme": "Forme de l'aide",
+      "question": "L'aide est-elle affichée d'emblée dans l'interface, consultable à la demande, ou s'agit-il d'une information à mémoriser ?",
+      "cas": [
+        { "si": "Indication affichée d'emblée pour guider l'action en cours", "critere": "GUI-01", "exemple": "Aucune indication sur les caractères requis du mot de passe." },
+        { "si": "Aide consultable à la demande (FAQ, info-bulle, contact support, documentation)", "critere": "GUI-05", "exemple": "Aucun lien vers l'aide ou le support depuis l'espace client." },
+        { "si": "L'utilisateur doit retenir une information d'un écran à l'autre", "critere": "WKL-02", "exemple": "Le numéro de dossier affiché à l'étape 1 doit être ressaisi à l'étape 3." }
+      ],
+      "statut": "proposee"
+    },
+    {
+      "id": "R9",
+      "theme": "Source de la surcharge",
+      "question": "Les éléments en trop sont-ils liés à la tâche, ou étrangers à la tâche ?",
+      "cas": [
+        { "si": "Trop d'informations utiles affichées en même temps", "critere": "WKL-05", "exemple": "Fiche produit avec 40 caractéristiques techniques sans regroupement." },
+        { "si": "Distractions étrangères à la tâche (publicité, pop-up, sollicitations)", "critere": "WKL-04", "exemple": "Pop-up d'inscription à la newsletter au milieu du paiement." }
+      ],
+      "statut": "proposee"
+    }
+  ]
+}

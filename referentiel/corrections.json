@@ -1,0 +1,226 @@
+{
+  "version": "1.0-proposition",
+  "_lisez_moi": "Corrections appliquées par-dessus les CSV sources (qui restent intacts). Toute question est marquée : 'source' (texte d'origine), 'deplacee' (vient d'un autre critère, voir 'origine') ou 'proposee' (nouvelle, à valider par les designers seniors). Toute question d'origine absente de la checklist finale doit figurer dans 'retirees' avec une raison : le script de build le vérifie.",
+
+  "corrections_texte": [
+    ["Leagibility", "Legibility"],
+    ["documention", "documentation"],
+    ["(e.g., Tooltypes)", "(e.g., tooltips)"],
+    ["occuring", "occurring"],
+    ["checjked", "checked"],
+    ["Correspondance", "Correspondence"],
+    ["feedback.In all cases", "feedback. In all cases"],
+    ["deducted by the system", "deduced by the system"]
+  ],
+
+  "categories": {
+    "guidance": { "code": "GUI", "label": "Guidance", "label_fr": "Guidage" },
+    "workload": { "code": "WKL", "label": "Workload", "label_fr": "Charge de travail" },
+    "explicit_control": { "code": "CTL", "label": "Explicit control", "label_fr": "Contrôle explicite" },
+    "adaptability": { "code": "ADA", "label": "Adaptability", "label_fr": "Adaptabilité" },
+    "consistency": { "code": "CON", "label": "Consistency", "label_fr": "Homogénéité / cohérence" },
+    "errors_management": { "code": "ERR", "label": "Error management", "label_fr": "Gestion des erreurs" },
+    "significance_of_codes": { "code": "COD", "label": "Significance of codes", "label_fr": "Signifiance des codes et dénominations" },
+    "compatibility": { "code": "CPT", "label": "Compatibility", "label_fr": "Compatibilité" },
+    "opt_for_perfect_visual_design": {
+      "code": "VIS",
+      "label": "Visual design",
+      "label_fr": "Design visuel",
+      "definition": "Visual design serves two purposes: improving usability by making the interface more understandable, consistent and guiding, and making the interface aesthetically pleasing. Visual choices (e.g., colours) also affect the user experience through the values they convey (Arhippainen).",
+      "statut_definition": "proposee"
+    }
+  },
+
+  "criteres": {
+    "guidance.prompting": {
+      "code": "GUI-01", "label_fr": "Incitation",
+      "definition": "Encourage the user to perform specific actions by providing cues. For example, guide data entry by indicating the correct format and acceptable values: Date (dd / mm / yy) _ _ / _ _ / _ _.",
+      "statut_definition": "modifiee",
+      "note": "Définition : retrait des renvois à des exemples visuels absents du fichier (« See this example… »)."
+    },
+    "guidance.grouping_distinction_between_items": {
+      "code": "GUI-02", "label_fr": "Groupement / distinction entre items",
+      "checklist": [
+        { "q": "Is it easy for the user to distinguish between elements and identify information of the same type?", "statut": "source" },
+        { "q": "Are pieces of information of the same type graphically similar?", "statut": "source" },
+        { "q": "Are pieces of information of the same type grouped and located in the same place?", "statut": "source" },
+        { "q": "Are distinct pieces of information presented differently?", "statut": "source" },
+        { "q": "Do distinct pieces of information have a different placement?", "statut": "source" },
+        { "q": "Do navigation menus include separators to visually distinguish different elements?", "statut": "source" },
+        { "q": "Do colors and shapes serve as visual cues for different page elements (e.g., sections, menus, text, headings)?", "statut": "deplacee", "origine": "GUI-04" }
+      ],
+      "note": "Bastien & Scapin distinguent « par la localisation » et « par le format » : indiquer le sous-type dans le constat si utile."
+    },
+    "guidance.immediate_feedback": {
+      "code": "GUI-03", "label_fr": "Feedback immédiat",
+      "retirees": [
+        { "q": "Do clickable elements exhibit a \"hover\" effect upon mouseover (e.g., color change)?", "vers": "GUI-01", "raison": "Doublon avec GUI-01 (« change appearance when hovered »). L'état de survol signale qu'un élément est cliquable AVANT l'action : règle R1." }
+      ]
+    },
+    "guidance.leagibility_readability": {
+      "code": "GUI-04", "name": "Legibility / Readability", "label_fr": "Lisibilité",
+      "retirees": [
+        { "q": "Are clickable elements visually prominent?", "vers": "GUI-01", "raison": "Identifier ce qui est cliquable relève de l'incitation (GUI-01 : « action elements easily identifiable »), pas de la lisibilité du texte : règle R6." },
+        { "q": "Is the use of colors harmonious?", "vers": "VIS-02", "raison": "Harmonie des couleurs = esthétique : règle R6." },
+        { "q": "Do colors and shapes serve as visual cues for different page elements (e.g., sections, menus, text, headings)?", "vers": "GUI-02", "raison": "Distinction par le format : règle R6." }
+      ]
+    },
+    "guidance.help_documentation": { "code": "GUI-05", "label_fr": "Aide et documentation" },
+
+    "workload.concision": {
+      "code": "WKL-01", "label_fr": "Concision",
+      "checklist": [
+        { "q": "Is the amount of information to enter reduced to a minimum?", "statut": "source" },
+        { "q": "Are labels, titles and texts short while remaining explicit?", "statut": "proposee" },
+        { "q": "Are units of measure part of the field label rather than entered by the user?", "statut": "proposee" },
+        { "q": "Are codes and abbreviations short and consistent?", "statut": "proposee" },
+        { "q": "Do fields offer relevant default values when the value can be anticipated?", "statut": "proposee" },
+        { "q": "Is the size of input fields consistent with the expected length of the data?", "statut": "proposee" }
+      ],
+      "retirees": [
+        { "q": "Is memorization minimized?", "vers": "WKL-02", "raison": "Relève de la reconnaissance plutôt que du rappel." },
+        { "q": "Are the mandatory steps for the user brief?", "vers": "WKL-03", "raison": "Nombre d'étapes = actions minimales : règle R3." },
+        { "q": "Is the number of steps in a procedure minimized?", "vers": "WKL-03", "raison": "Nombre d'étapes = actions minimales : règle R3." },
+        { "q": "Are shortcuts provided?", "vers": "WKL-03", "raison": "Raccourcis = réduction du nombre d'actions : règle R3." },
+        { "q": "Does the system anticipate user needs by highlighting the most frequent or relevant choices?", "vers": "WKL-03", "raison": "Réduit le nombre d'actions : règle R3." },
+        { "q": "On long pages, is there an anchor to return to the top of the page?", "vers": "WKL-03", "raison": "Réduit le nombre d'actions : règle R3." },
+        { "q": "Is the page width adapted to different devices?", "vers": "CPT-01", "raison": "Adaptation aux supports = compatibilité (déjà couverte par CPT-01)." }
+      ],
+      "note": "La checklist d'origine était identique à celle de Minimal Actions. Concision porte sur UN élément (un libellé, un champ) : règle R3."
+    },
+    "workload.recognition_rather_than_recall": {
+      "code": "WKL-02", "label_fr": "Reconnaissance plutôt que rappel",
+      "checklist": [
+        { "q": "Does the design keep important information visible, so that users do not have to memorize it?", "statut": "source" },
+        { "q": "Does the design offer help in-context?", "statut": "source" },
+        { "q": "Is memorization minimized?", "statut": "deplacee", "origine": "WKL-01" },
+        { "q": "Are options, actions and commands visible rather than hidden or to be remembered?", "statut": "proposee" },
+        { "q": "Is information entered in a previous step recalled when needed (e.g., summary before validation)?", "statut": "proposee" },
+        { "q": "Do form fields keep a visible label once filled in (no placeholder-only labels)?", "statut": "proposee" },
+        { "q": "Are history, recent items or suggestions (e.g., autocomplete) offered?", "statut": "proposee" },
+        { "q": "Is the user's location always visible (breadcrumb, active menu item, step indicator)?", "statut": "proposee" }
+      ]
+    },
+    "workload.minimal_actions": {
+      "code": "WKL-03", "label_fr": "Actions minimales",
+      "checklist": [
+        { "q": "Is the number of steps in a procedure minimized?", "statut": "source" },
+        { "q": "Are the mandatory steps for the user brief?", "statut": "source" },
+        { "q": "Are shortcuts provided?", "statut": "source" },
+        { "q": "Does the system anticipate user needs by highlighting the most frequent or relevant choices?", "statut": "source" },
+        { "q": "On long pages, is there an anchor to return to the top of the page?", "statut": "source" },
+        { "q": "Can key tasks be completed with a minimum number of clicks or screens?", "statut": "proposee" },
+        { "q": "Does the system avoid asking for data it already knows or can deduce (e.g., city from postcode)?", "statut": "proposee" },
+        { "q": "Are bulk actions available for repetitive operations on several items?", "statut": "proposee" }
+      ],
+      "retirees": [
+        { "q": "Is memorization minimized?", "vers": "WKL-02", "raison": "Relève de la reconnaissance plutôt que du rappel." },
+        { "q": "Is the amount of information to enter reduced to a minimum?", "vers": "WKL-01", "raison": "Quantité d'information d'un champ = concision : règle R3." },
+        { "q": "Is the page width adapted to different devices?", "vers": "CPT-01", "raison": "Adaptation aux supports = compatibilité." }
+      ],
+      "note": "Checklist réécrite : elle était identique à celle de Concision. Actions minimales porte sur le NOMBRE d'étapes, de clics ou de saisies : règle R3."
+    },
+    "workload.focused_attention": {
+      "code": "WKL-04", "label_fr": "Attention focalisée",
+      "checklist": [
+        { "q": "Is the main task of each screen immediately identifiable?", "statut": "proposee" },
+        { "q": "Is there a clear visual hierarchy with one primary call-to-action per screen?", "statut": "proposee" },
+        { "q": "Are elements unrelated to the task (ads, pop-ups, autoplaying media, promotions) absent from task flows or easy to dismiss?", "statut": "proposee" },
+        { "q": "Are notifications and alerts proportionate to their importance and non-intrusive?", "statut": "proposee" },
+        { "q": "Can the user complete a flow without being interrupted (e.g., surveys, cross-selling)?", "statut": "proposee" }
+      ]
+    },
+    "workload.information_density": { "code": "WKL-05", "label_fr": "Densité informationnelle" },
+
+    "explicit_control.actions_explicit": {
+      "code": "CTL-01", "name": "Explicit user actions", "label_fr": "Actions explicites",
+      "retirees": [
+        { "q": "Do actions with significant and/or irreversible consequences require explicit confirmation from the user?", "vers": "ERR-01", "raison": "Doublon avec ERR-01 (« confirmation before triggering an irreversible action ») : la confirmation sert à prévenir une erreur, règle R2." }
+      ]
+    },
+    "explicit_control.user_control_freedom": { "code": "CTL-02", "label_fr": "Contrôle utilisateur et liberté" },
+
+    "adaptability.flexibility": { "code": "ADA-01", "label_fr": "Flexibilité" },
+    "adaptability.universal_usability_user_experience_expertise": {
+      "code": "ADA-02", "name": "Universal usability & user expertise", "label_fr": "Prise en compte de l'expérience de l'utilisateur"
+    },
+
+    "consistency.consistency_standard": { "code": "CON-01", "name": "Consistency & standards", "label_fr": "Homogénéité et standards" },
+
+    "errors_management.protection_against_errors": {
+      "code": "ERR-01", "label_fr": "Protection contre les erreurs",
+      "retirees": [
+        { "q": "Does the system provide a help section (e.g., assistance, chat, tooltips)?", "vers": "GUI-05", "raison": "L'aide consultable relève d'Aide et documentation : règle R8." }
+      ]
+    },
+    "errors_management.quality_of_error_messages": { "code": "ERR-02", "label_fr": "Qualité des messages d'erreur" },
+    "errors_management.error_correction": {
+      "code": "ERR-03", "label_fr": "Correction des erreurs",
+      "retirees": [
+        { "q": "Do error messages provide guidance on how to correct the error?", "vers": "ERR-02", "raison": "Doublon avec ERR-02 : le contenu du message relève de la qualité des messages, règle R2." }
+      ]
+    },
+
+    "significance_of_codes.significance_of_codes": { "code": "COD-01", "label_fr": "Signifiance des codes et dénominations" },
+
+    "compatibility.compatibility_correspondance_between_the_system_and_the_real_world": {
+      "code": "CPT-01", "name": "Compatibility & match with the real world", "label_fr": "Compatibilité et correspondance avec le monde réel"
+    },
+    "compatibility.design_the_product_or_service_to_fit_the_intended_contexts": {
+      "code": "CPT-02", "name": "Fit the intended contexts", "label_fr": "Adaptation aux contextes d'usage",
+      "checklist": [
+        { "q": "Have the contexts of use been identified (place, device, mobility, environment, time constraints)?", "statut": "proposee" },
+        { "q": "Is the interface usable in real conditions of use (e.g., outdoors with glare, one-handed on mobile, noisy environment)?", "statut": "proposee" },
+        { "q": "Are formats adapted to the cultural and linguistic context (dates, currencies, addresses, reading direction)?", "statut": "proposee" },
+        { "q": "Does the interface support interrupted use (resuming later, offline mode if relevant)?", "statut": "proposee" },
+        { "q": "Is the interface suited to shared or public contexts (privacy of displayed data)?", "statut": "proposee" }
+      ]
+    },
+    "compatibility.utility_clear_goals": {
+      "code": "CPT-03", "label_fr": "Utilité et objectifs clairs",
+      "checklist": [
+        { "q": "Is the purpose of the product or service understandable within a few seconds on the entry page?", "statut": "proposee" },
+        { "q": "Do affordances (buttons, visuals, wording) make the possible uses explicit?", "statut": "proposee" },
+        { "q": "Can users achieve their main goals end to end?", "statut": "proposee" },
+        { "q": "Do the features match the needs identified for the target users?", "statut": "proposee" },
+        { "q": "Do additional features exceed expectations without cluttering the core experience?", "statut": "proposee" }
+      ]
+    },
+
+    "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_1": {
+      "code": "VIS-01", "name": "Visual design for usability", "label_fr": "Design visuel au service de l'utilisabilité",
+      "checklist": [
+        { "q": "Does the visual hierarchy (size, weight, color, position) reflect the importance of information?", "statut": "proposee" },
+        { "q": "Is a grid and alignment system applied consistently?", "statut": "proposee" },
+        { "q": "Is white space used to structure content?", "statut": "proposee" },
+        { "q": "Is color never the only means of conveying information?", "statut": "proposee" },
+        { "q": "Are interactive elements visually distinguishable from static content?", "statut": "proposee" }
+      ]
+    },
+    "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_2": {
+      "code": "VIS-02", "name": "Aesthetics", "label_fr": "Esthétique",
+      "checklist": [
+        { "q": "Is the use of colors harmonious?", "statut": "deplacee", "origine": "GUI-04" },
+        { "q": "Is the overall look pleasant and professional for the target audience?", "statut": "proposee" },
+        { "q": "Is the visual style consistent with the brand and the values it conveys?", "statut": "proposee" },
+        { "q": "Are images, illustrations and icons of good quality and in a consistent style?", "statut": "proposee" },
+        { "q": "Do animations and micro-interactions bring pleasure without hindering the task?", "statut": "proposee" }
+      ]
+    }
+  },
+
+  "frameworks": [
+    {
+      "framework": "Kaniasty's CARMEL Guidelines",
+      "criterion": "Recovery_Confirmation dialogs",
+      "details": "Confirmation dialogs prevent unintended destructive or irreversible actions.",
+      "raison": "Le texte d'origine était une copie de « Accessibility_Font size »."
+    },
+    {
+      "framework": "Colombo & Pasch's",
+      "criterion": "Challenges/Skills Balance_The system should have a steep learning curve to help novice users.",
+      "new_criterion": "Challenges/Skills Balance_The system should have a gentle learning curve to help novice users.",
+      "raison": "« Steep » est ambigu (souvent compris comme « difficile ») : l'intention est un apprentissage rapide et progressif."
+    }
+  ]
+}

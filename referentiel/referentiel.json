@@ -1,431 +1,1339 @@
 {
+  "version": "1.0-proposition",
   "grid": [
     {
-      "id": "guidance",
+      "code": "GUI",
+      "id_source": "guidance",
       "label": "Guidance",
+      "label_fr": "Guidage",
       "definition": "All the means used to advise, guide, inform and lead the user during his interaction with the computer.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "guidance.prompting",
+          "code": "GUI-01",
+          "id_source": "guidance.prompting",
           "name": "Prompting",
+          "label_fr": "Incitation",
           "sources": [
             "Bastien & Scapin"
           ],
-          "definition": "Encourage the user to perform specific actions by providing indices. For example, guide data entries indicating the correct format and acceptable values: Date (dd / mm / yy) _ _ / _ _ / _ _. See this example of incitement ... missed! But as another example, successful.\n\nCan also see this example where the incentive is so bad that we must tell the user where to click!",
+          "definition": "Encourage the user to perform specific actions by providing cues. For example, guide data entry by indicating the correct format and acceptable values: Date (dd / mm / yy) _ _ / _ _ / _ _.",
+          "statut_definition": "modifiee",
           "checklist": [
-            "Is a title given to each page?",
-            "Are the titles concise and relevant to the content?",
-            "Is the navigation menu present on every page?",
-            "Are action elements (links, call-to-action buttons, tabs, etc.) easily identifiable?",
-            "Do action elements change appearance when hovered over or when they are active?",
-            "Are key elements placed above the fold?",
-            "Are back buttons/icons available for easy navigation?",
-            "Are unavailable functions visually deactivated (e.g., grayed out) and non-clickable?"
-          ]
+            {
+              "id": "GUI-01-Q01",
+              "q": "Is a title given to each page?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-01-Q02",
+              "q": "Are the titles concise and relevant to the content?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-01-Q03",
+              "q": "Is the navigation menu present on every page?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-01-Q04",
+              "q": "Are action elements (links, call-to-action buttons, tabs, etc.) easily identifiable?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-01-Q05",
+              "q": "Do action elements change appearance when hovered over or when they are active?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-01-Q06",
+              "q": "Are key elements placed above the fold?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-01-Q07",
+              "q": "Are back buttons/icons available for easy navigation?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-01-Q08",
+              "q": "Are unavailable functions visually deactivated (e.g., grayed out) and non-clickable?",
+              "statut": "source"
+            }
+          ],
+          "note": "Définition : retrait des renvois à des exemples visuels absents du fichier (« See this example… »)."
         },
         {
-          "id": "guidance.grouping_distinction_between_items",
+          "code": "GUI-02",
+          "id_source": "guidance.grouping_distinction_between_items",
           "name": "Grouping / Distinction between Items",
+          "label_fr": "Groupement / distinction entre items",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Position the items against each other in order to indicate their affiliation or not to a particular object class. For example, according to group menu options objects on which they apply.\n\nGive specific elements graphic features to indicate their belonging or not to a particular object class. For example: use a symbol and the red color for alert dialog boxes or error.",
+          "statut_definition": "source",
           "checklist": [
-            "Is it easy for the user to distinguish between elements and identify information of the same type?",
-            "Are pieces of information of the same type graphically similar?",
-            "Are pieces of information of the same type grouped and located in the same place?",
-            "Are distinct pieces of information presented differently?",
-            "Do distinct pieces of information have a different placement?",
-            "Do navigation menus include separators to visually distinguish different elements?"
-          ]
+            {
+              "id": "GUI-02-Q01",
+              "q": "Is it easy for the user to distinguish between elements and identify information of the same type?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-02-Q02",
+              "q": "Are pieces of information of the same type graphically similar?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-02-Q03",
+              "q": "Are pieces of information of the same type grouped and located in the same place?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-02-Q04",
+              "q": "Are distinct pieces of information presented differently?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-02-Q05",
+              "q": "Do distinct pieces of information have a different placement?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-02-Q06",
+              "q": "Do navigation menus include separators to visually distinguish different elements?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-02-Q07",
+              "q": "Do colors and shapes serve as visual cues for different page elements (e.g., sections, menus, text, headings)?",
+              "statut": "deplacee",
+              "origine": "GUI-04"
+            }
+          ],
+          "note": "Bastien & Scapin distinguent « par la localisation » et « par le format » : indiquer le sous-type dans le constat si utile."
         },
         {
-          "id": "guidance.immediate_feedback",
+          "code": "GUI-03",
+          "id_source": "guidance.immediate_feedback",
           "name": "Immediate Feedback",
+          "label_fr": "Feedback immédiat",
           "sources": [
             "Bastien & Scapin"
           ],
-          "definition": "The system should always inform the user about what is happening, using appropriate feedback.In all cases, the computer must meet the user based on the actions and requests of the latter. For example, in cases where treatment is long, information indicating the user that the operations are in progress should be provided to him.",
+          "definition": "The system should always inform the user about what is happening, using appropriate feedback. In all cases, the computer must meet the user based on the actions and requests of the latter. For example, in cases where treatment is long, information indicating the user that the operations are in progress should be provided to him.",
+          "statut_definition": "source",
           "checklist": [
-            "Do user actions result in a visible and understandable system response (e.g., confirmation message)?",
-            "Are user inputs always visible?",
-            "Is information displayed during the loading of an action, file, or page (e.g., hourglass, loading wheel)?",
-            "Do clickable elements exhibit a \"hover\" effect upon mouseover (e.g., color change)?",
-            "Is the delay between the action performed and the feedback reasonable?",
-            "Are long processes indicated by a waiting indication (e.g., progress bar, remaining time)?",
-            "Is the failure of computer processes clearly indicated and understandable?"
+            {
+              "id": "GUI-03-Q01",
+              "q": "Do user actions result in a visible and understandable system response (e.g., confirmation message)?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-03-Q02",
+              "q": "Are user inputs always visible?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-03-Q03",
+              "q": "Is information displayed during the loading of an action, file, or page (e.g., hourglass, loading wheel)?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-03-Q04",
+              "q": "Is the delay between the action performed and the feedback reasonable?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-03-Q05",
+              "q": "Are long processes indicated by a waiting indication (e.g., progress bar, remaining time)?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-03-Q06",
+              "q": "Is the failure of computer processes clearly indicated and understandable?",
+              "statut": "source"
+            }
           ]
         },
         {
-          "id": "guidance.leagibility_readability",
-          "name": "Leagibility/Readability",
+          "code": "GUI-04",
+          "id_source": "guidance.leagibility_readability",
+          "name": "Legibility / Readability",
+          "label_fr": "Lisibilité",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Legibility concerns the lexical characteristics of the information presented on the screen that may hamper or facilitate the reading of this information (character brightness, contrast between the letter and the background, font size, interword spacing, line spacing, paragraphs spacing, line length, etc.). By definition, the criterion Legibility does not concern feedback or error messages.",
+          "statut_definition": "source",
           "checklist": [
-            "Does the text adhere to WCAG or RGAA accessibility guidelines?",
-            "Is the font readable and of an adequate size (e.g., avoiding italics and all caps)?",
-            "Is there sufficient contrast between text and background colors?",
-            "Are clickable elements visually prominent?",
-            "Are line spacing and line height sufficient?",
-            "Is the use of colors harmonious?",
-            "Do colors and shapes serve as visual cues for different page elements (e.g., sections, menus, text, headings)?"
+            {
+              "id": "GUI-04-Q01",
+              "q": "Does the text adhere to WCAG or RGAA accessibility guidelines?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-04-Q02",
+              "q": "Is the font readable and of an adequate size (e.g., avoiding italics and all caps)?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-04-Q03",
+              "q": "Is there sufficient contrast between text and background colors?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-04-Q04",
+              "q": "Are line spacing and line height sufficient?",
+              "statut": "source"
+            }
           ]
         },
         {
-          "id": "guidance.help_documentation",
+          "code": "GUI-05",
+          "id_source": "guidance.help_documentation",
           "name": "Help & Documentation",
+          "label_fr": "Aide et documentation",
           "sources": [
             "Nielsen"
           ],
-          "definition": "The system helps and guide the user.\nIt’s best if the system doesn’t need any additional explanation. However, it may be necessary to provide documentation to help users understand how to complete their tasks (e.g., Tooltypes)",
+          "definition": "The system helps and guide the user.\nIt’s best if the system doesn’t need any additional explanation. However, it may be necessary to provide documentation to help users understand how to complete their tasks (e.g., tooltips)",
+          "statut_definition": "source",
           "checklist": [
-            "Is there for example, an FAQ or documention available in order to help users?",
-            "Is there a contact to a support team available?",
-            "Is help documentation easy to search?",
-            "Is help provided in context right at the moment when the user requires it?"
+            {
+              "id": "GUI-05-Q01",
+              "q": "Is there for example, an FAQ or documentation available in order to help users?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-05-Q02",
+              "q": "Is there a contact to a support team available?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-05-Q03",
+              "q": "Is help documentation easy to search?",
+              "statut": "source"
+            },
+            {
+              "id": "GUI-05-Q04",
+              "q": "Is help provided in context right at the moment when the user requires it?",
+              "statut": "source"
+            }
           ]
         }
       ]
     },
     {
-      "id": "workload",
+      "code": "WKL",
+      "id_source": "workload",
       "label": "Workload",
+      "label_fr": "Charge de travail",
       "definition": "All the elements of the interface which has a role in reducing the perceptual or mnemic user load, as well as in increasing the efficiency of the dialogue.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "workload.concision",
+          "code": "WKL-01",
+          "id_source": "workload.concision",
           "name": "Concision",
+          "label_fr": "Concision",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Reduce workload perceptive and mnemonic level in terms of individual elements of input or output. \nFor example, when measuring unit is associated with a data field, it should be part of the label of the field rather than being entered by the user.",
+          "statut_definition": "source",
           "checklist": [
-            "Is memorization minimized?",
-            "Is the amount of information to enter reduced to a minimum?",
-            "Are the mandatory steps for the user brief?",
-            "Is the number of steps in a procedure minimized?",
-            "Are shortcuts provided?",
-            "Does the system anticipate user needs by highlighting the most frequent or relevant choices?",
-            "On long pages, is there an anchor to return to the top of the page?",
-            "Is the page width adapted to different devices?"
-          ]
+            {
+              "id": "WKL-01-Q01",
+              "q": "Is the amount of information to enter reduced to a minimum?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-01-Q02",
+              "q": "Are labels, titles and texts short while remaining explicit?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-01-Q03",
+              "q": "Are units of measure part of the field label rather than entered by the user?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-01-Q04",
+              "q": "Are codes and abbreviations short and consistent?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-01-Q05",
+              "q": "Do fields offer relevant default values when the value can be anticipated?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-01-Q06",
+              "q": "Is the size of input fields consistent with the expected length of the data?",
+              "statut": "proposee"
+            }
+          ],
+          "note": "La checklist d'origine était identique à celle de Minimal Actions. Concision porte sur UN élément (un libellé, un champ) : règle R3."
         },
         {
-          "id": "workload.recognition_rather_than_recall",
+          "code": "WKL-02",
+          "id_source": "workload.recognition_rather_than_recall",
           "name": "Recognition rather than recall",
+          "label_fr": "Reconnaissance plutôt que rappel",
           "sources": [
             "Nielsen"
           ],
           "definition": "Minimize the user’s memory load by making elements, actions, and options visible. The user should not have to remember information from one part of the interface to another. Information required to use the design (e.g. field labels or menu items) should be visible or easily retrievable when needed.",
+          "statut_definition": "source",
           "checklist": [
-            "Does the design keep important information visible, so that users do not have to memorize it?",
-            "Does the design offer help in-context?"
+            {
+              "id": "WKL-02-Q01",
+              "q": "Does the design keep important information visible, so that users do not have to memorize it?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-02-Q02",
+              "q": "Does the design offer help in-context?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-02-Q03",
+              "q": "Is memorization minimized?",
+              "statut": "deplacee",
+              "origine": "WKL-01"
+            },
+            {
+              "id": "WKL-02-Q04",
+              "q": "Are options, actions and commands visible rather than hidden or to be remembered?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-02-Q05",
+              "q": "Is information entered in a previous step recalled when needed (e.g., summary before validation)?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-02-Q06",
+              "q": "Do form fields keep a visible label once filled in (no placeholder-only labels)?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-02-Q07",
+              "q": "Are history, recent items or suggestions (e.g., autocomplete) offered?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-02-Q08",
+              "q": "Is the user's location always visible (breadcrumb, active menu item, step indicator)?",
+              "statut": "proposee"
+            }
           ]
         },
         {
-          "id": "workload.minimal_actions",
+          "code": "WKL-03",
+          "id_source": "workload.minimal_actions",
           "name": "Minimal Actions",
+          "label_fr": "Actions minimales",
           "sources": [
             "Bastien & Scapin"
           ],
-          "definition": "Reduce the workload with respect to the number of actions necessary to accomplish a goal or a task. It is here a matter of limiting as much as possible the steps users must go through.\nFor example, do not require users to enter data that can be deducted by the system.",
+          "definition": "Reduce the workload with respect to the number of actions necessary to accomplish a goal or a task. It is here a matter of limiting as much as possible the steps users must go through.\nFor example, do not require users to enter data that can be deduced by the system.",
+          "statut_definition": "source",
           "checklist": [
-            "Is memorization minimized?",
-            "Is the amount of information to enter reduced to a minimum?",
-            "Are the mandatory steps for the user brief?",
-            "Is the number of steps in a procedure minimized?",
-            "Are shortcuts provided?",
-            "Does the system anticipate user needs by highlighting the most frequent or relevant choices?",
-            "On long pages, is there an anchor to return to the top of the page?",
-            "Is the page width adapted to different devices?"
-          ]
+            {
+              "id": "WKL-03-Q01",
+              "q": "Is the number of steps in a procedure minimized?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-03-Q02",
+              "q": "Are the mandatory steps for the user brief?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-03-Q03",
+              "q": "Are shortcuts provided?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-03-Q04",
+              "q": "Does the system anticipate user needs by highlighting the most frequent or relevant choices?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-03-Q05",
+              "q": "On long pages, is there an anchor to return to the top of the page?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-03-Q06",
+              "q": "Can key tasks be completed with a minimum number of clicks or screens?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-03-Q07",
+              "q": "Does the system avoid asking for data it already knows or can deduce (e.g., city from postcode)?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-03-Q08",
+              "q": "Are bulk actions available for repetitive operations on several items?",
+              "statut": "proposee"
+            }
+          ],
+          "note": "Checklist réécrite : elle était identique à celle de Concision. Actions minimales porte sur le NOMBRE d'étapes, de clics ou de saisies : règle R3."
         },
         {
-          "id": "workload.focused_attention",
+          "code": "WKL-04",
+          "id_source": "workload.focused_attention",
           "name": "Focused attention",
+          "label_fr": "Attention focalisée",
           "sources": [
             "Colombo & Pasch"
           ],
           "definition": "The system should be simple and intuitive to use. It should facilitate the user's concentration on the task in hand by providing meaningful feedback and avoiding irrelevant distractions.\n3a) The system should be usable\n3b) The system should provide feedback that is relevant and meaningful to the task in hand\n3c) The system should avoid distractions, i.e. stimuli that are not relevant to the task at hand.",
-          "checklist": []
+          "statut_definition": "source",
+          "checklist": [
+            {
+              "id": "WKL-04-Q01",
+              "q": "Is the main task of each screen immediately identifiable?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-04-Q02",
+              "q": "Is there a clear visual hierarchy with one primary call-to-action per screen?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-04-Q03",
+              "q": "Are elements unrelated to the task (ads, pop-ups, autoplaying media, promotions) absent from task flows or easy to dismiss?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-04-Q04",
+              "q": "Are notifications and alerts proportionate to their importance and non-intrusive?",
+              "statut": "proposee"
+            },
+            {
+              "id": "WKL-04-Q05",
+              "q": "Can the user complete a flow without being interrupted (e.g., surveys, cross-selling)?",
+              "statut": "proposee"
+            }
+          ]
         },
         {
-          "id": "workload.information_density",
+          "code": "WKL-05",
+          "id_source": "workload.information_density",
           "name": "Information density",
+          "label_fr": "Densité informationnelle",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Reduce the workload of perceptive and mnemonic terms, for sets of items and not for items. For example, limit the informational density of the screen, to display only the necessary information",
+          "statut_definition": "source",
           "checklist": [
-            "Are the perceptual efforts required of the user acceptable?",
-            "Are the animations discreet, limited in number, and controllable?",
-            "Is the quantity of information displayed simultaneously and the number of choices available acceptable?",
-            "Are the different information blocks sufficiently spaced apart?",
-            "Are filtering and sorting features provided?",
-            "Do illustrations and icons serve a purpose for the user or their experience?",
-            "Is the span of attention considered (average short-term memory storage of 5±2 items)?",
-            "Do text lines contain an average of 55-75 characters (including spaces) on the computer and 30-40 on mobile devices?"
+            {
+              "id": "WKL-05-Q01",
+              "q": "Are the perceptual efforts required of the user acceptable?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-05-Q02",
+              "q": "Are the animations discreet, limited in number, and controllable?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-05-Q03",
+              "q": "Is the quantity of information displayed simultaneously and the number of choices available acceptable?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-05-Q04",
+              "q": "Are the different information blocks sufficiently spaced apart?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-05-Q05",
+              "q": "Are filtering and sorting features provided?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-05-Q06",
+              "q": "Do illustrations and icons serve a purpose for the user or their experience?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-05-Q07",
+              "q": "Is the span of attention considered (average short-term memory storage of 5±2 items)?",
+              "statut": "source"
+            },
+            {
+              "id": "WKL-05-Q08",
+              "q": "Do text lines contain an average of 55-75 characters (including spaces) on the computer and 30-40 on mobile devices?",
+              "statut": "source"
+            }
           ]
         }
       ]
     },
     {
-      "id": "explicit_control",
+      "code": "CTL",
+      "id_source": "explicit_control",
       "label": "Explicit control",
+      "label_fr": "Contrôle explicite",
       "definition": "Consideration by the system of explicit user actions and control that users have over the treatment of their actions.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "explicit_control.actions_explicit",
-          "name": "Actions Explicit",
+          "code": "CTL-01",
+          "id_source": "explicit_control.actions_explicit",
+          "name": "Explicit user actions",
+          "label_fr": "Actions explicites",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Clarify the relationship between the operation of the application and user actions. This relationship must be explicit, i.e., the computer must process only those actions requested by the users and only when requested to do so.\nFor example, entering commands must end with an end indication (\"Enter\", \"OK\") to which publishing opportunities should be prerequisites.",
+          "statut_definition": "source",
           "checklist": [
-            "Do operations trigger with explicit consent from the user?",
-            "Does processing start immediately after the user's action?",
-            "When an operation doesn't start immediately after the user's action, is it indicated that it will be delayed or cannot be performed?",
-            "Do actions with significant and/or irreversible consequences require explicit confirmation from the user?"
+            {
+              "id": "CTL-01-Q01",
+              "q": "Do operations trigger with explicit consent from the user?",
+              "statut": "source"
+            },
+            {
+              "id": "CTL-01-Q02",
+              "q": "Does processing start immediately after the user's action?",
+              "statut": "source"
+            },
+            {
+              "id": "CTL-01-Q03",
+              "q": "When an operation doesn't start immediately after the user's action, is it indicated that it will be delayed or cannot be performed?",
+              "statut": "source"
+            }
           ]
         },
         {
-          "id": "explicit_control.user_control_freedom",
+          "code": "CTL-02",
+          "id_source": "explicit_control.user_control_freedom",
           "name": "User Control & Freedom",
+          "label_fr": "Contrôle utilisateur et liberté",
           "sources": [
             "Bastien & Scapin",
             "Nielsen",
             "Colombo & Pasch"
           ],
           "definition": "The criterion User Control refers to the fact that the users should always be in control of the system processing (e.g., interrupt, cancel, pause and continue). Every possible action by a user should be anticipated and appropriate options should be provided.\n\nThe system should not make users feel trapped. Avoid (as far as possible) constraining users’ actions, provide them an exit strategy and make the actions easily reversible.The system should make users feel “free” of constraints and, at the same time, in control of the experience.",
+          "statut_definition": "source",
           "checklist": [
-            "Can reversible actions be canceled at any time by the user?",
-            "Can an ongoing operation (e.g., filling out a form) be paused and resumed by the user?",
-            "Is it easy for the user to go back?",
-            "Is the opening of new windows explicitly controllable by the user?",
-            "Do multimedia elements leave control to the user (play, rewind, volume, pause, etc.)?"
+            {
+              "id": "CTL-02-Q01",
+              "q": "Can reversible actions be canceled at any time by the user?",
+              "statut": "source"
+            },
+            {
+              "id": "CTL-02-Q02",
+              "q": "Can an ongoing operation (e.g., filling out a form) be paused and resumed by the user?",
+              "statut": "source"
+            },
+            {
+              "id": "CTL-02-Q03",
+              "q": "Is it easy for the user to go back?",
+              "statut": "source"
+            },
+            {
+              "id": "CTL-02-Q04",
+              "q": "Is the opening of new windows explicitly controllable by the user?",
+              "statut": "source"
+            },
+            {
+              "id": "CTL-02-Q05",
+              "q": "Do multimedia elements leave control to the user (play, rewind, volume, pause, etc.)?",
+              "statut": "source"
+            }
           ]
         }
       ]
     },
     {
-      "id": "adaptability",
+      "code": "ADA",
+      "id_source": "adaptability",
       "label": "Adaptability",
+      "label_fr": "Adaptabilité",
       "definition": "Ability to react depending on the context and the needs and user preferences.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "adaptability.flexibility",
+          "code": "ADA-01",
+          "id_source": "adaptability.flexibility",
           "name": "Flexibility",
+          "label_fr": "Flexibilité",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Make available to users the means to customize the interface to reflect their strategies or work habits and requirements of the task. \nFor example, users should be able to disable unnecessary displays.",
+          "statut_definition": "source",
           "checklist": [
-            "Are different means provided to trigger the same command (e.g., icon, keyboard shortcut)?",
-            "Can primary actions be performed both with the keyboard and the mouse?",
-            "Is the system configurable according to the user's preferences?",
-            "Are displays that are not useful to the user deactivatable?",
-            "Is it possible for the user to create custom shortcuts?",
-            "Are means provided for visually impaired and blind individuals?"
+            {
+              "id": "ADA-01-Q01",
+              "q": "Are different means provided to trigger the same command (e.g., icon, keyboard shortcut)?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-01-Q02",
+              "q": "Can primary actions be performed both with the keyboard and the mouse?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-01-Q03",
+              "q": "Is the system configurable according to the user's preferences?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-01-Q04",
+              "q": "Are displays that are not useful to the user deactivatable?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-01-Q05",
+              "q": "Is it possible for the user to create custom shortcuts?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-01-Q06",
+              "q": "Are means provided for visually impaired and blind individuals?",
+              "statut": "source"
+            }
           ]
         },
         {
-          "id": "adaptability.universal_usability_user_experience_expertise",
-          "name": "Universal Usability & User Experience (Expertise)",
+          "code": "ADA-02",
+          "id_source": "adaptability.universal_usability_user_experience_expertise",
+          "name": "Universal usability & user expertise",
+          "label_fr": "Prise en compte de l'expérience de l'utilisateur",
           "sources": [
             "Bastien & Scapin",
             "Shneiderman",
             "Arhippainen"
           ],
           "definition": "The system must respect the experience level of the user. \nExperienced and inexperienced users have different information needs. It may be desirable to provide inexperienced users with prompted modes of transactions allowing simple step-by-step actions. For experienced users, computer-initiated dialogues may be boring and slow down their interactions; short-cuts may allow them to access system functions more rapidly. Different levels of interaction should take users’ experience into account.\nHowever, most systems will have users with varying levels of experience. Users may become more expert with increased experience, or perhaps less expert after a long period of disuse. The interface should also be designed so as to accommodate the varying users’ levels of experience.",
+          "statut_definition": "source",
           "checklist": [
-            "Are the contents adapted to all users (e.g., explanation of technical terms)?",
-            "Do search functions offer basic and advanced options?",
-            "Is task completion guided for the user?",
-            "Is access to shortcuts for quickly achieving goals available to the user?",
-            "Do error messages provide a more in-depth version for experts?",
-            "Is the overall usability level acceptable to complete users' tasks?"
+            {
+              "id": "ADA-02-Q01",
+              "q": "Are the contents adapted to all users (e.g., explanation of technical terms)?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-02-Q02",
+              "q": "Do search functions offer basic and advanced options?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-02-Q03",
+              "q": "Is task completion guided for the user?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-02-Q04",
+              "q": "Is access to shortcuts for quickly achieving goals available to the user?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-02-Q05",
+              "q": "Do error messages provide a more in-depth version for experts?",
+              "statut": "source"
+            },
+            {
+              "id": "ADA-02-Q06",
+              "q": "Is the overall usability level acceptable to complete users' tasks?",
+              "statut": "source"
+            }
           ]
         }
       ]
     },
     {
-      "id": "consistency",
+      "code": "CON",
+      "id_source": "consistency",
       "label": "Consistency",
+      "label_fr": "Homogénéité / cohérence",
       "definition": "Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts. For example, always displayed in the same place the incentive for entering data or commands.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "consistency.consistency_standard",
-          "name": "Consistency & Standard",
+          "code": "CON-01",
+          "id_source": "consistency.consistency_standard",
+          "name": "Consistency & standards",
+          "label_fr": "Homogénéité et standards",
           "sources": [
             "Bastien & Scapin",
             "Nielsen",
             "Kaniasty CARMEL"
           ],
-          "definition": "Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts.\n\nUsers should not have to wonder whether different words, situations, or actions mean the same thing. Follow platform and industry conventions.\n\nThe consistency between the following elements could be checjked:\n1) Style guides \n2) Design patterns\n3) Naming conventions\n4) Look & Feel\n5) Interactions",
+          "definition": "Consistency refers to the way interface design choices (codes, naming, formats, procedures, etc.) are maintained in similar contexts, and are different when applied to different contexts.\n\nUsers should not have to wonder whether different words, situations, or actions mean the same thing. Follow platform and industry conventions.\n\nThe consistency between the following elements could be checked:\n1) Style guides \n2) Design patterns\n3) Naming conventions\n4) Look & Feel\n5) Interactions",
+          "statut_definition": "source",
           "checklist": [
-            "Is the interface visually stable from one page to another?",
-            "Are typography, colors, alignments, spacing, and call-to-action elements consistent from one page to another?",
-            "Is the placement of key elements the same on all pages (e.g., the menu)?",
-            "Are state changes and click consequences consistent for identical elements?",
-            "Does the same word have the same meaning throughout the interface?",
-            "Do the same sequences of actions have the same effects from one page to another?"
+            {
+              "id": "CON-01-Q01",
+              "q": "Is the interface visually stable from one page to another?",
+              "statut": "source"
+            },
+            {
+              "id": "CON-01-Q02",
+              "q": "Are typography, colors, alignments, spacing, and call-to-action elements consistent from one page to another?",
+              "statut": "source"
+            },
+            {
+              "id": "CON-01-Q03",
+              "q": "Is the placement of key elements the same on all pages (e.g., the menu)?",
+              "statut": "source"
+            },
+            {
+              "id": "CON-01-Q04",
+              "q": "Are state changes and click consequences consistent for identical elements?",
+              "statut": "source"
+            },
+            {
+              "id": "CON-01-Q05",
+              "q": "Does the same word have the same meaning throughout the interface?",
+              "statut": "source"
+            },
+            {
+              "id": "CON-01-Q06",
+              "q": "Do the same sequences of actions have the same effects from one page to another?",
+              "statut": "source"
+            }
           ]
         }
       ]
     },
     {
-      "id": "errors_management",
-      "label": "Errors management",
+      "code": "ERR",
+      "id_source": "errors_management",
+      "label": "Error management",
+      "label_fr": "Gestion des erreurs",
       "definition": "Means firstly to avoid or reduce errors, secondly to correct them when they occur.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "errors_management.protection_against_errors",
+          "code": "ERR-01",
+          "id_source": "errors_management.protection_against_errors",
           "name": "Protection Against Errors",
+          "label_fr": "Protection contre les erreurs",
           "sources": [
             "Bastien & Scapin"
           ],
-          "definition": "Establish ways to detect and prevent errors and recover from them when occuring. Errors are defined in this context as invalid data entry, invalid format for data entry, incorrect command syntax, etc.\nFor example, all possible actions on an interface should be considered especially accidental button presses of the keyboard so that non-expected inputs are detected.",
+          "definition": "Establish ways to detect and prevent errors and recover from them when occurring. Errors are defined in this context as invalid data entry, invalid format for data entry, incorrect command syntax, etc.\nFor example, all possible actions on an interface should be considered especially accidental button presses of the keyboard so that non-expected inputs are detected.",
+          "statut_definition": "source",
           "checklist": [
-            "Are measures in place to prevent user errors (e.g., indicating data format to input)?",
-            "Does the system provide a help section (e.g., assistance, chat, tooltips)?",
-            "Are manual inputs minimized to the bare essentials?",
-            "Is confirmation requested from the user before triggering an irreversible action?",
-            "Are mandatory or optional input fields clearly marked?",
-            "Are input fields accompanied by clear labels and, if necessary, examples of content?"
+            {
+              "id": "ERR-01-Q01",
+              "q": "Are measures in place to prevent user errors (e.g., indicating data format to input)?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-01-Q02",
+              "q": "Are manual inputs minimized to the bare essentials?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-01-Q03",
+              "q": "Is confirmation requested from the user before triggering an irreversible action?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-01-Q04",
+              "q": "Are mandatory or optional input fields clearly marked?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-01-Q05",
+              "q": "Are input fields accompanied by clear labels and, if necessary, examples of content?",
+              "statut": "source"
+            }
           ]
         },
         {
-          "id": "errors_management.quality_of_error_messages",
+          "code": "ERR-02",
+          "id_source": "errors_management.quality_of_error_messages",
           "name": "Quality of Error Messages",
+          "label_fr": "Qualité des messages d'erreur",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Ensure that the information given to users about the nature of errors (syntax, format, etc.) and the actions to correct them, is relevant, easy to read and accurate. \nFor example, using a neutral vocabulary, non-personal, non-condemnatory in error messages; avoid humor.",
+          "statut_definition": "source",
           "checklist": [
-            "Are error messages understandable, self-contained, and explicit?",
-            "Are error messages concise, readable, and placed in a suitable location?",
-            "Do error messages indicate the origin and nature of the error?",
-            "Do error messages provide guidance on how to correct the issue?",
-            "Are error messages non-blaming?",
-            "Do error messages remain displayed until the issue is resolved or corrected?",
-            "Are error messages accompanied by elements to resume navigation (e.g., a call-to-action to return to the homepage)?"
+            {
+              "id": "ERR-02-Q01",
+              "q": "Are error messages understandable, self-contained, and explicit?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-02-Q02",
+              "q": "Are error messages concise, readable, and placed in a suitable location?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-02-Q03",
+              "q": "Do error messages indicate the origin and nature of the error?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-02-Q04",
+              "q": "Do error messages provide guidance on how to correct the issue?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-02-Q05",
+              "q": "Are error messages non-blaming?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-02-Q06",
+              "q": "Do error messages remain displayed until the issue is resolved or corrected?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-02-Q07",
+              "q": "Are error messages accompanied by elements to resume navigation (e.g., a call-to-action to return to the homepage)?",
+              "statut": "source"
+            }
           ]
         },
         {
-          "id": "errors_management.error_correction",
+          "code": "ERR-03",
+          "id_source": "errors_management.error_correction",
           "name": "Error Correction",
+          "label_fr": "Correction des erreurs",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "Make available to users the means to correct their mistakes.\nFor example, providing the ability to modify orders during capture.",
+          "statut_definition": "source",
           "checklist": [
-            "Does the system correctly detect user input errors?",
-            "Is an error promptly communicated to the user?",
-            "Do error messages provide guidance on how to correct the error?",
-            "In the case of a form, is an error easily noticeable by the user?",
-            "Can users easily undo input errors or unintended actions?",
-            "Are means available for reporting a system error (e.g., a reporting call-to-action)?",
-            "Does the system offer alternatives (e.g., alternative search) in case of errors?"
+            {
+              "id": "ERR-03-Q01",
+              "q": "Does the system correctly detect user input errors?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-03-Q02",
+              "q": "Is an error promptly communicated to the user?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-03-Q03",
+              "q": "In the case of a form, is an error easily noticeable by the user?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-03-Q04",
+              "q": "Can users easily undo input errors or unintended actions?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-03-Q05",
+              "q": "Are means available for reporting a system error (e.g., a reporting call-to-action)?",
+              "statut": "source"
+            },
+            {
+              "id": "ERR-03-Q06",
+              "q": "Does the system offer alternatives (e.g., alternative search) in case of errors?",
+              "statut": "source"
+            }
           ]
         }
       ]
     },
     {
-      "id": "significance_of_codes",
-      "label": "Significance of Codes",
+      "code": "COD",
+      "id_source": "significance_of_codes",
+      "label": "Significance of codes",
+      "label_fr": "Signifiance des codes et dénominations",
       "definition": "There must be balance between the object or the information displayed or entered, and its referent. Codes and names are significant to the users when there is a strong semantic relationship between such codes and the items or actions they refer to.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "significance_of_codes.significance_of_codes",
+          "code": "COD-01",
+          "id_source": "significance_of_codes.significance_of_codes",
           "name": "Significance of Codes",
+          "label_fr": "Signifiance des codes et dénominations",
           "sources": [
             "Bastien & Scapin"
           ],
           "definition": "The criterion Significance of Codes qualifies the relationship between a term and/or a sign and its reference. Codes and names are significant to the users when there is a strong semantic relationship between such codes and the items or actions they refer to.\nFor example, make the explicit rules of abbreviation.",
+          "statut_definition": "source",
           "checklist": [
-            "Do the labels of clickable links reflect the content of the destination page?",
-            "Are button labels explicit about the consequences of clicking?",
-            "Are the icons used understandable and appropriate?",
-            "Are abbreviations limited and explained?",
-            "Is the language used understandable to the user?",
-            "Are technical terms specific to your company/domain defined?",
-            "Are the colors, symbols, and terms used adapted to the cultural codes of the target audience (e.g., green for validation and red for errors)?"
+            {
+              "id": "COD-01-Q01",
+              "q": "Do the labels of clickable links reflect the content of the destination page?",
+              "statut": "source"
+            },
+            {
+              "id": "COD-01-Q02",
+              "q": "Are button labels explicit about the consequences of clicking?",
+              "statut": "source"
+            },
+            {
+              "id": "COD-01-Q03",
+              "q": "Are the icons used understandable and appropriate?",
+              "statut": "source"
+            },
+            {
+              "id": "COD-01-Q04",
+              "q": "Are abbreviations limited and explained?",
+              "statut": "source"
+            },
+            {
+              "id": "COD-01-Q05",
+              "q": "Is the language used understandable to the user?",
+              "statut": "source"
+            },
+            {
+              "id": "COD-01-Q06",
+              "q": "Are technical terms specific to your company/domain defined?",
+              "statut": "source"
+            },
+            {
+              "id": "COD-01-Q07",
+              "q": "Are the colors, symbols, and terms used adapted to the cultural codes of the target audience (e.g., green for validation and red for errors)?",
+              "statut": "source"
+            }
           ]
         }
       ]
     },
     {
-      "id": "compatibility",
+      "code": "CPT",
+      "id_source": "compatibility",
       "label": "Compatibility",
+      "label_fr": "Compatibilité",
       "definition": "There must be agreement between the characteristics of users and tasks, on the one hand, and the organization of outputs, inputs and dialogue of a given application, on the other. For example, the language should be familiar to users, and related to the task at hand.",
+      "statut_definition": "source",
       "criteria": [
         {
-          "id": "compatibility.compatibility_correspondance_between_the_system_and_the_real_world",
-          "name": "Compatibility & Correspondance between the system and the real world",
+          "code": "CPT-01",
+          "id_source": "compatibility.compatibility_correspondance_between_the_system_and_the_real_world",
+          "name": "Compatibility & match with the real world",
+          "label_fr": "Compatibilité et correspondance avec le monde réel",
           "sources": [
             "Bastien & Scapin",
             "Nielsen"
           ],
           "definition": "The criterion Compatibility refers to the match between users’ characteristics (memory, perceptions, customs, skills, age, expectations, etc.) and task characteristics on the one hand, and the organization of the output, input, and dialogue for a given application, on the other hand.\n\nThe design should speak the users’ language. Use words, phrases, and concepts familiar to the user, rather than internal jargon. Follow real-world conventions, making information appear in a natural and logical order.\nReuse common codes and habits from real life in the systems to promote recognition.",
+          "statut_definition": "source",
           "checklist": [
-            "Is the interface adapted to the target user?",
-            "Is the language of the interface understandable?",
-            "Is the vocabulary relevant to the target audience?",
-            "Is access to commands adapted to the context of task completion?",
-            "Is the interface compatible across different devices, browsers, and screen sizes without distortion or loss of content?",
-            "Is the target interface consistent with the primary context and device of use (mobile-first, responsive, or adaptive)?",
-            "Is data input in forms done in a logical order for the user?",
-            "Can the user choose their own display and sorting criteria?"
+            {
+              "id": "CPT-01-Q01",
+              "q": "Is the interface adapted to the target user?",
+              "statut": "source"
+            },
+            {
+              "id": "CPT-01-Q02",
+              "q": "Is the language of the interface understandable?",
+              "statut": "source"
+            },
+            {
+              "id": "CPT-01-Q03",
+              "q": "Is the vocabulary relevant to the target audience?",
+              "statut": "source"
+            },
+            {
+              "id": "CPT-01-Q04",
+              "q": "Is access to commands adapted to the context of task completion?",
+              "statut": "source"
+            },
+            {
+              "id": "CPT-01-Q05",
+              "q": "Is the interface compatible across different devices, browsers, and screen sizes without distortion or loss of content?",
+              "statut": "source"
+            },
+            {
+              "id": "CPT-01-Q06",
+              "q": "Is the target interface consistent with the primary context and device of use (mobile-first, responsive, or adaptive)?",
+              "statut": "source"
+            },
+            {
+              "id": "CPT-01-Q07",
+              "q": "Is data input in forms done in a logical order for the user?",
+              "statut": "source"
+            },
+            {
+              "id": "CPT-01-Q08",
+              "q": "Can the user choose their own display and sorting criteria?",
+              "statut": "source"
+            }
           ]
         },
         {
-          "id": "compatibility.design_the_product_or_service_to_fit_the_intended_contexts",
-          "name": "Design the Product or Service to Fit the Intended Contexts",
+          "code": "CPT-02",
+          "id_source": "compatibility.design_the_product_or_service_to_fit_the_intended_contexts",
+          "name": "Fit the intended contexts",
+          "label_fr": "Adaptation aux contextes d'usage",
           "sources": [
             "Arhippainen"
           ],
           "definition": "The service or product is always used in particular contextual circumstances: the user is using a product in a physical situation, with a company or alone through the specific cultural habits and way of life in a certain temporal moment. All these context factors have impacts on user experience.",
-          "checklist": []
+          "statut_definition": "source",
+          "checklist": [
+            {
+              "id": "CPT-02-Q01",
+              "q": "Have the contexts of use been identified (place, device, mobility, environment, time constraints)?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-02-Q02",
+              "q": "Is the interface usable in real conditions of use (e.g., outdoors with glare, one-handed on mobile, noisy environment)?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-02-Q03",
+              "q": "Are formats adapted to the cultural and linguistic context (dates, currencies, addresses, reading direction)?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-02-Q04",
+              "q": "Does the interface support interrupted use (resuming later, offline mode if relevant)?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-02-Q05",
+              "q": "Is the interface suited to shared or public contexts (privacy of displayed data)?",
+              "statut": "proposee"
+            }
+          ]
         },
         {
-          "id": "compatibility.utility_clear_goals",
+          "code": "CPT-03",
+          "id_source": "compatibility.utility_clear_goals",
           "name": "Utility & Clear Goals",
+          "label_fr": "Utilité et objectifs clairs",
           "sources": [
             "Colombo & Pasch"
           ],
           "definition": "The objective of the system must be clear. The system has to fulfill users' needs and expectations.\n1a) The system must be designed with the right affordances to explicitly inform users of its use(s)\n1b) The system must be functional, i.e. it must fulfil the objectives put forward by the affordances and meet the users' expectations\n1c) Additional (non-core) functionality is welcome, even more so if it provides for alternative uses of the system: exceeding user expectations is often a predictor of a good user experience",
-          "checklist": []
+          "statut_definition": "source",
+          "checklist": [
+            {
+              "id": "CPT-03-Q01",
+              "q": "Is the purpose of the product or service understandable within a few seconds on the entry page?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-03-Q02",
+              "q": "Do affordances (buttons, visuals, wording) make the possible uses explicit?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-03-Q03",
+              "q": "Can users achieve their main goals end to end?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-03-Q04",
+              "q": "Do the features match the needs identified for the target users?",
+              "statut": "proposee"
+            },
+            {
+              "id": "CPT-03-Q05",
+              "q": "Do additional features exceed expectations without cluttering the core experience?",
+              "statut": "proposee"
+            }
+          ]
         }
       ]
     },
     {
-      "id": "opt_for_perfect_visual_design",
-      "label": "Opt for perfect visual design",
-      "definition": "",
+      "code": "VIS",
+      "id_source": "opt_for_perfect_visual_design",
+      "label": "Visual design",
+      "label_fr": "Design visuel",
+      "definition": "Visual design serves two purposes: improving usability by making the interface more understandable, consistent and guiding, and making the interface aesthetically pleasing. Visual choices (e.g., colours) also affect the user experience through the values they convey (Arhippainen).",
+      "statut_definition": "proposee",
       "criteria": [
         {
-          "id": "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_1",
-          "name": "Opt for a perfect visual design 1",
+          "code": "VIS-01",
+          "id_source": "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_1",
+          "name": "Visual design for usability",
+          "label_fr": "Design visuel au service de l'utilisabilité",
           "sources": [
             "Arhippainen"
           ],
           "definition": "From a UX perspective, visual aspects have two intentions. The first is that visual design can improve usability by making the user interface more understandable, consistent and guiding.",
-          "checklist": []
+          "statut_definition": "source",
+          "checklist": [
+            {
+              "id": "VIS-01-Q01",
+              "q": "Does the visual hierarchy (size, weight, color, position) reflect the importance of information?",
+              "statut": "proposee"
+            },
+            {
+              "id": "VIS-01-Q02",
+              "q": "Is a grid and alignment system applied consistently?",
+              "statut": "proposee"
+            },
+            {
+              "id": "VIS-01-Q03",
+              "q": "Is white space used to structure content?",
+              "statut": "proposee"
+            },
+            {
+              "id": "VIS-01-Q04",
+              "q": "Is color never the only means of conveying information?",
+              "statut": "proposee"
+            },
+            {
+              "id": "VIS-01-Q05",
+              "q": "Are interactive elements visually distinguishable from static content?",
+              "statut": "proposee"
+            }
+          ]
         },
         {
-          "id": "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_2",
-          "name": "Opt for a perfect visual design 2",
+          "code": "VIS-02",
+          "id_source": "opt_for_perfect_visual_design.opt_for_a_perfect_visual_design_2",
+          "name": "Aesthetics",
+          "label_fr": "Esthétique",
           "sources": [
             "Arhippainen"
           ],
           "definition": "The second is to make the user interface aesthetically pleasing through good visual design. In addition, the choices made in visual design, for example, the use of colours, can have an impact on the UX",
-          "checklist": []
+          "statut_definition": "source",
+          "checklist": [
+            {
+              "id": "VIS-02-Q01",
+              "q": "Is the use of colors harmonious?",
+              "statut": "deplacee",
+              "origine": "GUI-04"
+            },
+            {
+              "id": "VIS-02-Q02",
+              "q": "Is the overall look pleasant and professional for the target audience?",
+              "statut": "proposee"
+            },
+            {
+              "id": "VIS-02-Q03",
+              "q": "Is the visual style consistent with the brand and the values it conveys?",
+              "statut": "proposee"
+            },
+            {
+              "id": "VIS-02-Q04",
+              "q": "Are images, illustrations and icons of good quality and in a consistent style?",
+              "statut": "proposee"
+            },
+            {
+              "id": "VIS-02-Q05",
+              "q": "Do animations and micro-interactions bring pleasure without hindering the task?",
+              "statut": "proposee"
+            }
+          ]
         }
       ]
     }
   ],
+  "regles_departage": {
+    "principes": [
+      "Un constat a UN critère principal : celui qui correspond à la cause du problème, pas à son symptôme.",
+      "Les autres critères touchés vont dans « Critères secondaires ».",
+      "En cas de doute, poser la question discriminante de la règle concernée."
+    ],
+    "regles": [
+      {
+        "id": "R1",
+        "theme": "Guider ou répondre",
+        "question": "Le problème se situe-t-il AVANT l'action de l'utilisateur ou APRÈS ?",
+        "cas": [
+          {
+            "si": "Ce qui guide ou signale une action possible avant que l'utilisateur agisse (format attendu, élément cliquable, état de survol, titre)",
+            "critere": "GUI-01",
+            "exemple": "Aucun exemple de format sous le champ date de naissance."
+          },
+          {
+            "si": "La réponse du système après l'action (confirmation, chargement, progression, échec d'un traitement)",
+            "critere": "GUI-03",
+            "exemple": "Après clic sur « Payer », rien ne bouge pendant 5 secondes."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R2",
+        "theme": "Moment de l'erreur",
+        "question": "Le problème concerne-t-il la prévention de l'erreur, le message affiché, ou le moyen de la réparer ?",
+        "cas": [
+          {
+            "si": "Empêcher l'erreur de se produire (contraintes de saisie, champs obligatoires signalés, confirmation avant action irréversible)",
+            "critere": "ERR-01",
+            "exemple": "Le bouton « Supprimer le compte » agit sans confirmation."
+          },
+          {
+            "si": "Le contenu ou la forme du message d'erreur (clarté, emplacement, ton, indication de la solution)",
+            "critere": "ERR-02",
+            "exemple": "Message « Erreur 500 » sans explication."
+          },
+          {
+            "si": "Le moyen de corriger ou d'annuler une fois l'erreur commise (annulation, modification sans tout ressaisir)",
+            "critere": "ERR-03",
+            "exemple": "Le formulaire se vide entièrement après une erreur sur un seul champ."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R3",
+        "theme": "Niveau de la charge de travail",
+        "question": "Le problème concerne-t-il un élément isolé, l'écran dans son ensemble, ou le nombre d'étapes ?",
+        "cas": [
+          {
+            "si": "Un élément isolé trop long ou trop exigeant (libellé, champ, texte)",
+            "critere": "WKL-01",
+            "exemple": "Unité « kg » à saisir dans le champ au lieu d'être dans le libellé."
+          },
+          {
+            "si": "L'écran dans son ensemble trop chargé",
+            "critere": "WKL-05",
+            "exemple": "Tableau de bord avec 14 widgets affichés simultanément."
+          },
+          {
+            "si": "Le nombre d'étapes, de clics ou de saisies pour accomplir la tâche",
+            "critere": "WKL-03",
+            "exemple": "7 écrans pour modifier une adresse de livraison."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R4",
+        "theme": "Qui a la main",
+        "question": "Le système agit-il sans que l'utilisateur l'ait demandé, ou l'utilisateur ne peut-il pas reprendre la main ?",
+        "cas": [
+          {
+            "si": "Le système déclenche une action sans demande explicite (enregistrement, envoi, navigation automatique)",
+            "critere": "CTL-01",
+            "exemple": "Le formulaire est envoyé dès la sélection d'une option."
+          },
+          {
+            "si": "L'utilisateur ne peut pas interrompre, annuler, revenir en arrière ou reprendre plus tard",
+            "critere": "CTL-02",
+            "exemple": "Pas de bouton « Retour » dans le tunnel de commande."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R5",
+        "theme": "Référence de comparaison",
+        "question": "Le problème est-il une incohérence interne au produit, un écart avec les conventions extérieures, ou un libellé qui ne dit pas ce qu'il fait ?",
+        "cas": [
+          {
+            "si": "Incohérence interne au produit (même action, mot ou composant traité différemment d'un écran à l'autre)",
+            "critere": "CON-01",
+            "exemple": "Le bouton principal est vert sur une page et gris sur la suivante."
+          },
+          {
+            "si": "Écart avec les habitudes des utilisateurs, les conventions du domaine ou du monde réel",
+            "critere": "CPT-01",
+            "exemple": "Champs d'adresse dans un ordre inhabituel (ville avant rue)."
+          },
+          {
+            "si": "Un libellé, une icône ou un code dont le sens ne correspond pas à ce qu'il désigne",
+            "critere": "COD-01",
+            "exemple": "Icône d'engrenage qui ouvre l'historique des commandes."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R6",
+        "theme": "Nature du problème visuel",
+        "question": "Le problème touche-t-il la lecture, l'organisation des éléments, la hiérarchie visuelle ou l'esthétique ?",
+        "cas": [
+          {
+            "si": "La lecture du texte (taille, contraste, interligne, longueur de ligne)",
+            "critere": "GUI-04",
+            "exemple": "Texte gris clair 11 px sur fond blanc."
+          },
+          {
+            "si": "Le regroupement ou la distinction des éléments (proximité, séparation, format commun)",
+            "critere": "GUI-02",
+            "exemple": "Les filtres et les résultats ne sont pas séparés visuellement."
+          },
+          {
+            "si": "La hiérarchie visuelle, la grille, l'usage de l'espace et de la couleur comme support de compréhension",
+            "critere": "VIS-01",
+            "exemple": "Trois boutons de même poids visuel, aucune action principale identifiable."
+          },
+          {
+            "si": "L'esthétique, l'harmonie, l'image de marque et l'émotion",
+            "critere": "VIS-02",
+            "exemple": "Mélange d'illustrations de styles incompatibles."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R7",
+        "theme": "Adaptation à l'utilisateur",
+        "question": "Le problème concerne-t-il la personnalisation, ou la prise en compte du niveau d'expertise ?",
+        "cas": [
+          {
+            "si": "L'utilisateur ne peut pas adapter l'interface à ses préférences ou utiliser plusieurs moyens (clavier, souris, réglages)",
+            "critere": "ADA-01",
+            "exemple": "Impossible de masquer les colonnes inutiles du tableau."
+          },
+          {
+            "si": "L'interface ne s'adapte pas aux débutants ou aux experts (guidage pas à pas, mode avancé)",
+            "critere": "ADA-02",
+            "exemple": "Aucune recherche avancée pour les utilisateurs réguliers."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R8",
+        "theme": "Forme de l'aide",
+        "question": "L'aide est-elle affichée d'emblée dans l'interface, consultable à la demande, ou s'agit-il d'une information à mémoriser ?",
+        "cas": [
+          {
+            "si": "Indication affichée d'emblée pour guider l'action en cours",
+            "critere": "GUI-01",
+            "exemple": "Aucune indication sur les caractères requis du mot de passe."
+          },
+          {
+            "si": "Aide consultable à la demande (FAQ, info-bulle, contact support, documentation)",
+            "critere": "GUI-05",
+            "exemple": "Aucun lien vers l'aide ou le support depuis l'espace client."
+          },
+          {
+            "si": "L'utilisateur doit retenir une information d'un écran à l'autre",
+            "critere": "WKL-02",
+            "exemple": "Le numéro de dossier affiché à l'étape 1 doit être ressaisi à l'étape 3."
+          }
+        ],
+        "statut": "proposee"
+      },
+      {
+        "id": "R9",
+        "theme": "Source de la surcharge",
+        "question": "Les éléments en trop sont-ils liés à la tâche, ou étrangers à la tâche ?",
+        "cas": [
+          {
+            "si": "Trop d'informations utiles affichées en même temps",
+            "critere": "WKL-05",
+            "exemple": "Fiche produit avec 40 caractéristiques techniques sans regroupement."
+          },
+          {
+            "si": "Distractions étrangères à la tâche (publicité, pop-up, sollicitations)",
+            "critere": "WKL-04",
+            "exemple": "Pop-up d'inscription à la newsletter au milieu du paiement."
+          }
+        ],
+        "statut": "proposee"
+      }
+    ]
+  },
   "frameworks": [
     {
       "framework": "Bastien & Scapin",
@@ -756,9 +1664,10 @@
           "quality_component": "Efficiency"
         },
         {
-          "criterion": "Challenges/Skills Balance_The system should have a steep learning curve to help novice users.",
+          "criterion": "Challenges/Skills Balance_The system should have a gentle learning curve to help novice users.",
           "details": "The system should adapt to the user in that it should be designed to dynamically provide adequate challenges for both novice, average and experienced users.",
-          "quality_component": "Learnability"
+          "quality_component": "Learnability",
+          "statut": "modifiee"
         },
         {
           "criterion": "Challenges/Skills Balance_The system should encourage users to explore it and to discover all the features and opportunities for interaction.",
@@ -987,8 +1896,9 @@
         },
         {
           "criterion": "Recovery_Confirmation dialogs",
-          "details": "The design meets minimum font size legibility guidelines.",
-          "quality_component": "Errors"
+          "details": "Confirmation dialogs prevent unintended destructive or irreversible actions.",
+          "quality_component": "Errors",
+          "statut": "modifiee"
         },
         {
           "criterion": "Recovery_Undo functions",
@@ -1086,6 +1996,406 @@
           "quality_component": "Learnability"
         }
       ]
+    }
+  ],
+  "journal_modifications": [
+    {
+      "type": "definition_modifiee",
+      "critere": "GUI-01",
+      "avant": "Encourage the user to perform specific actions by providing indices. For example, guide data entries indicating the correct format and acceptable values: Date (dd / mm / yy) _ _ / _ _ / _ _. See this example of incitement ... missed! But as another example, successful.\n\nCan also see this example where the incentive is so bad that we must tell the user where to click!",
+      "apres": "Encourage the user to perform specific actions by providing cues. For example, guide data entry by indicating the correct format and acceptable values: Date (dd / mm / yy) _ _ / _ _ / _ _."
+    },
+    {
+      "type": "note",
+      "critere": "GUI-01",
+      "texte": "Définition : retrait des renvois à des exemples visuels absents du fichier (« See this example… »)."
+    },
+    {
+      "type": "note",
+      "critere": "GUI-02",
+      "texte": "Bastien & Scapin distinguent « par la localisation » et « par le format » : indiquer le sous-type dans le constat si utile."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "GUI-03",
+      "question": "Do clickable elements exhibit a \"hover\" effect upon mouseover (e.g., color change)?",
+      "vers": "GUI-01",
+      "raison": "Doublon avec GUI-01 (« change appearance when hovered »). L'état de survol signale qu'un élément est cliquable AVANT l'action : règle R1."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "GUI-04",
+      "question": "Are clickable elements visually prominent?",
+      "vers": "GUI-01",
+      "raison": "Identifier ce qui est cliquable relève de l'incitation (GUI-01 : « action elements easily identifiable »), pas de la lisibilité du texte : règle R6."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "GUI-04",
+      "question": "Is the use of colors harmonious?",
+      "vers": "VIS-02",
+      "raison": "Harmonie des couleurs = esthétique : règle R6."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "GUI-04",
+      "question": "Do colors and shapes serve as visual cues for different page elements (e.g., sections, menus, text, headings)?",
+      "vers": "GUI-02",
+      "raison": "Distinction par le format : règle R6."
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "GUI-04",
+      "avant": "Leagibility/Readability",
+      "apres": "Legibility / Readability"
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-01",
+      "question": "Is memorization minimized?",
+      "vers": "WKL-02",
+      "raison": "Relève de la reconnaissance plutôt que du rappel."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-01",
+      "question": "Are the mandatory steps for the user brief?",
+      "vers": "WKL-03",
+      "raison": "Nombre d'étapes = actions minimales : règle R3."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-01",
+      "question": "Is the number of steps in a procedure minimized?",
+      "vers": "WKL-03",
+      "raison": "Nombre d'étapes = actions minimales : règle R3."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-01",
+      "question": "Are shortcuts provided?",
+      "vers": "WKL-03",
+      "raison": "Raccourcis = réduction du nombre d'actions : règle R3."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-01",
+      "question": "Does the system anticipate user needs by highlighting the most frequent or relevant choices?",
+      "vers": "WKL-03",
+      "raison": "Réduit le nombre d'actions : règle R3."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-01",
+      "question": "On long pages, is there an anchor to return to the top of the page?",
+      "vers": "WKL-03",
+      "raison": "Réduit le nombre d'actions : règle R3."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-01",
+      "question": "Is the page width adapted to different devices?",
+      "vers": "CPT-01",
+      "raison": "Adaptation aux supports = compatibilité (déjà couverte par CPT-01)."
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-01",
+      "question": "Are labels, titles and texts short while remaining explicit?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-01",
+      "question": "Are units of measure part of the field label rather than entered by the user?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-01",
+      "question": "Are codes and abbreviations short and consistent?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-01",
+      "question": "Do fields offer relevant default values when the value can be anticipated?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-01",
+      "question": "Is the size of input fields consistent with the expected length of the data?"
+    },
+    {
+      "type": "note",
+      "critere": "WKL-01",
+      "texte": "La checklist d'origine était identique à celle de Minimal Actions. Concision porte sur UN élément (un libellé, un champ) : règle R3."
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-02",
+      "question": "Are options, actions and commands visible rather than hidden or to be remembered?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-02",
+      "question": "Is information entered in a previous step recalled when needed (e.g., summary before validation)?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-02",
+      "question": "Do form fields keep a visible label once filled in (no placeholder-only labels)?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-02",
+      "question": "Are history, recent items or suggestions (e.g., autocomplete) offered?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-02",
+      "question": "Is the user's location always visible (breadcrumb, active menu item, step indicator)?"
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-03",
+      "question": "Is memorization minimized?",
+      "vers": "WKL-02",
+      "raison": "Relève de la reconnaissance plutôt que du rappel."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-03",
+      "question": "Is the amount of information to enter reduced to a minimum?",
+      "vers": "WKL-01",
+      "raison": "Quantité d'information d'un champ = concision : règle R3."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "WKL-03",
+      "question": "Is the page width adapted to different devices?",
+      "vers": "CPT-01",
+      "raison": "Adaptation aux supports = compatibilité."
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-03",
+      "question": "Can key tasks be completed with a minimum number of clicks or screens?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-03",
+      "question": "Does the system avoid asking for data it already knows or can deduce (e.g., city from postcode)?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-03",
+      "question": "Are bulk actions available for repetitive operations on several items?"
+    },
+    {
+      "type": "note",
+      "critere": "WKL-03",
+      "texte": "Checklist réécrite : elle était identique à celle de Concision. Actions minimales porte sur le NOMBRE d'étapes, de clics ou de saisies : règle R3."
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-04",
+      "question": "Is the main task of each screen immediately identifiable?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-04",
+      "question": "Is there a clear visual hierarchy with one primary call-to-action per screen?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-04",
+      "question": "Are elements unrelated to the task (ads, pop-ups, autoplaying media, promotions) absent from task flows or easy to dismiss?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-04",
+      "question": "Are notifications and alerts proportionate to their importance and non-intrusive?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "WKL-04",
+      "question": "Can the user complete a flow without being interrupted (e.g., surveys, cross-selling)?"
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "CTL-01",
+      "question": "Do actions with significant and/or irreversible consequences require explicit confirmation from the user?",
+      "vers": "ERR-01",
+      "raison": "Doublon avec ERR-01 (« confirmation before triggering an irreversible action ») : la confirmation sert à prévenir une erreur, règle R2."
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "CTL-01",
+      "avant": "Actions Explicit",
+      "apres": "Explicit user actions"
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "ADA-02",
+      "avant": "Universal Usability & User Experience (Expertise)",
+      "apres": "Universal usability & user expertise"
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "CON-01",
+      "avant": "Consistency & Standard",
+      "apres": "Consistency & standards"
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "ERR-01",
+      "question": "Does the system provide a help section (e.g., assistance, chat, tooltips)?",
+      "vers": "GUI-05",
+      "raison": "L'aide consultable relève d'Aide et documentation : règle R8."
+    },
+    {
+      "type": "question_deplacee",
+      "critere": "ERR-03",
+      "question": "Do error messages provide guidance on how to correct the error?",
+      "vers": "ERR-02",
+      "raison": "Doublon avec ERR-02 : le contenu du message relève de la qualité des messages, règle R2."
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "CPT-01",
+      "avant": "Compatibility & Correspondance between the system and the real world",
+      "apres": "Compatibility & match with the real world"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-02",
+      "question": "Have the contexts of use been identified (place, device, mobility, environment, time constraints)?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-02",
+      "question": "Is the interface usable in real conditions of use (e.g., outdoors with glare, one-handed on mobile, noisy environment)?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-02",
+      "question": "Are formats adapted to the cultural and linguistic context (dates, currencies, addresses, reading direction)?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-02",
+      "question": "Does the interface support interrupted use (resuming later, offline mode if relevant)?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-02",
+      "question": "Is the interface suited to shared or public contexts (privacy of displayed data)?"
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "CPT-02",
+      "avant": "Design the Product or Service to Fit the Intended Contexts",
+      "apres": "Fit the intended contexts"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-03",
+      "question": "Is the purpose of the product or service understandable within a few seconds on the entry page?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-03",
+      "question": "Do affordances (buttons, visuals, wording) make the possible uses explicit?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-03",
+      "question": "Can users achieve their main goals end to end?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-03",
+      "question": "Do the features match the needs identified for the target users?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "CPT-03",
+      "question": "Do additional features exceed expectations without cluttering the core experience?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-01",
+      "question": "Does the visual hierarchy (size, weight, color, position) reflect the importance of information?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-01",
+      "question": "Is a grid and alignment system applied consistently?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-01",
+      "question": "Is white space used to structure content?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-01",
+      "question": "Is color never the only means of conveying information?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-01",
+      "question": "Are interactive elements visually distinguishable from static content?"
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "VIS-01",
+      "avant": "Opt for a perfect visual design 1",
+      "apres": "Visual design for usability"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-02",
+      "question": "Is the overall look pleasant and professional for the target audience?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-02",
+      "question": "Is the visual style consistent with the brand and the values it conveys?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-02",
+      "question": "Are images, illustrations and icons of good quality and in a consistent style?"
+    },
+    {
+      "type": "question_proposee",
+      "critere": "VIS-02",
+      "question": "Do animations and micro-interactions bring pleasure without hindering the task?"
+    },
+    {
+      "type": "nom_modifie",
+      "critere": "VIS-02",
+      "avant": "Opt for a perfect visual design 2",
+      "apres": "Aesthetics"
+    },
+    {
+      "type": "definition_modifiee",
+      "critere": "VIS",
+      "avant": "",
+      "apres": "Visual design serves two purposes: improving usability by making the interface more understandable, consistent and guiding, and making the interface aesthetically pleasing. Visual choices (e.g., colours) also affect the user experience through the values they convey (Arhippainen)."
+    },
+    {
+      "type": "heuristique_modifiee",
+      "critere": "Kaniasty's CARMEL Guidelines / Recovery_Confirmation dialogs",
+      "avant": "The design meets minimum font size legibility guidelines.",
+      "apres": "Confirmation dialogs prevent unintended destructive or irreversible actions.",
+      "raison": "Le texte d'origine était une copie de « Accessibility_Font size »."
+    },
+    {
+      "type": "heuristique_modifiee",
+      "critere": "Colombo & Pasch's",
+      "avant": "Challenges/Skills Balance_The system should have a steep learning curve to help novice users.",
+      "apres": "Challenges/Skills Balance_The system should have a gentle learning curve to help novice users.",
+      "raison": "« Steep » est ambigu (souvent compris comme « difficile ») : l'intention est un apprentissage rapide et progressif."
     }
   ]
 }
