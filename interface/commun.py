@@ -4,7 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from audit_ergo import Referentiel
-from audit_ergo.suggestion import ErreurSuggestion, adresse_api, cle_disponible, client_ou_none
+from audit_ergo.suggestion import ErreurSuggestion, adresse_api, cle_disponible, client_ou_none, format_api
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "template" / "Audit_ergonomique_template.xlsx"
 CLE_SESSION = "cle_api_saisie"
@@ -33,8 +33,10 @@ def barre_laterale(ref):
         st.subheader("IA")
         if cle_disponible():
             st.success("Clé d'API configurée.")
-            if adresse_api():
-                st.caption(f"API : {adresse_api()}")
+            try:
+                st.caption(f"API : {adresse_api() or 'Anthropic'} · format {format_api()}")
+            except ErreurSuggestion as e:
+                st.error(str(e))
         else:
             st.text_input("Clé d'API Anthropic", type="password", key=CLE_SESSION,
                           help="Utilisée seulement pendant cette session, jamais enregistrée. Pour ne plus la "

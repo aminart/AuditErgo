@@ -15,8 +15,13 @@ Le fichier `.env` (ignoré par Git) contient :
 | Variable | Rôle |
 |---|---|
 | `API_KEY` | Clé d'API. Sans elle, tout fonctionne sauf les suggestions de critères. |
-| `API_BASE` | Adresse de l'API, si les appels passent par une passerelle d'entreprise compatible avec l'API Anthropic (endpoint `/v1/messages`). Vide = API Anthropic. |
+| `API_BASE` | Adresse de la passerelle, par exemple `https://passerelle.exemple.fr/v1` (la forme `…/v1/chat/completions` est aussi acceptée). Vide = API Anthropic directe. |
 | `CA_BUNDLE` | Chemin du fichier de certificats (PEM) de l'organisation, si la passerelle ou le proxy utilise une autorité de certification interne. |
+| `AUDIT_ERGO_MODELE` | Nom du modèle tel que la passerelle le connaît. |
+
+**Deux formats d'API sont pris en charge** (variable `API_FORMAT`) :
+- `openai` : passerelle au format OpenAI (`/v1/chat/completions`). C'est le format par défaut quand `API_BASE` est renseigné. Si la passerelle n'accepte pas `response_format`, l'application réessaie automatiquement sans, et valide elle-même la réponse.
+- `anthropic` : API Anthropic (`/v1/messages`), directe ou via une passerelle compatible. Par défaut quand `API_BASE` est vide. Ce format permet en plus la mise en cache du référentiel, le réglage de l'effort de réflexion et la relance automatique en cas de refus.
 
 La clé peut aussi être saisie dans la barre latérale de l'interface (elle n'est alors gardée que le temps de la session). Les noms `ANTHROPIC_API_KEY` et `ANTHROPIC_BASE_URL` sont également acceptés.
 
@@ -31,7 +36,7 @@ python3 -m audit_ergo --suggerer "Après un clic sur Payer, rien ne se passe pen
 python3 -m audit_ergo --suggerer "..." --critere GUI-01    # faire vérifier un choix
 ```
 
-L'IA ne peut répondre qu'avec des codes du référentiel (sortie structurée contrainte). Le référentiel complet (~9 000 tokens) est envoyé à chaque appel et **mis en cache** : il n'est facturé plein tarif qu'au premier appel de chaque série. Modèle par défaut : `claude-opus-5-5`, modifiable dans `.env`.
+Seuls les codes du référentiel sont acceptés : toute réponse citant un code inconnu est rejetée. Le référentiel complet (~9 000 tokens) est envoyé à chaque appel. Au format `anthropic`, il est **mis en cache** et n'est facturé plein tarif qu'au premier appel de chaque série ; au format `openai`, cela dépend de la passerelle.
 
 ### 🔍 Relire un audit
 
@@ -58,7 +63,7 @@ Les contrôles de forme (`audit_ergo/controles.py`) sont classés en trois nivea
 python3 -m pytest -q
 ```
 
-Les tests de l'IA utilisent un faux client : ils ne nécessitent pas de clé et ne consomment rien.
+Les tests de l'IA utilisent de faux clients et une fausse passerelle locale : ils ne nécessitent pas de clé et ne consomment rien.
 
 ## Contenu
 
@@ -66,7 +71,7 @@ Les tests de l'IA utilisent un faux client : ils ne nécessitent pas de clé et 
 |---|---|
 | `audit_ergo/` | Moteur de relecture : lecture du fichier, contrôles, synthèse, export annoté |
 | `app.py`, `interface/` | Interface web (Streamlit) : pages « Suggérer un critère » et « Relire un audit » |
-| `audit_ergo/suggestion.py` | Suggestion de critères par l'IA (prompt, schéma de réponse, appel API) |
+| `audit_ergo/suggestion.py` | Suggestion de critères par l'IA (prompt, schéma de réponse, appel API aux formats OpenAI et Anthropic) |
 | `tests/` | Tests automatiques |
 | `CONCEPTION.md` | Document de conception : fonctionnalités, architecture, règles de départage, score, feuille de route |
 | `template/Audit_ergonomique_template.xlsx` | **Template à remplir par les designers** (listes déroulantes, contrôles automatiques, aide intégrée) |

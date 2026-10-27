@@ -1,10 +1,12 @@
 """Suggestion de critères par l'IA (Claude) à partir d'un constat.
 
 Configuration lue dans l'environnement ou dans un fichier .env à la racine du dépôt (voir .env.exemple) :
-- API_KEY   : clé d'API (obligatoire pour utiliser l'IA) ;
-- API_BASE  : adresse de l'API, si les appels passent par une passerelle (défaut : API Anthropic) ;
-- CA_BUNDLE : chemin d'un fichier de certificats (PEM) si la passerelle ou le proxy utilise une autorité
-              de certification interne.
+- API_KEY    : clé d'API (obligatoire pour utiliser l'IA) ;
+- API_BASE   : adresse de la passerelle (ex. https://passerelle.exemple.fr/v1) ; vide = API Anthropic ;
+- CA_BUNDLE  : chemin d'un fichier de certificats (PEM) si la passerelle ou le proxy utilise une autorité
+               de certification interne ;
+- API_FORMAT : « openai » (endpoint /v1/chat/completions) ou « anthropic » (endpoint /v1/messages).
+               Par défaut : openai si API_BASE est renseigné, anthropic sinon.
 Sans clé, `client_ou_none()` renvoie None et l'interface l'indique au lieu d'appeler l'API.
 """
 import json
@@ -39,8 +41,16 @@ def charger_env(chemin=FICHIER_ENV):
 charger_env()  # avant de lire la configuration ci-dessous, pour qu'elle puisse venir du .env
 MODELE = os.environ.get("AUDIT_ERGO_MODELE", "claude-opus-5-5")
 EFFORT = os.environ.get("AUDIT_ERGO_EFFORT", "medium")
-# Relance automatique sur un autre modèle si un filtre de sécurité refuse la requête (désactivable)
+MAX_TOKENS = int(os.environ.get("AUDIT_ERGO_MAX_TOKENS", "16000"))
+# Format anthropic uniquement : relance sur un autre modèle si un filtre de sécurité refuse la requête
 FALLBACK = os.environ.get("AUDIT_ERGO_FALLBACK", "1") != "0"
+FORMATS = ("openai", "anthropic")
+
+
+@dataclass
+class ClientIA:
+    format: str  # "openai" ou "anthropic"
+    sdk: object  # openai.OpenAI ou anthropic.Anthropic
 
 
 def _env(*noms):
@@ -58,30 +68,66 @@ def adresse_api():
     return _env("API_BASE", "ANTHROPIC_BASE_URL")
 
 
-def client_ou_none(api_key=None):
-    """Client Anthropic prêt à l'emploi, ou None si aucune clé n'est configurée.
+def format_api():
+    charger_env()
+    fmt = (_env("API_FORMAT") or ("openai" if adresse_api() else "anthropic")).lower()
+    if fmt not in FORMATS:
+        raise ErreurSuggestion(f"API_FORMAT : « {fmt} » inconnu (valeurs possibles : openai, anthropic).")
+    return fmt
 
-    Lève ErreurSuggestion si CA_BUNDLE désigne un fichier absent ou illisible.
+
+def _contexte_ssl():
+    """Contexte SSL construit à partir de CA_BUNDLE, ou None si la variable est vide."""
+    ca = _env("CA_BUNDLE")
+    if not ca:
+        return None
+    chemin = Path(ca).expanduser()
+    if not chemin.is_file():
+        raise ErreurSuggestion(f"CA_BUNDLE : fichier introuvable ({chemin}).")
+    try:
+        return ssl.create_default_context(cafile=str(chemin))
+    except (ssl.SSLError, OSError) as e:
+        raise ErreurSuggestion(f"CA_BUNDLE : fichier de certificats illisible ({chemin}) : {e}") from e
+
+
+def _base_openai(adresse):
+    """Le SDK OpenAI ajoute lui-même /chat/completions : on l'enlève si l'adresse le contient déjà."""
+    adresse = adresse.rstrip("/")
+    for suffixe in ("/chat/completions", "/completions"):
+        if adresse.endswith(suffixe):
+            return adresse[: -len(suffixe)]
+    return adresse
+
+
+def client_ou_none(api_key=None):
+    """ClientIA prêt à l'emploi, ou None si aucune clé n'est configurée.
+
+    Lève ErreurSuggestion si la configuration est invalide (CA_BUNDLE, API_FORMAT, API_BASE manquant).
     """
     charger_env()
     api_key = api_key or _env("API_KEY", "ANTHROPIC_API_KEY")
     if not api_key:
         return None
+    fmt, base, contexte_ssl = format_api(), adresse_api(), _contexte_ssl()
+
+    if fmt == "openai":
+        if not base:
+            raise ErreurSuggestion("API_BASE est obligatoire avec le format OpenAI (adresse de la passerelle).")
+        import openai
+
+        options = {"api_key": api_key, "base_url": _base_openai(base), "max_retries": 3}
+        if contexte_ssl:
+            options["http_client"] = openai.DefaultHttpxClient(verify=contexte_ssl)
+        return ClientIA("openai", openai.OpenAI(**options))
+
     import anthropic
 
     options = {"api_key": api_key, "max_retries": 3}
-    if base := adresse_api():
+    if base:
         options["base_url"] = base
-    if ca := _env("CA_BUNDLE"):
-        chemin = Path(ca).expanduser()
-        if not chemin.is_file():
-            raise ErreurSuggestion(f"CA_BUNDLE : fichier introuvable ({chemin}).")
-        try:
-            contexte_ssl = ssl.create_default_context(cafile=str(chemin))
-        except (ssl.SSLError, OSError) as e:
-            raise ErreurSuggestion(f"CA_BUNDLE : fichier de certificats illisible ({chemin}) : {e}") from e
+    if contexte_ssl:
         options["http_client"] = anthropic.DefaultHttpxClient(verify=contexte_ssl)
-    return anthropic.Anthropic(**options)
+    return ClientIA("anthropic", anthropic.Anthropic(**options))
 
 
 # --- Prompt -----------------------------------------------------------------------------------------
@@ -175,8 +221,7 @@ def _schema(ref):
     }
 
 
-def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte=None):
-    """Paramètres de l'appel API. Séparé de l'appel pour pouvoir être testé sans clé."""
+def _message(constat, ecran=None, critere_designer=None, contexte=None):
     if not constat or not str(constat).strip():
         raise ErreurSuggestion("Le constat est vide.")
     contexte = {k: v for k, v in (contexte or {}).items() if v}
@@ -189,20 +234,47 @@ def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte
         parties.append(f"Critère choisi par le designer : {critere_designer}")
     else:
         parties.append("Le designer n'a pas indiqué de critère.")
+    return "\n".join(parties)
+
+
+def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte=None):
+    """Paramètres de l'appel au format Anthropic (/v1/messages). Testable sans clé."""
     requete = {
         "model": MODELE,
-        "max_tokens": 16000,  # inclut la réflexion du modèle : une limite basse tronquerait la réponse
+        "max_tokens": MAX_TOKENS,  # inclut la réflexion du modèle : une limite basse tronquerait la réponse
         "system": [
             {"type": "text", "text": CONSIGNES},
             # Bloc stable et volumineux : mis en cache pour ne le payer qu'une fois par série d'appels
             {"type": "text", "text": _texte_referentiel(ref), "cache_control": {"type": "ephemeral"}},
         ],
-        "messages": [{"role": "user", "content": "\n".join(parties)}],
+        "messages": [{"role": "user", "content": _message(constat, ecran, critere_designer, contexte)}],
         "output_config": {"effort": EFFORT, "format": {"type": "json_schema", "schema": _schema(ref)}},
     }
     if FALLBACK:
         requete.update(betas=["server-side-fallback-2026-07-01"], fallbacks="default")
     return requete
+
+
+def construire_requete_openai(ref, constat, ecran=None, critere_designer=None, contexte=None):
+    """Paramètres de l'appel au format OpenAI (/v1/chat/completions). Testable sans clé.
+
+    Le schéma est à la fois demandé via response_format et décrit dans les consignes, car toutes les
+    passerelles ne transmettent pas response_format.
+    """
+    schema = _schema(ref)
+    consigne_json = ("Réponds uniquement avec un objet JSON valide, sans texte autour ni bloc de code, "
+                     "conforme à ce schéma JSON :\n" + json.dumps(schema, ensure_ascii=False))
+    return {
+        "model": MODELE,
+        "max_tokens": MAX_TOKENS,
+        "messages": [
+            # Contenu stable en tête : les passerelles qui gèrent un cache de prompt peuvent le réutiliser
+            {"role": "system", "content": f"{CONSIGNES}\n\n{_texte_referentiel(ref)}\n\n{consigne_json}"},
+            {"role": "user", "content": _message(constat, ecran, critere_designer, contexte)},
+        ],
+        "response_format": {"type": "json_schema",
+                            "json_schema": {"name": "suggestion_critere", "strict": True, "schema": schema}},
+    }
 
 
 # --- Résultat ---------------------------------------------------------------------------------------
@@ -235,74 +307,141 @@ class Suggestion:
 
 
 def interpreter(ref, data, critere_designer=None, usage=None):
-    """Valide la réponse JSON du modèle et la convertit en Suggestion."""
+    """Valide la réponse JSON du modèle et la convertit en Suggestion.
+
+    Le format OpenAI ne garantit pas toujours le respect du schéma : tout est donc revérifié ici.
+    """
     try:
         p = data["critere_principal"]
-        codes = [p["code"]] + [x["code"] for x in data["criteres_secondaires"] + data["alternatives"]]
-    except (KeyError, TypeError) as e:
+        secondaires = [{"code": x["code"], "justification": str(x["justification"])}
+                       for x in data.get("criteres_secondaires") or []]
+        alternatives = [{"code": x["code"], "pourquoi_pas": str(x["pourquoi_pas"])}
+                        for x in data.get("alternatives") or []]
+        verdict = data.get("verdict_designer") or {}
+        suggestion = Suggestion(
+            code=p["code"],
+            confiance=p.get("confiance") if p.get("confiance") in CONFIANCES else "faible",
+            justification=str(p["justification"]),
+            regle=p.get("regle") if p.get("regle") in ref.regles else "aucune",
+            question_checklist=str(p.get("question_checklist") or ""),
+            question_a_se_poser=str(data.get("question_a_se_poser") or ""),
+            precisions_manquantes=[str(x) for x in data.get("precisions_manquantes") or []],
+            critere_designer=critere_designer, usage=usage or {},
+        )
+    except (KeyError, TypeError, AttributeError) as e:
         raise ErreurSuggestion(f"Réponse de l'IA incomplète ({e}).") from e
+    codes = [suggestion.code] + [x["code"] for x in secondaires + alternatives]
     inconnus = [c for c in codes if c not in ref.criteres]
     if inconnus:
-        raise ErreurSuggestion(f"L'IA a proposé des codes absents du référentiel : {', '.join(inconnus)}.")
-    secondaires = [s for s in data["criteres_secondaires"] if s["code"] != p["code"]]
-    alternatives = [a for a in data["alternatives"] if a["code"] != p["code"]]
-    verdict = data["verdict_designer"]["statut"] if critere_designer else "non_fourni"
-    return Suggestion(
-        code=p["code"], confiance=p["confiance"], justification=p["justification"], regle=p["regle"],
-        question_checklist=p["question_checklist"], secondaires=secondaires, alternatives=alternatives,
-        question_a_se_poser=data["question_a_se_poser"], precisions_manquantes=data["precisions_manquantes"],
-        verdict=verdict, commentaire_verdict=data["verdict_designer"]["commentaire"] if critere_designer else "",
-        critere_designer=critere_designer, usage=usage or {},
-    )
-
-
-def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=None):
-    """Appelle Claude et renvoie une Suggestion. `critere_designer` est un code du référentiel (ou None)."""
-    import anthropic
-
-    if client is None:
-        raise ErreurSuggestion("Aucune clé d'API configurée (API_KEY dans le fichier .env).")
-    libelle = None
+        raise ErreurSuggestion(f"L'IA a proposé des codes absents du référentiel : {', '.join(map(str, inconnus))}.")
+    suggestion.secondaires = [x for x in secondaires if x["code"] != suggestion.code]
+    suggestion.alternatives = [x for x in alternatives if x["code"] != suggestion.code]
     if critere_designer:
-        c = ref.criteres[critere_designer]
-        libelle = f"{c['code']} – {c['label_fr']} ({c['name']})"
-    requete = construire_requete(ref, constat, ecran, libelle, contexte)
-    try:
-        reponse = client.beta.messages.create(**requete)
-    except anthropic.AuthenticationError as e:
-        raise ErreurSuggestion("Clé d'API refusée : vérifiez API_KEY.") from e
-    except anthropic.PermissionDeniedError as e:
-        raise ErreurSuggestion("Cette clé d'API n'a pas accès au modèle demandé.") from e
-    except anthropic.NotFoundError as e:
-        raise ErreurSuggestion(f"Introuvable : vérifiez le modèle ({MODELE}, variable AUDIT_ERGO_MODELE)"
-                               + (f" et l'adresse API_BASE ({adresse_api()})." if adresse_api() else ".")) from e
-    except anthropic.RateLimitError as e:
-        raise ErreurSuggestion("Limite de requêtes atteinte : réessayez dans une minute.") from e
-    except anthropic.BadRequestError as e:
-        raise ErreurSuggestion(f"Requête refusée par l'API : {e.message}") from e
-    except anthropic.APIStatusError as e:
-        raise ErreurSuggestion(f"Erreur du service ({e.status_code}) : réessayez plus tard.") from e
-    except anthropic.APIConnectionError as e:
+        if verdict.get("statut") not in ("confirme", "a_revoir", "incorrect"):
+            raise ErreurSuggestion("Réponse de l'IA incomplète (verdict sur le choix du designer manquant).")
+        suggestion.verdict, suggestion.commentaire_verdict = verdict["statut"], str(verdict.get("commentaire") or "")
+    return suggestion
+
+
+def _erreur_api(sdk, e):
+    """Traduit une exception du SDK (anthropic ou openai, mêmes noms de classes) en message lisible."""
+    base = f" et l'adresse API_BASE ({adresse_api()})." if adresse_api() else "."
+    if isinstance(e, sdk.AuthenticationError):
+        return ErreurSuggestion("Clé d'API refusée : vérifiez API_KEY.")
+    if isinstance(e, sdk.PermissionDeniedError):
+        return ErreurSuggestion("Cette clé d'API n'a pas accès au modèle demandé.")
+    if isinstance(e, sdk.NotFoundError):
+        return ErreurSuggestion(f"Introuvable : vérifiez le modèle ({MODELE}, variable AUDIT_ERGO_MODELE){base}")
+    if isinstance(e, sdk.RateLimitError):
+        return ErreurSuggestion("Limite de requêtes atteinte : réessayez dans une minute.")
+    if isinstance(e, sdk.BadRequestError):
+        return ErreurSuggestion(f"Requête refusée par l'API : {e.message}")
+    if isinstance(e, sdk.APIStatusError):
+        return ErreurSuggestion(f"Erreur du service ({e.status_code}) : réessayez plus tard.")
+    if isinstance(e, sdk.APIConnectionError):
         cause = repr(e.__cause__ or e)
         if "CERTIFICATE_VERIFY_FAILED" in cause or "SSL" in cause:
-            raise ErreurSuggestion("Certificat refusé lors de la connexion à l'API : renseignez CA_BUNDLE avec "
-                                   "le fichier de certificats de votre organisation.") from e
-        raise ErreurSuggestion("Connexion à l'API impossible : vérifiez votre accès réseau"
-                               + (f" et l'adresse API_BASE ({adresse_api()})." if adresse_api() else ".")) from e
+            return ErreurSuggestion("Certificat refusé lors de la connexion à l'API : renseignez CA_BUNDLE avec "
+                                    "le fichier de certificats de votre organisation.")
+        return ErreurSuggestion(f"Connexion à l'API impossible : vérifiez votre accès réseau{base}")
+    raise e
 
+
+def _extraire_json(texte):
+    """JSON de la réponse, même entouré de texte ou d'un bloc ```json (passerelles sans response_format)."""
+    if not texte:
+        raise ErreurSuggestion("Réponse de l'IA vide : réessayez.")
+    debut, fin = texte.find("{"), texte.rfind("}")
+    try:
+        return json.loads(texte[debut:fin + 1] if debut != -1 and fin > debut else texte)
+    except json.JSONDecodeError as e:
+        raise ErreurSuggestion("Réponse de l'IA illisible : réessayez.") from e
+
+
+def _appel_anthropic(sdk, requete):
+    import anthropic
+
+    try:
+        reponse = sdk.beta.messages.create(**requete)
+    except anthropic.APIError as e:
+        raise _erreur_api(anthropic, e) from e
     if reponse.stop_reason == "refusal":
         raise ErreurSuggestion("L'IA a refusé de traiter ce constat. Reformulez-le ou classez-le manuellement.")
     if reponse.stop_reason == "max_tokens":
         raise ErreurSuggestion("Réponse de l'IA tronquée : réessayez.")
     texte = next((b.text for b in reponse.content if b.type == "text"), None)
-    try:
-        data = json.loads(texte)
-    except (TypeError, json.JSONDecodeError) as e:
-        raise ErreurSuggestion("Réponse de l'IA illisible : réessayez.") from e
     u = reponse.usage
     usage = {"entree": u.input_tokens, "sortie": u.output_tokens,
              "cache_lu": getattr(u, "cache_read_input_tokens", 0) or 0,
              "cache_ecrit": getattr(u, "cache_creation_input_tokens", 0) or 0}
+    return _extraire_json(texte), usage
+
+
+def _appel_openai(sdk, requete):
+    import openai
+
+    try:
+        try:
+            reponse = sdk.chat.completions.create(**requete)
+        except openai.BadRequestError as e:
+            # Passerelle ou modèle qui n'accepte pas response_format : on réessaie sans (le schéma reste
+            # décrit dans les consignes, et la réponse est validée ensuite)
+            if "response_format" not in str(e) and "json_schema" not in str(e):
+                raise
+            sans = {k: v for k, v in requete.items() if k != "response_format"}
+            reponse = sdk.chat.completions.create(**sans)
+    except openai.APIError as e:
+        raise _erreur_api(openai, e) from e
+    if not reponse.choices:
+        raise ErreurSuggestion("Réponse de l'IA vide : réessayez.")
+    choix = reponse.choices[0]
+    if choix.finish_reason == "content_filter" or getattr(choix.message, "refusal", None):
+        raise ErreurSuggestion("L'IA a refusé de traiter ce constat. Reformulez-le ou classez-le manuellement.")
+    if choix.finish_reason == "length":
+        raise ErreurSuggestion("Réponse de l'IA tronquée : augmentez AUDIT_ERGO_MAX_TOKENS ou réessayez.")
+    u = reponse.usage
+    details = getattr(u, "prompt_tokens_details", None) if u else None
+    usage = {"entree": getattr(u, "prompt_tokens", 0) or 0, "sortie": getattr(u, "completion_tokens", 0) or 0,
+             "cache_lu": getattr(details, "cached_tokens", 0) or 0, "cache_ecrit": 0}
+    return _extraire_json(choix.message.content), usage
+
+
+def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=None):
+    """Appelle l'IA et renvoie une Suggestion. `critere_designer` est un code du référentiel (ou None).
+
+    `client` est un ClientIA ; un client Anthropic nu est aussi accepté.
+    """
+    if client is None:
+        raise ErreurSuggestion("Aucune clé d'API configurée (API_KEY dans le fichier .env).")
+    fmt, sdk = (client.format, client.sdk) if isinstance(client, ClientIA) else ("anthropic", client)
+    libelle = None
+    if critere_designer:
+        c = ref.criteres[critere_designer]
+        libelle = f"{c['code']} – {c['label_fr']} ({c['name']})"
+    if fmt == "openai":
+        data, usage = _appel_openai(sdk, construire_requete_openai(ref, constat, ecran, libelle, contexte))
+    else:
+        data, usage = _appel_anthropic(sdk, construire_requete(ref, constat, ecran, libelle, contexte))
     return interpreter(ref, data, critere_designer, usage)
 
 
@@ -320,7 +459,7 @@ def verifier_audit(client, ref, audit, progression=None, paralleles=4):
 
     if not a_traiter:
         return resultats
-    # Le premier appel écrit le référentiel en cache ; les suivants, en parallèle, le relisent
+    # Le premier appel écrit le référentiel en cache (si l'API le gère) ; les suivants, en parallèle, le relisent
     resultats[a_traiter[0].ligne] = une(a_traiter[0])
     if progression:
         progression(1, len(a_traiter))
