@@ -1,11 +1,15 @@
 """Suggestion de critères par l'IA (Claude) à partir d'un constat.
 
-La clé d'API est lue dans la variable d'environnement ANTHROPIC_API_KEY, ou dans un fichier .env
-à la racine du dépôt (voir .env.exemple). Sans clé, `client_ou_none()` renvoie None et l'interface
-l'indique au lieu d'appeler l'API.
+Configuration lue dans l'environnement ou dans un fichier .env à la racine du dépôt (voir .env.exemple) :
+- API_KEY   : clé d'API (obligatoire pour utiliser l'IA) ;
+- API_BASE  : adresse de l'API, si les appels passent par une passerelle (défaut : API Anthropic) ;
+- CA_BUNDLE : chemin d'un fichier de certificats (PEM) si la passerelle ou le proxy utilise une autorité
+              de certification interne.
+Sans clé, `client_ou_none()` renvoie None et l'interface l'indique au lieu d'appeler l'API.
 """
 import json
 import os
+import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -39,19 +43,45 @@ EFFORT = os.environ.get("AUDIT_ERGO_EFFORT", "medium")
 FALLBACK = os.environ.get("AUDIT_ERGO_FALLBACK", "1") != "0"
 
 
+def _env(*noms):
+    """Première variable renseignée parmi `noms` (les noms ANTHROPIC_* restent acceptés)."""
+    return next((os.environ[n].strip() for n in noms if os.environ.get(n, "").strip()), None)
+
+
 def cle_disponible():
     charger_env()
-    return bool(os.environ.get("ANTHROPIC_API_KEY"))
+    return bool(_env("API_KEY", "ANTHROPIC_API_KEY"))
+
+
+def adresse_api():
+    charger_env()
+    return _env("API_BASE", "ANTHROPIC_BASE_URL")
 
 
 def client_ou_none(api_key=None):
-    """Client Anthropic prêt à l'emploi, ou None si aucune clé n'est configurée."""
+    """Client Anthropic prêt à l'emploi, ou None si aucune clé n'est configurée.
+
+    Lève ErreurSuggestion si CA_BUNDLE désigne un fichier absent ou illisible.
+    """
     charger_env()
-    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+    api_key = api_key or _env("API_KEY", "ANTHROPIC_API_KEY")
     if not api_key:
         return None
     import anthropic
-    return anthropic.Anthropic(api_key=api_key, max_retries=3)
+
+    options = {"api_key": api_key, "max_retries": 3}
+    if base := adresse_api():
+        options["base_url"] = base
+    if ca := _env("CA_BUNDLE"):
+        chemin = Path(ca).expanduser()
+        if not chemin.is_file():
+            raise ErreurSuggestion(f"CA_BUNDLE : fichier introuvable ({chemin}).")
+        try:
+            contexte_ssl = ssl.create_default_context(cafile=str(chemin))
+        except (ssl.SSLError, OSError) as e:
+            raise ErreurSuggestion(f"CA_BUNDLE : fichier de certificats illisible ({chemin}) : {e}") from e
+        options["http_client"] = anthropic.DefaultHttpxClient(verify=contexte_ssl)
+    return anthropic.Anthropic(**options)
 
 
 # --- Prompt -----------------------------------------------------------------------------------------
@@ -231,7 +261,7 @@ def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=N
     import anthropic
 
     if client is None:
-        raise ErreurSuggestion("Aucune clé d'API configurée (variable ANTHROPIC_API_KEY ou fichier .env).")
+        raise ErreurSuggestion("Aucune clé d'API configurée (API_KEY dans le fichier .env).")
     libelle = None
     if critere_designer:
         c = ref.criteres[critere_designer]
@@ -240,11 +270,12 @@ def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=N
     try:
         reponse = client.beta.messages.create(**requete)
     except anthropic.AuthenticationError as e:
-        raise ErreurSuggestion("Clé d'API refusée : vérifiez ANTHROPIC_API_KEY.") from e
+        raise ErreurSuggestion("Clé d'API refusée : vérifiez API_KEY.") from e
     except anthropic.PermissionDeniedError as e:
         raise ErreurSuggestion("Cette clé d'API n'a pas accès au modèle demandé.") from e
     except anthropic.NotFoundError as e:
-        raise ErreurSuggestion(f"Modèle introuvable : {MODELE} (variable AUDIT_ERGO_MODELE).") from e
+        raise ErreurSuggestion(f"Introuvable : vérifiez le modèle ({MODELE}, variable AUDIT_ERGO_MODELE)"
+                               + (f" et l'adresse API_BASE ({adresse_api()})." if adresse_api() else ".")) from e
     except anthropic.RateLimitError as e:
         raise ErreurSuggestion("Limite de requêtes atteinte : réessayez dans une minute.") from e
     except anthropic.BadRequestError as e:
@@ -252,7 +283,12 @@ def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=N
     except anthropic.APIStatusError as e:
         raise ErreurSuggestion(f"Erreur du service ({e.status_code}) : réessayez plus tard.") from e
     except anthropic.APIConnectionError as e:
-        raise ErreurSuggestion("Connexion à l'API impossible : vérifiez votre accès Internet.") from e
+        cause = repr(e.__cause__ or e)
+        if "CERTIFICATE_VERIFY_FAILED" in cause or "SSL" in cause:
+            raise ErreurSuggestion("Certificat refusé lors de la connexion à l'API : renseignez CA_BUNDLE avec "
+                                   "le fichier de certificats de votre organisation.") from e
+        raise ErreurSuggestion("Connexion à l'API impossible : vérifiez votre accès réseau"
+                               + (f" et l'adresse API_BASE ({adresse_api()})." if adresse_api() else ".")) from e
 
     if reponse.stop_reason == "refusal":
         raise ErreurSuggestion("L'IA a refusé de traiter ce constat. Reformulez-le ou classez-le manuellement.")

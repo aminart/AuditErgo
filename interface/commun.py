@@ -4,7 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from audit_ergo import Referentiel
-from audit_ergo.suggestion import cle_disponible, client_ou_none
+from audit_ergo.suggestion import ErreurSuggestion, adresse_api, cle_disponible, client_ou_none
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "template" / "Audit_ergonomique_template.xlsx"
 CLE_SESSION = "cle_api_saisie"
@@ -17,7 +17,11 @@ def referentiel():
 
 def client():
     """Client Anthropic (clé du .env / de l'environnement, sinon clé saisie dans la barre latérale), ou None."""
-    return client_ou_none(st.session_state.get(CLE_SESSION) or None)
+    try:
+        return client_ou_none(st.session_state.get(CLE_SESSION) or None)
+    except ErreurSuggestion as e:  # CA_BUNDLE introuvable ou illisible
+        st.error(str(e))
+        return None
 
 
 def barre_laterale(ref):
@@ -29,10 +33,12 @@ def barre_laterale(ref):
         st.subheader("IA")
         if cle_disponible():
             st.success("Clé d'API configurée.")
+            if adresse_api():
+                st.caption(f"API : {adresse_api()}")
         else:
             st.text_input("Clé d'API Anthropic", type="password", key=CLE_SESSION,
                           help="Utilisée seulement pendant cette session, jamais enregistrée. Pour ne plus la "
-                               "saisir, placez-la dans le fichier .env (voir .env.exemple).")
+                               "saisir, renseignez API_KEY dans le fichier .env (voir .env.exemple).")
             if not st.session_state.get(CLE_SESSION):
                 st.info("Sans clé, les contrôles de forme fonctionnent ; les suggestions de critères sont "
                         "désactivées.")

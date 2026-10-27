@@ -1,5 +1,6 @@
 """Tests du moteur de suggestion, avec un faux client à la place de l'API (aucune clé nécessaire)."""
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import anthropic
@@ -8,7 +9,7 @@ import pytest
 from openpyxl import load_workbook
 
 from audit_ergo import relire
-from audit_ergo.suggestion import ErreurSuggestion, construire_requete, suggerer, verifier_audit
+from audit_ergo.suggestion import ErreurSuggestion, client_ou_none, construire_requete, suggerer, verifier_audit
 from audit_ergo.lecture import lire_audit
 from conftest import CONSTAT_VALIDE
 
@@ -134,3 +135,49 @@ def test_verifier_audit_et_export(audit_xlsx, ref, tmp_path):
 def test_verifier_audit_vide(audit_xlsx, ref):
     assert verifier_audit(FauxClient(reponse_ia()), ref, lire_audit(audit_xlsx([]))) == {}
 
+
+
+@pytest.fixture
+def env_vide(monkeypatch):
+    for nom in ("API_KEY", "API_BASE", "CA_BUNDLE", "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL"):
+        monkeypatch.delenv(nom, raising=False)
+    monkeypatch.setattr("audit_ergo.suggestion.FICHIER_ENV", Path("/inexistant/.env"))
+    monkeypatch.setattr("audit_ergo.suggestion.charger_env.__defaults__", (Path("/inexistant/.env"),))
+    return monkeypatch
+
+
+def test_configuration_sans_cle(env_vide):
+    assert client_ou_none() is None
+
+
+def test_configuration_cle_et_adresse(env_vide):
+    env_vide.setenv("API_KEY", "cle-test")
+    env_vide.setenv("API_BASE", "https://passerelle.exemple.fr/anthropic")
+    client = client_ou_none()
+    assert client.api_key == "cle-test"
+    assert str(client.base_url).startswith("https://passerelle.exemple.fr/anthropic")
+
+
+def test_configuration_noms_anthropic_acceptes(env_vide):
+    env_vide.setenv("ANTHROPIC_API_KEY", "ancienne")
+    assert client_ou_none().api_key == "ancienne"
+    env_vide.setenv("API_KEY", "nouvelle")  # API_KEY est prioritaire
+    assert client_ou_none().api_key == "nouvelle"
+
+
+def test_configuration_ca_bundle(env_vide, tmp_path):
+    import certifi
+
+    env_vide.setenv("API_KEY", "cle-test")
+    env_vide.setenv("CA_BUNDLE", certifi.where())
+    assert client_ou_none() is not None
+
+    env_vide.setenv("CA_BUNDLE", str(tmp_path / "absent.pem"))
+    with pytest.raises(ErreurSuggestion, match="introuvable"):
+        client_ou_none()
+
+    faux = tmp_path / "faux.pem"
+    faux.write_text("pas un certificat")
+    env_vide.setenv("CA_BUNDLE", str(faux))
+    with pytest.raises(ErreurSuggestion, match="illisible"):
+        client_ou_none()

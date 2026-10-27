@@ -51,10 +51,14 @@ def main(argv=None):
     ref = Referentiel.charger()
     client = None
     if args.ia or args.suggerer:
-        client = client_ou_none()
+        try:
+            client = client_ou_none()
+        except ErreurSuggestion as e:
+            print(f"Erreur : {e}", file=sys.stderr)
+            return 2
         if client is None:
-            print("Erreur : aucune clé d'API. Définissez ANTHROPIC_API_KEY ou créez un fichier .env "
-                  "(voir .env.exemple).", file=sys.stderr)
+            print("Erreur : aucune clé d'API. Renseignez API_KEY dans le fichier .env (voir .env.exemple).",
+                  file=sys.stderr)
             return 2
 
     if args.suggerer:

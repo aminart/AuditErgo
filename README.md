@@ -6,11 +6,19 @@ Application d'aide à la relecture des audits ergonomiques (heuristiques) réali
 
 ```bash
 pip install -r requirements.txt
-cp .env.exemple .env      # puis coller la clé d'API Anthropic dans .env (facultatif)
+cp .env.exemple .env      # puis compléter .env (voir ci-dessous)
 streamlit run app.py      # ouvre l'interface dans le navigateur
 ```
 
-Sans clé, tout fonctionne sauf les suggestions de critères. La clé peut aussi être saisie dans la barre latérale de l'interface (elle n'est alors gardée que le temps de la session). Le fichier `.env` est ignoré par Git.
+Le fichier `.env` (ignoré par Git) contient :
+
+| Variable | Rôle |
+|---|---|
+| `API_KEY` | Clé d'API. Sans elle, tout fonctionne sauf les suggestions de critères. |
+| `API_BASE` | Adresse de l'API, si les appels passent par une passerelle d'entreprise compatible avec l'API Anthropic (endpoint `/v1/messages`). Vide = API Anthropic. |
+| `CA_BUNDLE` | Chemin du fichier de certificats (PEM) de l'organisation, si la passerelle ou le proxy utilise une autorité de certification interne. |
+
+La clé peut aussi être saisie dans la barre latérale de l'interface (elle n'est alors gardée que le temps de la session). Les noms `ANTHROPIC_API_KEY` et `ANTHROPIC_BASE_URL` sont également acceptés.
 
 ## Fonctionnalités
 
