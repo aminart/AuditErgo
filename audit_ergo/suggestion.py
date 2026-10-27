@@ -34,7 +34,8 @@ def charger_env(chemin=FICHIER_ENV):
     """Charge les variables d'un fichier .env simple (CLE=valeur) sans écraser l'environnement existant."""
     if not chemin.exists():
         return
-    for ligne in chemin.read_text(encoding="utf-8").splitlines():
+    # utf-8-sig : le Bloc-notes de Windows peut ajouter un BOM en tête de fichier
+    for ligne in chemin.read_text(encoding="utf-8-sig").splitlines():
         ligne = ligne.strip()
         if ligne and not ligne.startswith("#") and "=" in ligne:
             cle, valeur = ligne.split("=", 1)

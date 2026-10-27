@@ -360,3 +360,13 @@ def test_bout_en_bout_passerelle_openai_locale(env_vide, ref):
     assert recus[0]["auth"] == "Bearer cle-passerelle"
     assert recus[1]["corps"]["messages"][0]["role"] == "system"
     assert "response_format" not in recus[1]["corps"]
+
+
+def test_env_enregistre_par_le_bloc_notes(env_vide, tmp_path):
+    """Un .env enregistré avec un BOM (Bloc-notes de Windows) et des fins de ligne CRLF est bien lu."""
+    from audit_ergo.suggestion import charger_env
+
+    fichier = tmp_path / ".env"
+    fichier.write_bytes("API_KEY=cle-bloc-notes\r\nAPI_BASE=\r\n".encode("utf-8-sig"))
+    charger_env(fichier)
+    assert client_ou_none().sdk.api_key == "cle-bloc-notes"

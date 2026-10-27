@@ -4,6 +4,19 @@ Application d'aide à la relecture des audits ergonomiques (heuristiques) réali
 
 ## Installation
 
+### Windows : double-cliquer sur `start.bat`
+
+Prérequis : [Python 3.10 ou plus récent](https://www.python.org/downloads/), installé en cochant « Add python.exe to PATH ».
+
+`start.bat` s'occupe du reste :
+1. au premier lancement, il crée le fichier `.env` et l'ouvre dans le Bloc-notes pour y saisir `API_KEY`, `API_BASE`, `CA_BUNDLE` et `AUDIT_ERGO_MODELE` ;
+2. il crée un environnement Python isolé (dossier `.venv`) et y installe les dépendances, en utilisant `CA_BUNDLE` si le proxy de l'entreprise l'exige ; les dépendances ne sont réinstallées que si `requirements.txt` change ;
+3. il lance l'application et ouvre le navigateur sur http://localhost:8501. Pour l'arrêter, fermer la fenêtre.
+
+En cas de problème d'installation, supprimer le dossier `.venv` et relancer `start.bat`.
+
+### Autres systèmes, ou installation manuelle
+
 ```bash
 pip install -r requirements.txt
 cp .env.exemple .env      # puis compléter .env (voir ci-dessous)
@@ -62,6 +75,7 @@ Les contrôles de forme (`audit_ergo/controles.py`) sont classés en trois nivea
 ## Tests
 
 ```bash
+pip install -r requirements-dev.txt
 python3 -m pytest -q
 ```
 
@@ -75,6 +89,7 @@ Les tests de l'IA utilisent de faux clients et une fausse passerelle locale : il
 | `app.py`, `interface/` | Interface web (Streamlit) : pages « Suggérer un critère » et « Relire un audit » |
 | `audit_ergo/cache.py` | Cache local des réponses de l'IA |
 | `audit_ergo/suggestion.py` | Suggestion de critères par l'IA (prompt, schéma de réponse, appel API aux formats OpenAI et Anthropic) |
+| `start.bat` | Installation et lancement en un double-clic sous Windows |
 | `tests/` | Tests automatiques |
 | `CONCEPTION.md` | Document de conception : fonctionnalités, architecture, règles de départage, score, feuille de route |
 | `template/Audit_ergonomique_template.xlsx` | **Template à remplir par les designers** (listes déroulantes, contrôles automatiques, aide intégrée) |
