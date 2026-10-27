@@ -88,6 +88,7 @@ class Audit:
     constats: list
     contexte: dict = field(default_factory=dict)
     colonnes_inconnues: list = field(default_factory=list)
+    completions: dict = field(default_factory=dict)  # {ligne: {champ: (valeur, origine, explication)}}
 
     @property
     def colonnes_manquantes(self):
@@ -99,12 +100,18 @@ class ErreurLecture(Exception):
 
 
 def _trouver_entete(ws, max_lignes=15):
+    """(score, ligne) de la ligne d'en-tête : celle qui contient le plus de colonnes reconnues.
+
+    Il en faut au moins trois, ou une colonne « Constat » (un simple tableau de constats suffit :
+    l'IA peut compléter le reste). Renvoie (0, None) si aucune ligne ne convient.
+    """
     meilleur = (0, None)
     for r in range(1, min(ws.max_row, max_lignes) + 1):
-        trouves = sum(1 for c in ws[r] if c.value and nom_colonne(c.value))
-        if trouves > meilleur[0]:
-            meilleur = (trouves, r)
-    return meilleur[1] if meilleur[0] >= 3 else None
+        champs = [nom_colonne(c.value) for c in ws[r] if c.value]
+        score = sum(1 for ch in champs if ch) + (2 if "constat" in champs else 0)
+        if score > meilleur[0]:
+            meilleur = (score, r)
+    return meilleur if meilleur[0] >= 3 else (0, None)
 
 
 def _lire_contexte(wb):
@@ -124,20 +131,20 @@ def _lire_contexte(wb):
 def lire_audit(chemin):
     # data_only : on lit les valeurs affichées (l'ID et le Contrôle sont des formules)
     wb = load_workbook(chemin, data_only=True)
-    candidats = (["Audit"] if "Audit" in wb.sheetnames else []) + [n for n in wb.sheetnames if n != "Audit"]
-    for nom in candidats:
-        ws = wb[nom]
-        entete = _trouver_entete(ws)
-        if entete:
-            break
-    else:
+    # Onglet « Audit » du template en priorité ; sinon l'onglet dont l'en-tête est le mieux reconnu.
+    # Les onglets ajoutés par une relecture précédente (« Relecture – … ») sont ignorés.
+    candidats = [n for n in wb.sheetnames if not normaliser(n).startswith("relecture")]
+    scores = {n: _trouver_entete(wb[n]) for n in candidats}
+    nom = "Audit" if scores.get("Audit", (0, None))[1] else max(candidats, key=lambda n: scores[n][0], default=None)
+    if nom is None or not scores[nom][1]:
         raise ErreurLecture("Aucun onglet ne contient de ligne d'en-tête reconnaissable (Constat, Critère, Gravité…).")
+    ws, entete = wb[nom], scores[nom][1]
 
     colonnes, inconnues = {}, []
     for cell in ws[entete]:
         if cell.value is None:
             continue
-        if normaliser(str(cell.value)).startswith("relecture"):
+        if normaliser(str(cell.value)).startswith(("relecture", "ia ")):
             continue  # colonnes ajoutées par une relecture précédente
         champ = nom_colonne(cell.value)
         if champ and champ not in colonnes:

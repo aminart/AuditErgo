@@ -278,7 +278,7 @@ Avant de déployer l'outil, il faut prouver qu'il améliore vraiment les audits 
 | **2. Qualité** | Niveaux 3 et 4, score, rapport PDF, golden set et mesures | 3 à 4 semaines |
 | **3. Industrialisation** | Front React, comptes utilisateurs, historique, tableau de bord équipe, analyse des captures | selon besoin |
 
-> **Statut :** phase 0 proposée (référentiel, règles, template : à valider). Phase 1 réalisée **sans la partie IA** : import tolérant, contrôles de niveau 1, synthèse, export annoté, interface Streamlit et tests. La vérification des critères par l'IA (niveau 2) est prête (page « Suggérer un critère » et option `--ia`) mais pas encore testée avec l'API réelle : à valider dès qu'une clé est branchée.
+> **Statut :** phase 0 proposée (référentiel, règles, template : à valider). Phase 1 réalisée **sans la partie IA** : import tolérant, contrôles de niveau 1, synthèse, export annoté, interface Streamlit et tests. Les niveaux 2 et 3 (critère, recommandation, gravité par l'IA) sont prêts, avec en plus la **complétion** d'un audit partiellement rempli : les cellules vides reçoivent les propositions de l'IA (en violet, à valider), les saisies du designer ne sont jamais écrasées. Pas encore testés avec l'API réelle : à valider dès qu'une clé est branchée.
 
 ---
 

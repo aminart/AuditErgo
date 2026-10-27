@@ -42,7 +42,7 @@ La clé peut aussi être saisie dans la barre latérale de l'interface (elle n'e
 
 ### 🎯 Suggérer un critère (IA)
 
-Le designer décrit un constat ; l'IA propose le critère principal du référentiel avec un niveau de confiance, la justification (règle de départage et question de checklist citées), les critères secondaires, les critères envisagés puis écartés, et ce qu'il faudrait préciser si le constat est trop vague. Si le designer indique le critère qu'il envisage, l'IA le confirme ou le remet en question. Le résultat se copie directement dans le template.
+Le designer décrit un constat (et, s'il le souhaite, sa recommandation et sa gravité) ; l'IA propose une recommandation et une gravité, évalue celles du designer, et propose le critère principal du référentiel avec un niveau de confiance, la justification (règle de départage et question de checklist citées), les critères secondaires, les critères envisagés puis écartés, et ce qu'il faudrait préciser si le constat est trop vague. Si le designer indique le critère qu'il envisage, l'IA le confirme ou le remet en question. Le résultat se copie directement dans le template.
 
 ```bash
 python3 -m audit_ergo --suggerer "Après un clic sur Payer, rien ne se passe pendant 5 s" --ecran Paiement
@@ -53,13 +53,22 @@ python3 -m audit_ergo --suggerer "..." --critere GUI-01    # faire vérifier un 
 
 Seuls les codes du référentiel sont acceptés : toute réponse citant un code inconnu est rejetée. Le référentiel complet (~9 000 tokens) est envoyé à chaque appel. Au format `anthropic`, il est **mis en cache** et n'est facturé plein tarif qu'au premier appel de chaque série ; au format `openai`, cela dépend de la passerelle.
 
-### 🔍 Relire un audit
+### 🔍 Relire, compléter et corriger un audit
+
+Le designer peut déposer un audit **partiellement rempli** : les constats suffisent. Avec l'IA (bouton « Compléter et corriger avec l'IA », ou `--ia`) :
+
+- **les cellules vides sont remplies** : type, catégorie, critère principal, critères secondaires, règle de départage, gravité et recommandation. Elles apparaissent **en violet**, avec l'explication en commentaire, et sont à valider par le designer ;
+- **ce que le designer a déjà saisi n'est jamais écrasé** : l'IA donne son avis à côté, dans les colonnes « IA : critère suggéré / verdict critère / recommandation / avis recommandation / gravité / justification ». Une recommandation vague reçoit une version améliorée qui garde son intention ; un écart de gravité de 2 niveaux ou plus est signalé ;
+- un simple tableau avec une colonne « Constat » suffit : les colonnes manquantes sont ajoutées.
 
 ```bash
-python3 -m audit_ergo mon_audit.xlsx                # contrôles de forme -> mon_audit_relu.xlsx
-python3 -m audit_ergo mon_audit.xlsx --ia           # + vérification du critère de chaque constat par l'IA
+python3 -m audit_ergo mon_audit.xlsx                       # contrôles de forme -> mon_audit_relu.xlsx
+python3 -m audit_ergo mon_audit.xlsx --ia                  # + complétion et correction par l'IA
+python3 -m audit_ergo mon_audit.xlsx --ia --sans-remplissage   # avis de l'IA seulement, rien n'est rempli
 python3 -m audit_ergo mon_audit.xlsx -o relu.xlsx --json
 ```
+
+`exemples/audit_a_completer.xlsx` (fictif) contient 8 constats, dont 6 sans critère ni recommandation, un critère discutable et une recommandation vague.
 
 L'outil lit le template, mais aussi un fichier libre : il cherche l'onglet et la ligne d'en-tête, reconnaît les colonnes même déplacées ou renommées (« Préconisation » = Recommandation), et accepte un critère saisi par son code, son nom français ou anglais.
 
@@ -88,6 +97,7 @@ Les tests de l'IA utilisent de faux clients et une fausse passerelle locale : il
 | `audit_ergo/` | Moteur de relecture : lecture du fichier, contrôles, synthèse, export annoté |
 | `app.py`, `interface/` | Interface web (Streamlit) : pages « Suggérer un critère » et « Relire un audit » |
 | `audit_ergo/cache.py` | Cache local des réponses de l'IA |
+| `audit_ergo/completion.py` | Complétion des cellules vides d'un audit à partir des propositions de l'IA |
 | `audit_ergo/suggestion.py` | Suggestion de critères par l'IA (prompt, schéma de réponse, appel API aux formats OpenAI et Anthropic) |
 | `start.bat` | Installation et lancement en un double-clic sous Windows |
 | `tests/` | Tests automatiques |

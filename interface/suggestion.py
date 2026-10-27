@@ -1,18 +1,19 @@
-"""Page « Suggérer un critère » : un constat en entrée, les critères adéquats en sortie."""
+"""Page « Suggérer un critère » : un constat en entrée ; critère, recommandation et gravité en sortie."""
 import streamlit as st
 
-from audit_ergo.suggestion import LIBELLE_VERDICT, ErreurSuggestion, suggerer
+from audit_ergo.suggestion import LIBELLE_RECO, LIBELLE_VERDICT, ErreurSuggestion, suggerer
 from interface.commun import client, libelle_critere, referentiel
 
 ref = referentiel()
 AUCUN = "— Aucun, je veux une proposition —"
+GRAVITES = ["— Non renseignée —", "0 – Pas un problème", "1 – Cosmétique", "2 – Mineur", "3 – Majeur", "4 – Bloquant"]
 BADGE_CONFIANCE = {"haute": ":green-badge[Confiance haute]", "moyenne": ":orange-badge[Confiance moyenne]",
                    "faible": ":red-badge[Confiance faible]"}
 
 st.title("🎯 Suggérer un critère")
-st.write("Décrivez un constat : l'IA propose le critère du référentiel qui correspond, explique pourquoi en "
-         "s'appuyant sur les définitions, les checklists et les règles de départage, et signale ce qu'il "
-         "faudrait préciser.")
+st.write("Décrivez un constat : l'IA propose le critère du référentiel qui correspond (en s'appuyant sur les "
+         "définitions, les checklists et les règles de départage), une recommandation et une gravité. Si vous "
+         "indiquez vos propres choix, elle les vérifie.")
 
 cl = client()
 if cl is None:
@@ -25,6 +26,8 @@ with st.form("constat"):
     ecran = col1.text_input("Écran / page", placeholder="Ex. : Paiement")
     choix = col2.selectbox("Critère que vous envisagez (facultatif, pour le faire vérifier)",
                            [AUCUN] + [libelle_critere(ref, c) for c in ref.criteres])
+    reco_designer = st.text_area("Votre recommandation (facultatif, pour la faire vérifier ou améliorer)", height=70)
+    gravite_choisie = st.selectbox("Gravité que vous envisagez (facultatif)", GRAVITES)
     with st.expander("Contexte du produit (facultatif, améliore la pertinence)"):
         c1, c2, c3 = st.columns(3)
         contexte = {"produit": c1.text_input("Produit"), "cible": c2.text_input("Cible utilisateurs"),
@@ -41,7 +44,9 @@ if envoye:
         critere = None if choix == AUCUN else choix.split(" – ")[0]
         with st.spinner("Analyse du constat…"):
             try:
-                s = suggerer(cl, ref, constat, ecran or None, critere, contexte, forcer=forcer)
+                gravite = None if gravite_choisie == GRAVITES[0] else int(gravite_choisie[0])
+                s = suggerer(cl, ref, constat, ecran or None, critere, contexte, forcer=forcer,
+                             recommandation_designer=reco_designer or None, gravite_designer=gravite)
                 st.session_state.setdefault("historique", []).insert(0, (constat, ecran, s))
             except ErreurSuggestion as e:
                 st.error(str(e))
@@ -85,7 +90,26 @@ def afficher(s):
         else:
             st.caption("Aucun.")
 
-    st.markdown("**À coller dans l'audit**")
+    st.markdown("#### Recommandation")
+    if s.reco_statut != "non_fournie":
+        message = f"**Votre recommandation : {LIBELLE_RECO[s.reco_statut]}**" + (
+            f"\n\n{s.reco_commentaire}" if s.reco_commentaire else "")
+        {"bonne": st.success, "a_ameliorer": st.warning}.get(s.reco_statut, st.error)(message)
+    if s.reco_amelioree:
+        st.markdown("**Version améliorée de votre recommandation**")
+        st.code(s.reco_amelioree, language=None, wrap_lines=True)
+    if s.reco_proposee and s.reco_statut != "bonne":
+        st.markdown("**Recommandation proposée par l'IA**" if not s.reco_amelioree else
+                    "**Autre formulation proposée par l'IA**")
+        st.code(s.reco_proposee, language=None, wrap_lines=True)
+    if s.reco_complementaires:
+        st.markdown("**Pistes complémentaires**\n" + "\n".join(f"- {x}" for x in s.reco_complementaires))
+
+    if s.gravite is not None:
+        st.markdown(f"#### Gravité proposée : {GRAVITES[s.gravite + 1]}")
+        st.write(s.justification_gravite)
+
+    st.markdown("**Critère à coller dans l'audit**")
     st.code(s.ligne_excel(ref), language=None)
     with st.expander(f"Définition et checklist de {s.code}"):
         st.write(c["definition"])

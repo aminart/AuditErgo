@@ -1,7 +1,9 @@
-"""Génère un audit FICTIF, rempli à partir du template, avec des erreurs volontaires.
+"""Génère deux audits FICTIFS à partir du template, pour la démonstration et les tests.
 
-Sert de démonstration et de jeu de test pour la relecture automatique.
-Usage : python3 scripts/generer_audit_fictif.py  -> exemples/audit_fictif.xlsx
+- exemples/audit_fictif.xlsx : audit complet, avec des erreurs de forme volontaires ;
+- exemples/audit_a_completer.xlsx : surtout des constats seuls (l'IA complète le reste), plus quelques
+  critères et recommandations saisis par le designer, à faire corriger.
+Usage : python3 scripts/generer_audit_fictif.py
 """
 from datetime import date
 from pathlib import Path
@@ -11,6 +13,7 @@ from openpyxl import load_workbook
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "template" / "Audit_ergonomique_template.xlsx"
 OUT = ROOT / "exemples" / "audit_fictif.xlsx"
+OUT_A_COMPLETER = ROOT / "exemples" / "audit_a_completer.xlsx"
 
 CONTEXTE = {
     "Produit / interface auditée *": "BoutiqueDemo (site e-commerce FICTIF)",
@@ -99,6 +102,45 @@ def main():
     OUT.parent.mkdir(exist_ok=True)
     wb.save(OUT)
     print(f"{len(CONSTATS)} constats fictifs -> {OUT}")
+    generer_a_completer()
+
+
+# (écran, constat, critère du designer ou None, recommandation du designer ou None)
+A_COMPLETER = [
+    ("Paiement", "Après un clic sur « Payer », aucun indicateur de chargement n'apparaît pendant environ "
+                 "5 secondes ; le bouton reste actif et certains utilisateurs cliquent plusieurs fois.", None, None),
+    ("Formulaire d'inscription", "Le format attendu pour la date de naissance n'est indiqué nulle part ; "
+                                 "la saisie « 3/4/90 » est refusée sans explication.", None, None),
+    ("Panier", "Le bouton « Supprimer » retire l'article du panier immédiatement, sans confirmation ni "
+               "possibilité d'annuler.", None, None),
+    ("Résultats de recherche", "La page affiche 60 produits, 12 filtres et 3 bannières promotionnelles "
+                               "sans hiérarchie visuelle claire.", None, None),
+    ("Compte client", "L'icône d'engrenage ouvre l'historique des commandes au lieu des paramètres du compte.",
+     "GUI-01 – Incitation (Prompting)", None),  # critère discutable, à faire corriger
+    ("Paiement", "En cas de carte refusée, le message « Erreur 402 » s'affiche sans explication ni solution.",
+     "ERR-02 – Qualité des messages d'erreur (Quality of Error Messages)", "Améliorer le message."),  # reco vague
+    ("Tunnel de commande", "Aucun bouton « Retour » entre les étapes Livraison et Paiement ; le retour du "
+                           "navigateur vide le panier.", None, None),
+    ("Fiche produit", "Le prix barré et le prix promotionnel ont la même taille et la même couleur.", None, None),
+]
+
+
+def generer_a_completer():
+    wb = load_workbook(TEMPLATE)
+    ws = wb["Contexte"]
+    for row in ws.iter_rows(min_col=1, max_col=2):
+        if row[0].value in CONTEXTE:
+            row[1].value = CONTEXTE[row[0].value]
+    ws = wb["Audit"]
+    for i, (ecran, constat, critere, reco) in enumerate(A_COMPLETER):
+        r = 5 + i
+        ws[f"B{r}"], ws[f"F{r}"] = ecran, constat
+        if critere:
+            ws[f"H{r}"] = critere
+        if reco:
+            ws[f"N{r}"] = reco
+    wb.save(OUT_A_COMPLETER)
+    print(f"{len(A_COMPLETER)} constats à compléter -> {OUT_A_COMPLETER}")
 
 
 if __name__ == "__main__":

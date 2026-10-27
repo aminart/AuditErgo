@@ -41,8 +41,45 @@ def _ligne(ws, row, valeurs, fill=None, bold=False):
 
 
 COLONNES_RELECTURE = [("Relecture : niveau", 14), ("Relecture : remarques", 60)]
-COLONNES_IA = [("IA : critère suggéré", 32), ("IA : verdict", 14), ("IA : justification", 60)]
+COLONNES_IA = [("IA : critère suggéré", 32), ("IA : verdict critère", 16), ("IA : recommandation", 50),
+               ("IA : avis recommandation", 30), ("IA : gravité", 16), ("IA : justification", 60)]
 COULEURS_VERDICT = {"confirme": "E2EFDA", "a_revoir": "FFE699", "incorrect": "F8CBAD", "non_fourni": "EDEDED"}
+COULEURS_RECO = {"bonne": "E2EFDA", "a_ameliorer": "FFE699", "hors_sujet": "F8CBAD", "non_fournie": "EDEDED"}
+VIOLET = "E4DFEC"  # cellule complétée par l'application : à valider par le designer
+LIBELLES_GRAVITE = ["Pas un problème", "Cosmétique", "Mineur", "Majeur", "Bloquant"]
+
+
+def _commenter(cell, texte, auteur):
+    """Ajoute un commentaire, à la suite de celui qui existe déjà le cas échéant."""
+    if cell.comment:
+        texte = f"{cell.comment.text}\n\n{texte}"
+    cell.comment = Comment(texte, auteur, width=340, height=140)
+
+
+def _ajouter_colonnes_manquantes(ws, audit):
+    """Crée les colonnes que la complétion a dû ajouter (fichier sans colonne Recommandation, par ex.)."""
+    for champ, col in list(audit.colonnes.items()):
+        if col is None:
+            col = ws.max_column + 1
+            cell = ws.cell(row=audit.ligne_entete, column=col, value=LIBELLES[champ])
+            cell.font = Font(name=FONT, size=10, bold=True, color="FFFFFF")
+            cell.fill = PatternFill("solid", fgColor=NAVY)
+            cell.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
+            ws.column_dimensions[get_column_letter(col)].width = 45 if champ == "recommandation" else 24
+            audit.colonnes[champ] = col
+
+
+def _ecrire_completions(ws, audit):
+    from .completion import IA
+
+    for ligne, ajouts in audit.completions.items():
+        for champ, (valeur, origine, explication) in ajouts.items():
+            cell = ws.cell(row=ligne, column=audit.colonnes[champ], value=valeur)
+            cell.fill = PatternFill("solid", fgColor=VIOLET)
+            cell.font = Font(name=FONT, size=10, italic=True)
+            cell.alignment = WRAP
+            entete = "Proposé par l'IA, à valider." if origine == IA else "Complété automatiquement, à vérifier."
+            _commenter(cell, f"{entete}\n{explication}", "Complétion automatique")
 
 
 def _annoter_audit(ws, audit, anomalies, ref, ia=None):
@@ -50,6 +87,9 @@ def _annoter_audit(ws, audit, anomalies, ref, ia=None):
     for a in anomalies:
         if a.ligne:
             par_ligne.setdefault(a.ligne, []).append(a)
+
+    _ajouter_colonnes_manquantes(ws, audit)
+    _ecrire_completions(ws, audit)
 
     # Une relecture précédente a pu déjà ajouter ces colonnes : on les réutilise
     existantes = {cell.value: cell.column for cell in ws[audit.ligne_entete] if cell.value}
@@ -94,33 +134,61 @@ def _annoter_audit(ws, audit, anomalies, ref, ia=None):
             cible = ws.cell(row=c.ligne, column=audit.colonnes[champ])
             pire = NIVEAUX[min(NIVEAUX.index(a.niveau) for a in liste_champ)]
             cible.fill = PatternFill("solid", fgColor=COULEURS[pire])
-            texte = "\n".join(a.message for a in liste_champ)
-            cible.comment = Comment(texte, "Relecture automatique", width=320, height=110)
+            _commenter(cible, "\n".join(a.message for a in liste_champ), "Relecture automatique")
 
 
 def _colonnes_ia(ws, audit, ref, ia, cols):
-    from .suggestion import LIBELLE_VERDICT, ErreurSuggestion
+    from .controles import _gravite
+    from .suggestion import LIBELLE_RECO, LIBELLE_VERDICT, ErreurSuggestion
 
     for c in audit.constats:
         res = ia.get(c.ligne)
         if res is None:
             continue
-        crit, verdict, justif = (ws.cell(row=c.ligne, column=cols[t]) for t, _ in COLONNES_IA)
-        for cell in (crit, verdict, justif):
+        crit, verdict, reco, avis, grav, justif = (ws.cell(row=c.ligne, column=cols[t]) for t, _ in COLONNES_IA)
+        for cell in (crit, verdict, reco, avis, grav, justif):
             cell.font = Font(name=FONT, size=10)
             cell.alignment = WRAP
         if isinstance(res, ErreurSuggestion):
             verdict.value, justif.value = "Erreur", str(res)
             continue
+        completes = audit.completions.get(c.ligne, {})
+
         crit.value = res.ligne_excel(ref)
-        statut = res.verdict if res.critere_designer else "non_fourni"
-        verdict.value = LIBELLE_VERDICT[statut] + (f" (confiance {res.confiance})" if res.confiance != "haute" else "")
+        if res.critere_designer:
+            statut = res.verdict
+            verdict.value = LIBELLE_VERDICT[statut]
+        else:
+            statut = "non_fourni"
+            verdict.value = "Proposé (cellule remplie)" if "critere" in completes else LIBELLE_VERDICT[statut]
+        if res.confiance != "haute":
+            verdict.value += f" · confiance {res.confiance}"
         verdict.fill = PatternFill("solid", fgColor=COULEURS_VERDICT[statut])
+
+        reco.value = res.reco_a_retenir or None
+        if res.reco_statut != "non_fournie":
+            avis.value = LIBELLE_RECO[res.reco_statut] + (f" : {res.reco_commentaire}" if res.reco_commentaire else "")
+            avis.fill = PatternFill("solid", fgColor=COULEURS_RECO[res.reco_statut])
+        elif "recommandation" in completes:
+            avis.value = "Proposée (cellule remplie)"
+
+        if res.gravite is not None:
+            grav.value = f"{res.gravite} – {LIBELLES_GRAVITE[res.gravite]}"
+            g_designer = _gravite(c["gravite"]) if "gravite" not in completes else None
+            if g_designer is not None and g_designer != res.gravite:
+                grav.value += f" (vous : {g_designer})"
+                if abs(g_designer - res.gravite) >= 2:
+                    grav.fill = PatternFill("solid", fgColor=COULEURS_VERDICT["a_revoir"])
+
         details = [res.justification]
         if res.commentaire_verdict:
-            details.append(f"Sur le choix du designer : {res.commentaire_verdict}")
+            details.append(f"Sur le critère choisi : {res.commentaire_verdict}")
         if res.question_checklist:
             details.append(f"Checklist : {res.question_checklist}")
+        if res.justification_gravite:
+            details.append(f"Gravité : {res.justification_gravite}")
+        if res.reco_complementaires:
+            details.append("Recommandations complémentaires : " + " ; ".join(res.reco_complementaires))
         if res.question_a_se_poser:
             details.append(f"À se demander : {res.question_a_se_poser}")
         if res.precisions_manquantes:
@@ -137,8 +205,10 @@ def _onglet_synthese(wb, audit, synthese, ref):
     ws.column_dimensions["D"].width = 14
     ws["A1"] = "Relecture automatique de l'audit"
     ws["A1"].font = Font(name=FONT, size=16, bold=True, color=NAVY)
-    ws["A2"] = (f"Contrôles de forme (niveau 1) · référentiel v{ref.version} · {date.today():%d/%m/%Y}. "
-                "La vérification des critères par l'IA viendra dans une prochaine version.")
+    nb_completes = sum(len(a) for a in audit.completions.values())
+    ws["A2"] = (f"Référentiel v{ref.version} · {date.today():%d/%m/%Y}. "
+                + (f"{nb_completes} cellule(s) complétée(s) automatiquement, en violet dans l'onglet "
+                   f"« {audit.onglet} » : à valider." if nb_completes else "Contrôles de forme."))
     ws["A2"].font = Font(name=FONT, size=9, italic=True, color="7F7F7F")
 
     statut = ("✓ Prêt pour la relecture des critères" if synthese.pret
@@ -161,7 +231,8 @@ def _onglet_synthese(wb, audit, synthese, ref):
         ("Anomalies bloquantes / avertissements", f"{synthese.nb_bloquants} / {synthese.nb_avertissements}"),
         ("Champs recommandés remplis", f"{synthese.completude_recommandee:.0%}"),
         ("Critères cités (sur 24)", f"{len(ref.criteres) - len(synthese.non_couverts)}"),
-    ]
+    ] + ([("Cellules complétées par l'IA (en violet, à valider)",
+           f"{nb_completes} sur {len(audit.completions)} constat(s)")] if nb_completes else [])
     r = 6
     _entete(ws, r, ["Contexte", ""])
     for k, v in infos:

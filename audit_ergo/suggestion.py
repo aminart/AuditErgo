@@ -22,6 +22,9 @@ from .cache import CacheSuggestions
 FICHIER_ENV = Path(__file__).resolve().parent.parent / ".env"
 CONFIANCES = ["haute", "moyenne", "faible"]
 VERDICTS = ["confirme", "a_revoir", "incorrect", "non_fourni"]
+STATUTS_RECO = ["bonne", "a_ameliorer", "hors_sujet", "non_fournie"]
+LIBELLE_RECO = {"bonne": "✓ Bonne", "a_ameliorer": "À améliorer", "hors_sujet": "✗ Hors sujet",
+                "non_fournie": "Non fournie"}
 LIBELLE_VERDICT = {"confirme": "✓ Confirmé", "a_revoir": "À revoir", "incorrect": "✗ Incorrect",
                    "non_fourni": "Non fourni"}
 
@@ -163,10 +166,10 @@ def _texte_referentiel(ref):
 
 
 CONSIGNES = """Tu assistes des UX designers qui réalisent des audits ergonomiques heuristiques. \
-Pour chaque constat, tu proposes le critère du référentiel ci-dessous qui correspond le mieux, \
-afin que tous les designers classent les problèmes de la même façon.
+Pour chaque constat, tu proposes le critère du référentiel ci-dessous qui correspond le mieux, une \
+recommandation et une gravité, afin que tous les designers produisent des audits du même niveau.
 
-Méthode :
+Critère :
 1. Identifie la CAUSE du problème décrit, pas son symptôme. Le critère principal correspond à cette cause.
 2. Si deux critères sont proches, applique la règle de départage concernée et cite-la.
 3. Appuie-toi sur la définition du critère et, si possible, cite mot pour mot la question de checklist \
@@ -178,6 +181,20 @@ poser au designer et ce qu'il faudrait préciser.
 7. Si le designer a indiqué un critère, donne un verdict : « confirme » s'il correspond, « a_revoir » \
 s'il est défendable mais qu'un autre est meilleur, « incorrect » s'il ne correspond pas. Sinon, \
 « non_fourni ».
+
+Recommandation :
+8. Propose une recommandation qui est spécifique (nomme l'élément à modifier), actionnable (une équipe \
+peut l'implémenter sans réinterpréter), qui traite la cause, qui est vérifiable, et qui s'appuie sur une \
+norme ou un usage reconnu quand c'est pertinent (WCAG, guidelines de la plateforme). Une à trois phrases.
+9. Si le designer a rédigé une recommandation, évalue-la : « bonne » si elle remplit ces conditions, \
+« a_ameliorer » si elle est juste mais incomplète ou vague (donne alors une version améliorée qui garde \
+son intention), « hors_sujet » si elle ne traite pas le problème. Sinon, « non_fournie ».
+10. Ajoute au besoin une ou deux recommandations complémentaires (autres pistes utiles), sinon aucune.
+
+Gravité (échelle de Nielsen) : 0 pas un problème, 1 cosmétique, 2 mineur (gêne ponctuelle), \
+3 majeur (l'utilisateur est ralenti ou se trompe), 4 bloquant (la tâche ne peut pas être accomplie). \
+11. Estime la gravité d'après la fréquence, l'impact et la persistance du problème, en une phrase de \
+justification. Si le designer a indiqué une gravité très différente, explique l'écart.
 
 N'utilise que les codes du référentiel. Réponds en français, de façon concise et factuelle."""
 
@@ -220,14 +237,39 @@ def _schema(ref):
                 "required": ["statut", "commentaire"],
                 "additionalProperties": False,
             },
+            "recommandation": {
+                "type": "object",
+                "properties": {
+                    "proposee": {"type": "string"},
+                    "avis_designer": {
+                        "type": "object",
+                        "properties": {"statut": {"type": "string", "enum": STATUTS_RECO},
+                                       "commentaire": {"type": "string"},
+                                       "version_amelioree": {"type": "string"}},
+                        "required": ["statut", "commentaire", "version_amelioree"],
+                        "additionalProperties": False,
+                    },
+                    "complementaires": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["proposee", "avis_designer", "complementaires"],
+                "additionalProperties": False,
+            },
+            "gravite": {
+                "type": "object",
+                "properties": {"valeur": {"type": "integer", "enum": [0, 1, 2, 3, 4]},
+                               "justification": {"type": "string"}},
+                "required": ["valeur", "justification"],
+                "additionalProperties": False,
+            },
         },
         "required": ["critere_principal", "criteres_secondaires", "alternatives", "question_a_se_poser",
-                     "precisions_manquantes", "verdict_designer"],
+                     "precisions_manquantes", "verdict_designer", "recommandation", "gravite"],
         "additionalProperties": False,
     }
 
 
-def _message(constat, ecran=None, critere_designer=None, contexte=None):
+def _message(constat, ecran=None, critere_designer=None, contexte=None, recommandation_designer=None,
+             gravite_designer=None):
     if not constat or not str(constat).strip():
         raise ErreurSuggestion("Le constat est vide.")
     contexte = {k: v for k, v in (contexte or {}).items() if v}
@@ -240,10 +282,17 @@ def _message(constat, ecran=None, critere_designer=None, contexte=None):
         parties.append(f"Critère choisi par le designer : {critere_designer}")
     else:
         parties.append("Le designer n'a pas indiqué de critère.")
+    if recommandation_designer and str(recommandation_designer).strip():
+        parties.append(f"Recommandation rédigée par le designer : {str(recommandation_designer).strip()}")
+    else:
+        parties.append("Le designer n'a pas rédigé de recommandation.")
+    if gravite_designer is not None and str(gravite_designer).strip() != "":
+        parties.append(f"Gravité indiquée par le designer : {gravite_designer}")
     return "\n".join(parties)
 
 
-def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte=None):
+def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte=None, recommandation_designer=None,
+                       gravite_designer=None):
     """Paramètres de l'appel au format Anthropic (/v1/messages). Testable sans clé."""
     requete = {
         "model": MODELE,
@@ -253,7 +302,8 @@ def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte
             # Bloc stable et volumineux : mis en cache pour ne le payer qu'une fois par série d'appels
             {"type": "text", "text": _texte_referentiel(ref), "cache_control": {"type": "ephemeral"}},
         ],
-        "messages": [{"role": "user", "content": _message(constat, ecran, critere_designer, contexte)}],
+        "messages": [{"role": "user", "content": _message(constat, ecran, critere_designer, contexte, recommandation_designer,
+                                                         gravite_designer)}],
         "output_config": {"effort": EFFORT, "format": {"type": "json_schema", "schema": _schema(ref)}},
     }
     if FALLBACK:
@@ -261,7 +311,8 @@ def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte
     return requete
 
 
-def construire_requete_openai(ref, constat, ecran=None, critere_designer=None, contexte=None):
+def construire_requete_openai(ref, constat, ecran=None, critere_designer=None, contexte=None, recommandation_designer=None,
+                              gravite_designer=None):
     """Paramètres de l'appel au format OpenAI (/v1/chat/completions). Testable sans clé.
 
     Le schéma est à la fois demandé via response_format et décrit dans les consignes, car toutes les
@@ -276,7 +327,8 @@ def construire_requete_openai(ref, constat, ecran=None, critere_designer=None, c
         "messages": [
             # Contenu stable en tête : les passerelles qui gèrent un cache de prompt peuvent le réutiliser
             {"role": "system", "content": f"{CONSIGNES}\n\n{_texte_referentiel(ref)}\n\n{consigne_json}"},
-            {"role": "user", "content": _message(constat, ecran, critere_designer, contexte)},
+            {"role": "user", "content": _message(constat, ecran, critere_designer, contexte, recommandation_designer,
+                                                         gravite_designer)},
         ],
         "response_format": {"type": "json_schema",
                             "json_schema": {"name": "suggestion_critere", "strict": True, "schema": schema}},
@@ -299,6 +351,13 @@ class Suggestion:
     verdict: str = "non_fourni"
     commentaire_verdict: str = ""
     critere_designer: str | None = None  # code du critère choisi par le designer, s'il y en a un
+    reco_proposee: str = ""  # recommandation rédigée par l'IA
+    reco_statut: str = "non_fournie"  # avis sur la recommandation du designer (STATUTS_RECO)
+    reco_commentaire: str = ""
+    reco_amelioree: str = ""  # version améliorée de la recommandation du designer, si utile
+    reco_complementaires: list = field(default_factory=list)
+    gravite: int | None = None  # gravité estimée par l'IA (0 à 4)
+    justification_gravite: str = ""
     usage: dict = field(default_factory=dict)
     depuis_cache: bool = False  # True : réponse reprise du cache local, sans nouvel appel (ni coût)
 
@@ -312,8 +371,13 @@ class Suggestion:
             txt += f" | Règle : {self.regle}"
         return txt
 
+    @property
+    def reco_a_retenir(self):
+        """Recommandation à proposer : la version améliorée de celle du designer si elle existe, sinon celle de l'IA."""
+        return self.reco_amelioree or self.reco_proposee
 
-def interpreter(ref, data, critere_designer=None, usage=None):
+
+def interpreter(ref, data, critere_designer=None, usage=None, avec_reco_designer=False):
     """Valide la réponse JSON du modèle et la convertit en Suggestion.
 
     Le format OpenAI ne garantit pas toujours le respect du schéma : tout est donc revérifié ici.
@@ -347,6 +411,25 @@ def interpreter(ref, data, critere_designer=None, usage=None):
         if verdict.get("statut") not in ("confirme", "a_revoir", "incorrect"):
             raise ErreurSuggestion("Réponse de l'IA incomplète (verdict sur le choix du designer manquant).")
         suggestion.verdict, suggestion.commentaire_verdict = verdict["statut"], str(verdict.get("commentaire") or "")
+
+    # Recommandation et gravité : complétées si présentes (une passerelle peut ne pas respecter le schéma)
+    reco = data.get("recommandation") if isinstance(data.get("recommandation"), dict) else {}
+    suggestion.reco_proposee = str(reco.get("proposee") or "").strip()
+    suggestion.reco_complementaires = [str(x).strip() for x in reco.get("complementaires") or [] if str(x).strip()]
+    avis = reco.get("avis_designer") if isinstance(reco.get("avis_designer"), dict) else {}
+    if avec_reco_designer and avis.get("statut") in ("bonne", "a_ameliorer", "hors_sujet"):
+        suggestion.reco_statut = avis["statut"]
+        suggestion.reco_commentaire = str(avis.get("commentaire") or "").strip()
+        if avis["statut"] != "bonne":
+            suggestion.reco_amelioree = str(avis.get("version_amelioree") or "").strip()
+    grav = data.get("gravite") if isinstance(data.get("gravite"), dict) else {}
+    try:
+        valeur = int(grav.get("valeur"))
+        if 0 <= valeur <= 4:
+            suggestion.gravite = valeur
+            suggestion.justification_gravite = str(grav.get("justification") or "").strip()
+    except (TypeError, ValueError):
+        pass
     return suggestion
 
 
@@ -436,9 +519,11 @@ def _appel_openai(sdk, requete):
 DEFAUT = object()  # cache par défaut (CacheSuggestions.defaut())
 
 
-def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=None, cache=DEFAUT, forcer=False):
+def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=None, cache=DEFAUT, forcer=False,
+             recommandation_designer=None, gravite_designer=None):
     """Appelle l'IA et renvoie une Suggestion. `critere_designer` est un code du référentiel (ou None).
 
+    `recommandation_designer` et `gravite_designer` (facultatifs) sont évaluées par l'IA.
     `client` est un ClientIA ; un client Anthropic nu est aussi accepté.
     Une réponse déjà obtenue pour la même requête est reprise du cache local (sauf `forcer=True`) ;
     `cache=None` désactive le cache.
@@ -451,13 +536,14 @@ def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=N
         c = ref.criteres[critere_designer]
         libelle = f"{c['code']} – {c['label_fr']} ({c['name']})"
     construire = construire_requete_openai if fmt == "openai" else construire_requete
-    requete = construire(ref, constat, ecran, libelle, contexte)
+    requete = construire(ref, constat, ecran, libelle, contexte, recommandation_designer, gravite_designer)
+    avec_reco = bool(recommandation_designer and str(recommandation_designer).strip())
 
     cache = CacheSuggestions.defaut() if cache is DEFAUT else cache
     cle = cache.cle(fmt, requete) if cache else None
     if cache and not forcer and (memorise := cache.lire(cle)):
         try:
-            suggestion = interpreter(ref, memorise["data"], critere_designer)
+            suggestion = interpreter(ref, memorise["data"], critere_designer, avec_reco_designer=avec_reco)
             suggestion.depuis_cache = True
             return suggestion
         except (ErreurSuggestion, KeyError, TypeError):
@@ -465,7 +551,7 @@ def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=N
 
     appel = _appel_openai if fmt == "openai" else _appel_anthropic
     data, usage = appel(sdk, requete)
-    suggestion = interpreter(ref, data, critere_designer, usage)  # valide avant de mémoriser
+    suggestion = interpreter(ref, data, critere_designer, usage, avec_reco)  # valide avant de mémoriser
     if cache:
         cache.ecrire(cle, {"data": data, "usage": usage})
     return suggestion
@@ -484,7 +570,7 @@ def verifier_audit(client, ref, audit, progression=None, paralleles=4, forcer=Fa
     def une(c):
         try:
             return suggerer(client, ref, c["constat"], c["ecran"], ref.trouver_critere(c["critere"]), contexte,
-                            cache, forcer)
+                            cache, forcer, c["recommandation"], c["gravite"])
         except ErreurSuggestion as e:
             return e
 

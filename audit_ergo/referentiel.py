@@ -78,3 +78,12 @@ class Referentiel:
         """Tous les codes de critères cités dans un texte libre (critères secondaires). Renvoie (connus, inconnus)."""
         trouves = CODE_CRITERE.findall(str(saisie or ""))
         return [c for c in trouves if c in self.criteres], [c for c in trouves if c not in self.criteres]
+
+    def libelle_categorie(self, code):
+        """Libellé tel qu'il apparaît dans les listes du template (ex. « GUI – Guidage »)."""
+        return f"{code} – {self.categories[code]['label_fr']}"
+
+    def libelle_critere(self, code):
+        """Libellé tel qu'il apparaît dans les listes du template (ex. « GUI-03 – Feedback immédiat (…) »)."""
+        c = self.criteres[code]
+        return f"{code} – {c['label_fr']} ({c['name']})"
