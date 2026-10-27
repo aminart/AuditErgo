@@ -8,11 +8,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from audit_ergo import Referentiel  # noqa: E402
+from audit_ergo.lecture import nom_colonne  # noqa: E402
 
 TEMPLATE = ROOT / "template" / "Audit_ergonomique_template.xlsx"
-COLONNES = {"ecran": "B", "parcours": "C", "capture": "D", "type": "E", "constat": "F", "categorie": "G",
-            "critere": "H", "secondaires": "I", "regle": "J", "gravite": "K", "frequence": "L", "impact": "M",
-            "recommandation": "N", "priorite": "O"}
 
 CONSTAT_VALIDE = {
     "ecran": "Paiement", "type": "Problème",
@@ -34,9 +32,10 @@ def audit_xlsx(tmp_path):
     def fabriquer(constats, contexte=None, nom="audit.xlsx"):
         wb = load_workbook(TEMPLATE)
         ws = wb["Audit"]
+        colonnes = {nom_colonne(c.value): c.column for c in ws[3] if c.value}
         for i, valeurs in enumerate(constats):
             for champ, valeur in valeurs.items():
-                ws[f"{COLONNES[champ]}{5 + i}"] = valeur
+                ws.cell(row=5 + i, column=colonnes[champ], value=valeur)
         ctx = {"Produit / interface auditée *": "Produit test", "Cible utilisateurs *": "Tous",
                "Plateforme *": "Web desktop", "Parcours audités *": "Commande", "Designer *": "Test",
                "Date de l'audit *": "20/10/2026", **(contexte or {})}

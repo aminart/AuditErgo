@@ -52,6 +52,11 @@ def completer(audit, ia, ref):
                 if res.secondaires:
                     remplir("secondaires", " ; ".join(x["code"] for x in res.secondaires), IA,
                             "Critères secondaires proposés par l'IA.")
+            # Justification : seulement pour un critère proposé par l'IA ou un critère du designer qu'elle
+            # confirme ; jamais pour un critère qu'elle juge à revoir
+            if "critere" in ajouts or (critere_designer and res.verdict == "confirme"
+                                       and critere_designer == res.code):
+                remplir("justification", res.justification_critere, IA, "Justification rédigée par l'IA.")
             if res.gravite is not None:
                 remplir("gravite", res.gravite, IA, f"Gravité proposée par l'IA : {res.justification_gravite}")
             if est_probleme and res.reco_proposee:

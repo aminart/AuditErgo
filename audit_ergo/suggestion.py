@@ -372,6 +372,16 @@ class Suggestion:
         return txt
 
     @property
+    def justification_critere(self):
+        """Justification du critère principal, prête à figurer dans l'audit : raison, règle et checklist."""
+        txt = self.justification.strip()
+        if self.regle != "aucune":
+            txt += f" (règle {self.regle})"
+        if self.question_checklist:
+            txt += f" Checklist : « {self.question_checklist.strip()} »"
+        return txt
+
+    @property
     def reco_a_retenir(self):
         """Recommandation à proposer : la version améliorée de celle du designer si elle existe, sinon celle de l'IA."""
         return self.reco_amelioree or self.reco_proposee

@@ -24,6 +24,7 @@ COLONNES = {
     "gravite": ["gravite", "gravite 0 4", "severite"],
     "frequence": ["frequence"],
     "impact": ["impact"],
+    "justification": ["justification du critere", "justification", "justification critere", "pourquoi ce critere"],
     "recommandation": ["recommandation", "recommandation si probleme", "recommandations", "preconisation"],
     "priorite": ["priorite"],
     "controle": ["controle"],
@@ -34,6 +35,7 @@ LIBELLES = {
     "constat": "Constat", "categorie": "Catégorie", "critere": "Critère principal",
     "secondaires": "Critères secondaires", "regle": "Règle de départage", "gravite": "Gravité",
     "frequence": "Fréquence", "impact": "Impact", "recommandation": "Recommandation", "priorite": "Priorité",
+    "justification": "Justification du critère",
 }
 CHAMPS_CONTEXTE = {
     "produit": "produit interface auditee",

@@ -126,8 +126,8 @@ def test_verifier_audit_et_export(audit_xlsx, ref, tmp_path):
 
     ws = load_workbook(sortie)["Audit"]
     entetes = [c.value for c in ws[3]]
-    assert entetes[-6:] == ["IA : critère suggéré", "IA : verdict critère", "IA : recommandation",
-                            "IA : avis recommandation", "IA : gravité", "IA : justification"]
+    assert entetes[-7:] == ["IA : critère suggéré", "IA : verdict critère", "IA : justification critère",
+                            "IA : recommandation", "IA : avis recommandation", "IA : gravité", "IA : remarques"]
     col = entetes.index("IA : verdict critère") + 1
     assert ws.cell(row=5, column=col).value == "✓ Confirmé"
     assert "Erreur" in [ws.cell(row=r, column=col).value for r in (6, 7)]

@@ -109,8 +109,12 @@ def afficher(s):
         st.markdown(f"#### Gravité proposée : {GRAVITES[s.gravite + 1]}")
         st.write(s.justification_gravite)
 
-    st.markdown("**Critère à coller dans l'audit**")
+    st.markdown("**À coller dans l'audit**")
+    st.caption("Critère principal")
     st.code(s.ligne_excel(ref), language=None)
+    if not s.critere_designer or s.verdict == "confirme":
+        st.caption("Justification du critère")
+        st.code(s.justification_critere, language=None, wrap_lines=True)
     with st.expander(f"Définition et checklist de {s.code}"):
         st.write(c["definition"])
         for q in c["checklist"]:

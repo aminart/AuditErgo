@@ -41,8 +41,9 @@ def _ligne(ws, row, valeurs, fill=None, bold=False):
 
 
 COLONNES_RELECTURE = [("Relecture : niveau", 14), ("Relecture : remarques", 60)]
-COLONNES_IA = [("IA : critère suggéré", 32), ("IA : verdict critère", 16), ("IA : recommandation", 50),
-               ("IA : avis recommandation", 30), ("IA : gravité", 16), ("IA : justification", 60)]
+COLONNES_IA = [("IA : critère suggéré", 32), ("IA : verdict critère", 16), ("IA : justification critère", 50),
+               ("IA : recommandation", 50), ("IA : avis recommandation", 30), ("IA : gravité", 16),
+               ("IA : remarques", 50)]
 COULEURS_VERDICT = {"confirme": "E2EFDA", "a_revoir": "FFE699", "incorrect": "F8CBAD", "non_fourni": "EDEDED"}
 COULEURS_RECO = {"bonne": "E2EFDA", "a_ameliorer": "FFE699", "hors_sujet": "F8CBAD", "non_fournie": "EDEDED"}
 VIOLET = "E4DFEC"  # cellule complétée par l'application : à valider par le designer
@@ -145,12 +146,13 @@ def _colonnes_ia(ws, audit, ref, ia, cols):
         res = ia.get(c.ligne)
         if res is None:
             continue
-        crit, verdict, reco, avis, grav, justif = (ws.cell(row=c.ligne, column=cols[t]) for t, _ in COLONNES_IA)
-        for cell in (crit, verdict, reco, avis, grav, justif):
+        crit, verdict, justif, reco, avis, grav, remarques = (ws.cell(row=c.ligne, column=cols[t])
+                                                              for t, _ in COLONNES_IA)
+        for cell in (crit, verdict, justif, reco, avis, grav, remarques):
             cell.font = Font(name=FONT, size=10)
             cell.alignment = WRAP
         if isinstance(res, ErreurSuggestion):
-            verdict.value, justif.value = "Erreur", str(res)
+            verdict.value, remarques.value = "Erreur", str(res)
             continue
         completes = audit.completions.get(c.ligne, {})
 
@@ -180,11 +182,11 @@ def _colonnes_ia(ws, audit, ref, ia, cols):
                 if abs(g_designer - res.gravite) >= 2:
                     grav.fill = PatternFill("solid", fgColor=COULEURS_VERDICT["a_revoir"])
 
-        details = [res.justification]
+        justif.value = res.justification_critere
         if res.commentaire_verdict:
-            details.append(f"Sur le critère choisi : {res.commentaire_verdict}")
-        if res.question_checklist:
-            details.append(f"Checklist : {res.question_checklist}")
+            justif.value += f"\nSur le critère choisi : {res.commentaire_verdict}"
+
+        details = []
         if res.justification_gravite:
             details.append(f"Gravité : {res.justification_gravite}")
         if res.reco_complementaires:
@@ -193,7 +195,7 @@ def _colonnes_ia(ws, audit, ref, ia, cols):
             details.append(f"À se demander : {res.question_a_se_poser}")
         if res.precisions_manquantes:
             details.append("À préciser : " + " ; ".join(res.precisions_manquantes))
-        justif.value = "\n".join(details)
+        remarques.value = "\n".join(details) or None
 
 
 def _onglet_synthese(wb, audit, synthese, ref):

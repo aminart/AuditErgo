@@ -36,6 +36,8 @@ def test_audit_avec_seulement_les_constats(audit_xlsx, ref, tmp_path):
         "Critère principal *": "GUI-03 – Feedback immédiat (Immediate Feedback)",
         "Critères secondaires (codes séparés par ;)": "ERR-01",
         "Règle de départage": "R1",
+        "Justification du critère": "Réaction après l'action. (règle R1) Checklist : "
+                                    "« Is information displayed during the loading? »",
         "Gravité (0-4) *": 3,
         "Recommandation * (si Problème)": RECO_IA,
     }
@@ -67,8 +69,11 @@ def test_saisies_du_designer_jamais_modifiees(audit_xlsx, ref, tmp_path):
     assert cell("IA : recommandation").value == "Désactiver le bouton « Payer » pendant le traitement."
     assert cell("IA : avis recommandation").value.startswith("À améliorer : Trop vague")
     assert cell("IA : gravité").value == "3 – Majeur (vous : 1)"
-    assert "double paiement" in cell("IA : justification").value
-    assert "Recommandations complémentaires" in cell("IA : justification").value
+    assert "double paiement" in cell("IA : remarques").value
+    assert "Recommandations complémentaires" in cell("IA : remarques").value
+    assert cell("IA : justification critère").value.startswith("Réaction après l'action. (règle R1)")
+    assert "GUI-01 décrit l'avant" in cell("IA : justification critère").value  # avis sur le choix du designer
+    assert cell("Justification du critère").value is None  # critère à revoir : pas de justification remplie
     # Ce qui a été envoyé à l'IA contient bien les choix du designer
     message = client.appels[0]["messages"][0]["content"]
     assert "Recommandation rédigée par le designer : Améliorer le bouton" in message
@@ -81,6 +86,20 @@ def test_categorie_deduite_du_critere_du_designer(audit_xlsx, ref, tmp_path):
     audit, *_ = relire(audit_xlsx([saisie]), tmp_path / "c.xlsx", ref, FauxClient(reponse_complete("GUI-03")))
     valeur, origine, _ = audit.completions[5]["categorie"]
     assert valeur == "ERR – Gestion des erreurs" and origine == "auto"  # pas la catégorie proposée par l'IA
+
+
+def test_justification_du_critere_confirme(audit_xlsx, ref, tmp_path):
+    """Critère du designer confirmé par l'IA : sa justification est remplie ; une justification saisie est gardée."""
+    saisie = {"ecran": "Paiement", "type": "Problème", "constat": "Après un clic sur Payer, rien ne se passe.",
+              "critere": "GUI-03", "gravite": 3, "recommandation": "Afficher un indicateur de chargement sur le bouton."}
+    confirme = reponse_complete(verdict_designer={"statut": "confirme", "commentaire": "OK"})
+    audit, *_ = relire(audit_xlsx([saisie]), tmp_path / "a.xlsx", ref, FauxClient(confirme))
+    assert audit.completions[5]["justification"][0].startswith("Réaction après l'action. (règle R1)")
+
+    a_moi = {**saisie, "justification": "Ma propre justification."}
+    _, _, _, sortie, _ = relire(audit_xlsx([a_moi], nom="b.xlsx"), tmp_path / "b_relu.xlsx", ref, FauxClient(confirme))
+    _, _, cell = cellules(sortie)
+    assert cell("Justification du critère").value == "Ma propre justification."
 
 
 def test_sans_remplissage(audit_xlsx, ref, tmp_path):

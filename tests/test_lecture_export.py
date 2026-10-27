@@ -40,7 +40,8 @@ def test_export_annote_et_conserve_le_fichier(audit_xlsx, tmp_path):
     assert entetes[-2:] == ["Relecture : niveau", "Relecture : remarques"]
     assert ws.cell(row=5, column=len(entetes) - 1).value == "✓ Conforme"
     assert ws.cell(row=6, column=len(entetes) - 1).value == "Bloquant"
-    assert ws["K6"].comment is not None  # cellule Gravité fautive commentée
+    col_gravite = next(c.column for c in ws[3] if str(c.value).startswith("Gravité"))
+    assert ws.cell(row=6, column=col_gravite).comment is not None  # cellule Gravité fautive commentée
     assert str(ws["A5"].value).startswith("=")  # formules du designer conservées
     assert len(ws.data_validations.dataValidation) >= 8  # listes déroulantes conservées
 

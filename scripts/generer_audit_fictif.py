@@ -5,10 +5,14 @@
   critères et recommandations saisis par le designer, à faire corriger.
 Usage : python3 scripts/generer_audit_fictif.py
 """
+import sys
 from datetime import date
 from pathlib import Path
 
 from openpyxl import load_workbook
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from audit_ergo.lecture import nom_colonne  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "template" / "Audit_ergonomique_template.xlsx"
@@ -86,6 +90,11 @@ CONSTATS = [
 ]
 
 
+def colonnes(ws, ligne_entete=3):
+    """{champ: numéro de colonne} d'après les en-têtes du template."""
+    return {champ: c.column for c in ws[ligne_entete] if c.value and (champ := nom_colonne(c.value))}
+
+
 def main():
     wb = load_workbook(TEMPLATE)
     ws = wb["Contexte"]
@@ -93,12 +102,16 @@ def main():
         if row[0].value in CONTEXTE:
             row[1].value = CONTEXTE[row[0].value]
     ws = wb["Audit"]
+    col = colonnes(ws)
+    champs = ["type", "constat", "categorie", "critere", "secondaires", "regle", "gravite", "frequence", "impact",
+              "recommandation", "priorite"]
     for i, constat in enumerate(CONSTATS):
         r = 5 + i
         ecran, parcours, *reste = constat
-        ws[f"B{r}"], ws[f"C{r}"] = ecran, parcours or None
-        for col, valeur in zip("EFGHIJKLMNO", reste):
-            ws[f"{col}{r}"] = valeur if valeur != "" else None
+        ws.cell(row=r, column=col["ecran"], value=ecran)
+        ws.cell(row=r, column=col["parcours"], value=parcours or None)
+        for champ, valeur in zip(champs, reste):
+            ws.cell(row=r, column=col[champ], value=valeur if valeur != "" else None)
     OUT.parent.mkdir(exist_ok=True)
     wb.save(OUT)
     print(f"{len(CONSTATS)} constats fictifs -> {OUT}")
@@ -132,13 +145,15 @@ def generer_a_completer():
         if row[0].value in CONTEXTE:
             row[1].value = CONTEXTE[row[0].value]
     ws = wb["Audit"]
+    col = colonnes(ws)
     for i, (ecran, constat, critere, reco) in enumerate(A_COMPLETER):
         r = 5 + i
-        ws[f"B{r}"], ws[f"F{r}"] = ecran, constat
+        ws.cell(row=r, column=col["ecran"], value=ecran)
+        ws.cell(row=r, column=col["constat"], value=constat)
         if critere:
-            ws[f"H{r}"] = critere
+            ws.cell(row=r, column=col["critere"], value=critere)
         if reco:
-            ws[f"N{r}"] = reco
+            ws.cell(row=r, column=col["recommandation"], value=reco)
     wb.save(OUT_A_COMPLETER)
     print(f"{len(A_COMPLETER)} constats à compléter -> {OUT_A_COMPLETER}")
 

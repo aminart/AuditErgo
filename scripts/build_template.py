@@ -14,7 +14,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "template" / "Audit_ergonomique_template.xlsx"
-TEMPLATE_VERSION = "1.0"
+TEMPLATE_VERSION = "1.1"
 N_ROWS = 200  # lignes de constats préparées
 
 FONT = "Arial"
@@ -53,6 +53,7 @@ COLUMNS = [
     ("Critère principal *", 38, True, True),
     ("Critères secondaires (codes séparés par ;)", 20, False, True),
     ("Règle de départage", 12, False, True),
+    ("Justification du critère", 40, False, True),
     ("Gravité (0-4) *", 10, True, True),
     ("Fréquence", 14, False, True),
     ("Impact", 10, False, True),
@@ -141,7 +142,7 @@ def sheet_mode_emploi(wb, ref):
         ("1. Onglet « Contexte » : décrire le produit audité, la cible et la plateforme.", None),
         ("2. Onglet « Audit » : une ligne par constat (problème ou point fort). La ligne grisée en italique est un exemple : la laisser telle quelle.", None),
         ("3. Choisir d'abord la Catégorie, puis le Critère principal : la liste des critères dépend de la catégorie choisie.", None),
-        ("4. En cas d'hésitation entre deux critères, consulter l'onglet « Règles de départage » et indiquer la règle appliquée.", None),
+        ("4. En cas d'hésitation entre deux critères, consulter l'onglet « Règles de départage » et indiquer la règle appliquée. Justifier le choix en une phrase (colonne « Justification du critère ») : citer la règle ou la question de checklist.", None),
         ("5. Noter la gravité de 0 à 4 selon l'onglet « Gravité ». Toujours rédiger une recommandation pour un problème.", None),
         ("6. Vérifier la colonne « Contrôle » : elle doit afficher ✓ OK sur chaque ligne avant de rendre l'audit.", None),
         ("", None),
@@ -247,6 +248,8 @@ def sheet_audit(wb, ref):
         "Critère principal": crit_label(feedback),
         "Critères secondaires": "ERR-01",
         "Règle de départage": "R1",
+        "Justification du critère": "Le problème porte sur la réponse du système APRÈS l'action (règle R1) : "
+                                    "« Is information displayed during the loading of an action? »",
         "Gravité": 3,
         "Fréquence": "Systématique",
         "Impact": "Fort",

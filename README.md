@@ -57,8 +57,8 @@ Seuls les codes du référentiel sont acceptés : toute réponse citant un code 
 
 Le designer peut déposer un audit **partiellement rempli** : les constats suffisent. Avec l'IA (bouton « Compléter et corriger avec l'IA », ou `--ia`) :
 
-- **les cellules vides sont remplies** : type, catégorie, critère principal, critères secondaires, règle de départage, gravité et recommandation. Elles apparaissent **en violet**, avec l'explication en commentaire, et sont à valider par le designer ;
-- **ce que le designer a déjà saisi n'est jamais écrasé** : l'IA donne son avis à côté, dans les colonnes « IA : critère suggéré / verdict critère / recommandation / avis recommandation / gravité / justification ». Une recommandation vague reçoit une version améliorée qui garde son intention ; un écart de gravité de 2 niveaux ou plus est signalé ;
+- **les cellules vides sont remplies** : type, catégorie, critère principal, critères secondaires, règle de départage, **justification du critère** (raison, règle appliquée et question de checklist citée), gravité et recommandation. La justification n'est remplie que pour un critère proposé par l'IA ou un critère du designer qu'elle confirme. Elles apparaissent **en violet**, avec l'explication en commentaire, et sont à valider par le designer ;
+- **ce que le designer a déjà saisi n'est jamais écrasé** : l'IA donne son avis à côté, dans les colonnes « IA : critère suggéré / verdict critère / justification critère / recommandation / avis recommandation / gravité / remarques ». Une recommandation vague reçoit une version améliorée qui garde son intention ; un écart de gravité de 2 niveaux ou plus est signalé ;
 - un simple tableau avec une colonne « Constat » suffit : les colonnes manquantes sont ajoutées.
 
 ```bash

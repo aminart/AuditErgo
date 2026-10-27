@@ -44,6 +44,8 @@ def afficher_suggestion(s, ref):
     if s.gravite is not None:
         print(f"Gravité proposée : {s.gravite} – {s.justification_gravite}")
     print(f"\nÀ coller dans l'audit : {s.ligne_excel(ref)}")
+    if not s.critere_designer or s.verdict == "confirme":
+        print(f"Justification du critère : {s.justification_critere}")
 
 
 def main(argv=None):
