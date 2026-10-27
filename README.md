@@ -2,24 +2,42 @@
 
 Application d'aide à la relecture des audits ergonomiques (heuristiques) réalisés par les UX designers.
 
-## Utilisation (version 1 : contrôles de forme)
+## Installation
 
 ```bash
 pip install -r requirements.txt
+cp .env.exemple .env      # puis coller la clé d'API Anthropic dans .env (facultatif)
+streamlit run app.py      # ouvre l'interface dans le navigateur
+```
 
-# Interface web : déposer l'audit, voir les anomalies, télécharger le fichier annoté
-streamlit run app.py
+Sans clé, tout fonctionne sauf les suggestions de critères. La clé peut aussi être saisie dans la barre latérale de l'interface (elle n'est alors gardée que le temps de la session). Le fichier `.env` est ignoré par Git.
 
-# Ligne de commande : produit <audit>_relu.xlsx (code retour 1 s'il reste des anomalies bloquantes)
-python3 -m audit_ergo exemples/audit_fictif.xlsx
+## Fonctionnalités
+
+### 🎯 Suggérer un critère (IA)
+
+Le designer décrit un constat ; l'IA propose le critère principal du référentiel avec un niveau de confiance, la justification (règle de départage et question de checklist citées), les critères secondaires, les critères envisagés puis écartés, et ce qu'il faudrait préciser si le constat est trop vague. Si le designer indique le critère qu'il envisage, l'IA le confirme ou le remet en question. Le résultat se copie directement dans le template.
+
+```bash
+python3 -m audit_ergo --suggerer "Après un clic sur Payer, rien ne se passe pendant 5 s" --ecran Paiement
+python3 -m audit_ergo --suggerer "..." --critere GUI-01    # faire vérifier un choix
+```
+
+L'IA ne peut répondre qu'avec des codes du référentiel (sortie structurée contrainte). Le référentiel complet (~9 000 tokens) est envoyé à chaque appel et **mis en cache** : il n'est facturé plein tarif qu'au premier appel de chaque série. Modèle par défaut : `claude-opus-5-5`, modifiable dans `.env`.
+
+### 🔍 Relire un audit
+
+```bash
+python3 -m audit_ergo mon_audit.xlsx                # contrôles de forme -> mon_audit_relu.xlsx
+python3 -m audit_ergo mon_audit.xlsx --ia           # + vérification du critère de chaque constat par l'IA
 python3 -m audit_ergo mon_audit.xlsx -o relu.xlsx --json
 ```
 
 L'outil lit le template, mais aussi un fichier libre : il cherche l'onglet et la ligne d'en-tête, reconnaît les colonnes même déplacées ou renommées (« Préconisation » = Recommandation), et accepte un critère saisi par son code, son nom français ou anglais.
 
-Il renvoie le fichier d'origine **annoté** : cellules fautives surlignées et commentées, deux colonnes « Relecture » ajoutées, et deux onglets « Relecture – Synthèse » (indicateurs, gravités, couverture des 24 critères) et « Relecture – Anomalies ». Les formules et listes déroulantes du designer sont conservées.
+Il renvoie le fichier d'origine **annoté** : cellules fautives surlignées et commentées, colonnes « Relecture » ajoutées (et « IA : critère suggéré / verdict / justification » avec `--ia`), et deux onglets « Relecture – Synthèse » (indicateurs, gravités, couverture des 24 critères) et « Relecture – Anomalies ». Les formules et listes déroulantes du designer sont conservées.
 
-Les contrôles (`audit_ergo/controles.py`) sont classés en trois niveaux :
+Les contrôles de forme (`audit_ergo/controles.py`) sont classés en trois niveaux :
 - **Bloquant** : champ obligatoire vide, critère ou catégorie inconnus, critère hors de sa catégorie, gravité hors échelle.
 - **Avertissement** : constat ou recommandation trop courts, recommandation qui recopie le constat, priorité ou impact incohérents avec la gravité, règle de départage qui ne mène pas au critère choisi, critère secondaire inconnu, doublon, contexte incomplet, référentiel périmé.
 - **Info** : formulations vagues (« confus », « revoir l'ergonomie »…), gravité 0 pour un problème, critère secondaire identique au principal.
@@ -32,12 +50,15 @@ Les contrôles (`audit_ergo/controles.py`) sont classés en trois niveaux :
 python3 -m pytest -q
 ```
 
+Les tests de l'IA utilisent un faux client : ils ne nécessitent pas de clé et ne consomment rien.
+
 ## Contenu
 
 | Chemin | Rôle |
 |---|---|
 | `audit_ergo/` | Moteur de relecture : lecture du fichier, contrôles, synthèse, export annoté |
-| `app.py` | Interface web (Streamlit) |
+| `app.py`, `interface/` | Interface web (Streamlit) : pages « Suggérer un critère » et « Relire un audit » |
+| `audit_ergo/suggestion.py` | Suggestion de critères par l'IA (prompt, schéma de réponse, appel API) |
 | `tests/` | Tests automatiques |
 | `CONCEPTION.md` | Document de conception : fonctionnalités, architecture, règles de départage, score, feuille de route |
 | `template/Audit_ergonomique_template.xlsx` | **Template à remplir par les designers** (listes déroulantes, contrôles automatiques, aide intégrée) |

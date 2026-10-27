@@ -40,7 +40,12 @@ def _ligne(ws, row, valeurs, fill=None, bold=False):
             cell.fill = PatternFill("solid", fgColor=fill)
 
 
-def _annoter_audit(ws, audit, anomalies):
+COLONNES_RELECTURE = [("Relecture : niveau", 14), ("Relecture : remarques", 60)]
+COLONNES_IA = [("IA : critère suggéré", 32), ("IA : verdict", 14), ("IA : justification", 60)]
+COULEURS_VERDICT = {"confirme": "E2EFDA", "a_revoir": "FFE699", "incorrect": "F8CBAD", "non_fourni": "EDEDED"}
+
+
+def _annoter_audit(ws, audit, anomalies, ref, ia=None):
     par_ligne = {}
     for a in anomalies:
         if a.ligne:
@@ -48,17 +53,24 @@ def _annoter_audit(ws, audit, anomalies):
 
     # Une relecture précédente a pu déjà ajouter ces colonnes : on les réutilise
     existantes = {cell.value: cell.column for cell in ws[audit.ligne_entete] if cell.value}
-    col_niveau = existantes.get("Relecture : niveau", ws.max_column + 1)
-    col_remarques = existantes.get("Relecture : remarques", col_niveau + 1)
-    for r in range(audit.ligne_entete + 1, ws.max_row + 1):
-        for col in (col_niveau, col_remarques):
-            ws.cell(row=r, column=col).value = None
-    for col, titre, largeur in [(col_niveau, "Relecture : niveau", 14), (col_remarques, "Relecture : remarques", 60)]:
-        cell = ws.cell(row=audit.ligne_entete, column=col, value=titre)
+    prochaine = ws.max_column + 1
+    cols = {}
+    for titre, largeur in COLONNES_RELECTURE + (COLONNES_IA if ia is not None else []):
+        if titre in existantes:
+            cols[titre] = existantes[titre]
+        else:
+            cols[titre], prochaine = prochaine, prochaine + 1
+        cell = ws.cell(row=audit.ligne_entete, column=cols[titre], value=titre)
         cell.font = Font(name=FONT, size=10, bold=True, color="FFFFFF")
-        cell.fill = PatternFill("solid", fgColor="7030A0")
+        cell.fill = PatternFill("solid", fgColor="7030A0" if titre.startswith("Relecture") else "2E75B6")
         cell.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
-        ws.column_dimensions[get_column_letter(col)].width = largeur
+        ws.column_dimensions[get_column_letter(cols[titre])].width = largeur
+        for r in range(audit.ligne_entete + 1, ws.max_row + 1):
+            ws.cell(row=r, column=cols[titre]).value = None
+    col_niveau, col_remarques = cols["Relecture : niveau"], cols["Relecture : remarques"]
+
+    if ia is not None:
+        _colonnes_ia(ws, audit, ref, ia, cols)
 
     for c in audit.constats:
         liste = par_ligne.get(c.ligne, [])
@@ -84,6 +96,36 @@ def _annoter_audit(ws, audit, anomalies):
             cible.fill = PatternFill("solid", fgColor=COULEURS[pire])
             texte = "\n".join(a.message for a in liste_champ)
             cible.comment = Comment(texte, "Relecture automatique", width=320, height=110)
+
+
+def _colonnes_ia(ws, audit, ref, ia, cols):
+    from .suggestion import LIBELLE_VERDICT, ErreurSuggestion
+
+    for c in audit.constats:
+        res = ia.get(c.ligne)
+        if res is None:
+            continue
+        crit, verdict, justif = (ws.cell(row=c.ligne, column=cols[t]) for t, _ in COLONNES_IA)
+        for cell in (crit, verdict, justif):
+            cell.font = Font(name=FONT, size=10)
+            cell.alignment = WRAP
+        if isinstance(res, ErreurSuggestion):
+            verdict.value, justif.value = "Erreur", str(res)
+            continue
+        crit.value = res.ligne_excel(ref)
+        statut = res.verdict if res.critere_designer else "non_fourni"
+        verdict.value = LIBELLE_VERDICT[statut] + (f" (confiance {res.confiance})" if res.confiance != "haute" else "")
+        verdict.fill = PatternFill("solid", fgColor=COULEURS_VERDICT[statut])
+        details = [res.justification]
+        if res.commentaire_verdict:
+            details.append(f"Sur le choix du designer : {res.commentaire_verdict}")
+        if res.question_checklist:
+            details.append(f"Checklist : {res.question_checklist}")
+        if res.question_a_se_poser:
+            details.append(f"À se demander : {res.question_a_se_poser}")
+        if res.precisions_manquantes:
+            details.append("À préciser : " + " ; ".join(res.precisions_manquantes))
+        justif.value = "\n".join(details)
 
 
 def _onglet_synthese(wb, audit, synthese, ref):
@@ -161,12 +203,13 @@ def _onglet_anomalies(wb, anomalies):
     ws.auto_filter.ref = f"A1:F{max(len(anomalies) + 1, 2)}"
 
 
-def exporter(audit, anomalies, synthese, ref, sortie):
+def exporter(audit, anomalies, synthese, ref, sortie, ia=None):
+    """`ia` : résultats de suggestion.verifier_audit ({ligne: Suggestion | ErreurSuggestion}), ou None."""
     wb = load_workbook(audit.chemin)  # sans data_only : les formules du designer sont conservées
     for nom in (ONGLET_SYNTHESE, ONGLET_ANOMALIES):
         if nom in wb.sheetnames:
             del wb[nom]
-    _annoter_audit(wb[audit.onglet], audit, anomalies)
+    _annoter_audit(wb[audit.onglet], audit, anomalies, ref, ia)
     _onglet_synthese(wb, audit, synthese, ref)
     _onglet_anomalies(wb, anomalies)
     for nom in (ONGLET_SYNTHESE, ONGLET_ANOMALIES):

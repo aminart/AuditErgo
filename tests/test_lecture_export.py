@@ -30,7 +30,7 @@ def test_lecture_tolerante_fichier_libre(tmp_path, ref):
 def test_export_annote_et_conserve_le_fichier(audit_xlsx, tmp_path):
     erreur = {**CONSTAT_VALIDE, "gravite": 9}
     chemin = audit_xlsx([CONSTAT_VALIDE, erreur])
-    _, anomalies, synthese, sortie = relire(chemin, tmp_path / "relu.xlsx")
+    _, anomalies, synthese, sortie, _ = relire(chemin, tmp_path / "relu.xlsx")
     assert synthese.nb_constats == 2 and not synthese.pret
 
     wb = load_workbook(sortie)
@@ -45,13 +45,13 @@ def test_export_annote_et_conserve_le_fichier(audit_xlsx, tmp_path):
     assert len(ws.data_validations.dataValidation) >= 8  # listes déroulantes conservées
 
     # Relire le fichier déjà relu ne duplique pas les colonnes de relecture
-    _, _, _, sortie2 = relire(sortie, tmp_path / "relu2.xlsx")
+    _, _, _, sortie2, _ = relire(sortie, tmp_path / "relu2.xlsx")
     assert [c.value for c in load_workbook(sortie2)["Audit"][3]] == entetes
 
 
 def test_synthese_couverture(audit_xlsx, ref):
     secondaire = {**CONSTAT_VALIDE, "secondaires": "ERR-01"}
-    _, _, synthese, _ = relire(audit_xlsx([secondaire]))
+    _, _, synthese, _, _ = relire(audit_xlsx([secondaire]))
     assert synthese.par_critere == {"GUI-03": 1}
     assert synthese.secondaires == {"ERR-01": 1}
     assert "GUI-03" not in synthese.non_couverts and "ERR-01" not in synthese.non_couverts
