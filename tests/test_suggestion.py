@@ -183,6 +183,14 @@ def test_configuration_format_explicite(env_vide):
         client_ou_none()
 
 
+def test_anthropic_base_url_garde_le_format_anthropic(env_vide):
+    """ANTHROPIC_BASE_URL (souvent défini par d'autres outils) ne doit pas basculer en format OpenAI."""
+    env_vide.setenv("API_KEY", "cle-test")
+    env_vide.setenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+    client = client_ou_none()
+    assert client.format == "anthropic" and str(client.sdk.base_url).startswith("https://api.anthropic.com")
+
+
 def test_configuration_noms_anthropic_acceptes(env_vide):
     env_vide.setenv("ANTHROPIC_API_KEY", "ancienne")
     assert client_ou_none().sdk.api_key == "ancienne"

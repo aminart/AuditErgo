@@ -28,7 +28,7 @@ if not fichier:
     st.stop()
 
 
-def lancer(contenu, nom, avec_ia):
+def lancer(contenu, nom, avec_ia, forcer=False):
     """Relecture complète, conservée en session : l'IA n'est appelée qu'à la demande, pas à chaque clic."""
     barre = st.progress(0.0, "Vérification des critères par l'IA…") if avec_ia else None
 
@@ -40,7 +40,7 @@ def lancer(contenu, nom, avec_ia):
         entree.write_bytes(contenu)
         audit, anomalies, synthese, sortie, ia = relire(entree, Path(tmp) / f"{entree.stem}_relu.xlsx", ref,
                                                         client() if avec_ia else None,
-                                                        progression if avec_ia else None)
+                                                        progression if avec_ia else None, forcer)
         resultat = Path(sortie).read_bytes()
     if barre:
         barre.empty()
@@ -80,7 +80,13 @@ with col_ia:
             st.session_state["relecture"] = {"empreinte": empreinte, **lancer(contenu, fichier.name, True)}
             st.rerun()
     else:
-        st.caption("Critères vérifiés par l'IA : le fichier annoté contient les colonnes « IA : … ».")
+        caches = sum(1 for r in ia.values() if not isinstance(r, ErreurSuggestion) and r.depuis_cache)
+        st.caption("Critères vérifiés par l'IA : le fichier annoté contient les colonnes « IA : … »."
+                   + (f" {caches} constat(s) repris du cache, sans coût." if caches else ""))
+        if caches and st.button("Refaire l'analyse IA sans le cache"):
+            st.session_state["relecture"] = {"empreinte": empreinte,
+                                             **lancer(contenu, fichier.name, True, forcer=True)}
+            st.rerun()
 
 ctx = audit.contexte
 st.caption(" · ".join(str(v) for v in (ctx.get("produit"), ctx.get("designer"), ctx.get("plateforme")) if v)

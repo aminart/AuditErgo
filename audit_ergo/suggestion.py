@@ -6,7 +6,8 @@ Configuration lue dans l'environnement ou dans un fichier .env à la racine du d
 - CA_BUNDLE  : chemin d'un fichier de certificats (PEM) si la passerelle ou le proxy utilise une autorité
                de certification interne ;
 - API_FORMAT : « openai » (endpoint /v1/chat/completions) ou « anthropic » (endpoint /v1/messages).
-               Par défaut : openai si API_BASE est renseigné, anthropic sinon.
+               Par défaut : openai si API_BASE est renseigné, anthropic sinon (y compris quand seule la
+               variable ANTHROPIC_BASE_URL est définie).
 Sans clé, `client_ou_none()` renvoie None et l'interface l'indique au lieu d'appeler l'API.
 """
 import json
@@ -15,6 +16,8 @@ import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from .cache import CacheSuggestions
 
 FICHIER_ENV = Path(__file__).resolve().parent.parent / ".env"
 CONFIANCES = ["haute", "moyenne", "faible"]
@@ -70,7 +73,9 @@ def adresse_api():
 
 def format_api():
     charger_env()
-    fmt = (_env("API_FORMAT") or ("openai" if adresse_api() else "anthropic")).lower()
+    # Seul API_BASE (la variable de cette application) implique le format OpenAI ; ANTHROPIC_BASE_URL,
+    # souvent défini par d'autres outils, désigne une adresse au format Anthropic
+    fmt = (_env("API_FORMAT") or ("openai" if _env("API_BASE") else "anthropic")).lower()
     if fmt not in FORMATS:
         raise ErreurSuggestion(f"API_FORMAT : « {fmt} » inconnu (valeurs possibles : openai, anthropic).")
     return fmt
@@ -294,6 +299,7 @@ class Suggestion:
     commentaire_verdict: str = ""
     critere_designer: str | None = None  # code du critère choisi par le designer, s'il y en a un
     usage: dict = field(default_factory=dict)
+    depuis_cache: bool = False  # True : réponse reprise du cache local, sans nouvel appel (ni coût)
 
     def ligne_excel(self, ref):
         """Texte prêt à coller dans le template."""
@@ -426,10 +432,15 @@ def _appel_openai(sdk, requete):
     return _extraire_json(choix.message.content), usage
 
 
-def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=None):
+DEFAUT = object()  # cache par défaut (CacheSuggestions.defaut())
+
+
+def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=None, cache=DEFAUT, forcer=False):
     """Appelle l'IA et renvoie une Suggestion. `critere_designer` est un code du référentiel (ou None).
 
     `client` est un ClientIA ; un client Anthropic nu est aussi accepté.
+    Une réponse déjà obtenue pour la même requête est reprise du cache local (sauf `forcer=True`) ;
+    `cache=None` désactive le cache.
     """
     if client is None:
         raise ErreurSuggestion("Aucune clé d'API configurée (API_KEY dans le fichier .env).")
@@ -438,22 +449,41 @@ def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=N
     if critere_designer:
         c = ref.criteres[critere_designer]
         libelle = f"{c['code']} – {c['label_fr']} ({c['name']})"
-    if fmt == "openai":
-        data, usage = _appel_openai(sdk, construire_requete_openai(ref, constat, ecran, libelle, contexte))
-    else:
-        data, usage = _appel_anthropic(sdk, construire_requete(ref, constat, ecran, libelle, contexte))
-    return interpreter(ref, data, critere_designer, usage)
+    construire = construire_requete_openai if fmt == "openai" else construire_requete
+    requete = construire(ref, constat, ecran, libelle, contexte)
+
+    cache = CacheSuggestions.defaut() if cache is DEFAUT else cache
+    cle = cache.cle(fmt, requete) if cache else None
+    if cache and not forcer and (memorise := cache.lire(cle)):
+        try:
+            suggestion = interpreter(ref, memorise["data"], critere_designer)
+            suggestion.depuis_cache = True
+            return suggestion
+        except (ErreurSuggestion, KeyError, TypeError):
+            pass  # entrée illisible : on refait l'appel
+
+    appel = _appel_openai if fmt == "openai" else _appel_anthropic
+    data, usage = appel(sdk, requete)
+    suggestion = interpreter(ref, data, critere_designer, usage)  # valide avant de mémoriser
+    if cache:
+        cache.ecrire(cle, {"data": data, "usage": usage})
+    return suggestion
 
 
-def verifier_audit(client, ref, audit, progression=None, paralleles=4):
-    """Suggestion pour chaque constat de l'audit. Renvoie {ligne: Suggestion | ErreurSuggestion}."""
+def verifier_audit(client, ref, audit, progression=None, paralleles=4, forcer=False):
+    """Suggestion pour chaque constat de l'audit. Renvoie {ligne: Suggestion | ErreurSuggestion}.
+
+    Les constats déjà analysés sont repris du cache local, sauf `forcer=True`.
+    """
+    cache = CacheSuggestions.defaut()
     contexte = {k: audit.contexte.get(k) for k in ("produit", "cible", "plateforme", "contexte_usage")}
     a_traiter = [c for c in audit.constats if c["constat"]]
     resultats = {}
 
     def une(c):
         try:
-            return suggerer(client, ref, c["constat"], c["ecran"], ref.trouver_critere(c["critere"]), contexte)
+            return suggerer(client, ref, c["constat"], c["ecran"], ref.trouver_critere(c["critere"]), contexte,
+                            cache, forcer)
         except ErreurSuggestion as e:
             return e
 

@@ -47,3 +47,11 @@ def audit_xlsx(tmp_path):
         wb.save(chemin)
         return chemin
     return fabriquer
+
+
+@pytest.fixture(autouse=True)
+def cache_isole(tmp_path, monkeypatch):
+    """Chaque test a son propre cache de suggestions : jamais celui de l'utilisateur."""
+    chemin = tmp_path / "cache" / "suggestions.sqlite"
+    monkeypatch.setenv("AUDIT_ERGO_CACHE", str(chemin))
+    return chemin

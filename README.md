@@ -36,6 +36,8 @@ python3 -m audit_ergo --suggerer "Après un clic sur Payer, rien ne se passe pen
 python3 -m audit_ergo --suggerer "..." --critere GUI-01    # faire vérifier un choix
 ```
 
+**Les réponses sont mémorisées** dans `.cache/suggestions.sqlite` (ignoré par Git) : un constat déjà analysé, avec le même écran, le même critère envisagé et le même contexte, est repris sans nouvel appel ni coût (badge « Repris du cache »). Toute modification du référentiel, des consignes ou du modèle invalide automatiquement les anciennes réponses. Les erreurs ne sont jamais mémorisées. Pour forcer une nouvelle analyse : case à cocher dans l'interface ou `--sans-cache` ; pour tout effacer : bouton « Vider le cache de l'IA » ou `--vider-cache`. `AUDIT_ERGO_CACHE` permet de changer l'emplacement du cache (ou de le désactiver avec `0`).
+
 Seuls les codes du référentiel sont acceptés : toute réponse citant un code inconnu est rejetée. Le référentiel complet (~9 000 tokens) est envoyé à chaque appel. Au format `anthropic`, il est **mis en cache** et n'est facturé plein tarif qu'au premier appel de chaque série ; au format `openai`, cela dépend de la passerelle.
 
 ### 🔍 Relire un audit
@@ -71,6 +73,7 @@ Les tests de l'IA utilisent de faux clients et une fausse passerelle locale : il
 |---|---|
 | `audit_ergo/` | Moteur de relecture : lecture du fichier, contrôles, synthèse, export annoté |
 | `app.py`, `interface/` | Interface web (Streamlit) : pages « Suggérer un critère » et « Relire un audit » |
+| `audit_ergo/cache.py` | Cache local des réponses de l'IA |
 | `audit_ergo/suggestion.py` | Suggestion de critères par l'IA (prompt, schéma de réponse, appel API aux formats OpenAI et Anthropic) |
 | `tests/` | Tests automatiques |
 | `CONCEPTION.md` | Document de conception : fonctionnalités, architecture, règles de départage, score, feuille de route |

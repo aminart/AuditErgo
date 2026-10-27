@@ -29,6 +29,9 @@ with st.form("constat"):
         c1, c2, c3 = st.columns(3)
         contexte = {"produit": c1.text_input("Produit"), "cible": c2.text_input("Cible utilisateurs"),
                     "plateforme": c3.text_input("Plateforme")}
+    forcer = st.checkbox("Nouvelle analyse, même si ce constat a déjà été analysé",
+                         help="Par défaut, une réponse déjà obtenue pour exactement le même constat est reprise "
+                              "sans nouvel appel (ni coût).")
     envoye = st.form_submit_button("Proposer les critères", type="primary", disabled=cl is None)
 
 if envoye:
@@ -38,7 +41,7 @@ if envoye:
         critere = None if choix == AUCUN else choix.split(" – ")[0]
         with st.spinner("Analyse du constat…"):
             try:
-                s = suggerer(cl, ref, constat, ecran or None, critere, contexte)
+                s = suggerer(cl, ref, constat, ecran or None, critere, contexte, forcer=forcer)
                 st.session_state.setdefault("historique", []).insert(0, (constat, ecran, s))
             except ErreurSuggestion as e:
                 st.error(str(e))
@@ -48,7 +51,8 @@ def afficher(s):
     c = ref.criteres[s.code]
     st.subheader(f"{s.code} – {c['label_fr']}")
     st.caption(f"{c['name']} · catégorie {ref.categories[c['categorie']]['label_fr']}")
-    st.markdown(BADGE_CONFIANCE[s.confiance] + (f" :blue-badge[Règle {s.regle}]" if s.regle != "aucune" else ""))
+    st.markdown(BADGE_CONFIANCE[s.confiance] + (f" :blue-badge[Règle {s.regle}]" if s.regle != "aucune" else "")
+                + (" :gray-badge[Repris du cache · sans coût]" if s.depuis_cache else ""))
     st.write(s.justification)
     if s.question_checklist:
         st.markdown(f"**Question de checklist :** _{s.question_checklist}_")

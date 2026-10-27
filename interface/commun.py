@@ -4,6 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from audit_ergo import Referentiel
+from audit_ergo.cache import CacheSuggestions
 from audit_ergo.suggestion import ErreurSuggestion, adresse_api, cle_disponible, client_ou_none, format_api
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "template" / "Audit_ergonomique_template.xlsx"
@@ -44,6 +45,13 @@ def barre_laterale(ref):
             if not st.session_state.get(CLE_SESSION):
                 st.info("Sans clé, les contrôles de forme fonctionnent ; les suggestions de critères sont "
                         "désactivées.")
+        cache = CacheSuggestions.defaut()
+        if cache:
+            n = cache.taille()
+            st.caption(f"{n} réponse(s) de l'IA mémorisée(s) : un constat déjà analysé n'est pas refacturé.")
+            if n and st.button("Vider le cache de l'IA"):
+                cache.vider()
+                st.rerun()
 
 
 def libelle_critere(ref, code):

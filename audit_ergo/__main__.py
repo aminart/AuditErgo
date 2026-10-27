@@ -2,6 +2,7 @@
 
 Relire un audit :            python3 -m audit_ergo AUDIT.xlsx [-o SORTIE.xlsx] [--ia] [--json]
 Suggérer un critère :        python3 -m audit_ergo --suggerer "texte du constat" [--ecran PAGE] [--critere CODE]
+Les réponses de l'IA sont mémorisées : --sans-cache force une nouvelle analyse, --vider-cache les efface.
 """
 import argparse
 import json
@@ -9,6 +10,7 @@ import sys
 from dataclasses import asdict
 
 from . import ErreurLecture, Referentiel, relire
+from .cache import CacheSuggestions
 from .controles import NIVEAUX
 from .export import LIBELLE_NIVEAU
 from .suggestion import LIBELLE_VERDICT, ErreurSuggestion, client_ou_none, suggerer
@@ -16,7 +18,8 @@ from .suggestion import LIBELLE_VERDICT, ErreurSuggestion, client_ou_none, sugge
 
 def afficher_suggestion(s, ref):
     c = ref.criteres[s.code]
-    print(f"Critère proposé : {c['code']} – {c['label_fr']} ({c['name']})  [confiance {s.confiance}]")
+    print(f"Critère proposé : {c['code']} – {c['label_fr']} ({c['name']})  [confiance {s.confiance}]"
+          + ("  (repris du cache)" if s.depuis_cache else ""))
     print(f"  {s.justification}")
     if s.regle != "aucune":
         print(f"  Règle de départage : {s.regle}")
@@ -44,7 +47,15 @@ def main(argv=None):
     parser.add_argument("--suggerer", metavar="CONSTAT", help="proposer un critère pour un constat (IA)")
     parser.add_argument("--ecran", help="avec --suggerer : écran ou page concerné")
     parser.add_argument("--critere", help="avec --suggerer : critère choisi par le designer, à vérifier")
+    parser.add_argument("--sans-cache", action="store_true",
+                        help="refaire l'analyse IA même pour les constats déjà analysés")
+    parser.add_argument("--vider-cache", action="store_true", help="effacer les réponses IA mémorisées")
     args = parser.parse_args(argv)
+    if args.vider_cache:
+        cache = CacheSuggestions.defaut()
+        print(f"{cache.vider() if cache else 0} réponse(s) effacée(s) du cache.")
+        if not args.audit and not args.suggerer:
+            return 0
     if not args.audit and not args.suggerer:
         parser.error("indiquer un fichier d'audit ou --suggerer \"constat\"")
 
@@ -67,7 +78,7 @@ def main(argv=None):
             print(f"Erreur : critère « {args.critere} » inconnu.", file=sys.stderr)
             return 2
         try:
-            s = suggerer(client, ref, args.suggerer, args.ecran, critere)
+            s = suggerer(client, ref, args.suggerer, args.ecran, critere, forcer=args.sans_cache)
         except ErreurSuggestion as e:
             print(f"Erreur : {e}", file=sys.stderr)
             return 2
@@ -81,7 +92,8 @@ def main(argv=None):
         print(f"\rIA : {fait}/{total} constats", end="" if fait < total else "\n", file=sys.stderr)
 
     try:
-        audit, anomalies, synthese, sortie, ia = relire(args.audit, args.sortie, ref, client, progression)
+        audit, anomalies, synthese, sortie, ia = relire(args.audit, args.sortie, ref, client, progression,
+                                                        forcer=args.sans_cache)
     except (ErreurLecture, FileNotFoundError) as e:
         print(f"Erreur : {e}", file=sys.stderr)
         return 2
@@ -105,7 +117,9 @@ def main(argv=None):
             revoir = [(lg, r) for lg, r in sorted(ia.items())
                       if not isinstance(r, ErreurSuggestion) and r.verdict in ("a_revoir", "incorrect")]
             erreurs = [lg for lg, r in ia.items() if isinstance(r, ErreurSuggestion)]
-            print(f"\nIA : {len(revoir)} critère(s) à revoir" + (f", {len(erreurs)} erreur(s)" if erreurs else ""))
+            caches = sum(1 for r in ia.values() if not isinstance(r, ErreurSuggestion) and r.depuis_cache)
+            print(f"\nIA : {len(revoir)} critère(s) à revoir" + (f", {len(erreurs)} erreur(s)" if erreurs else "")
+                  + (f" ({caches} constat(s) repris du cache, sans coût)" if caches else ""))
             for lg, r in revoir:
                 print(f"  - ligne {lg} : {r.critere_designer} → {r.code} ({LIBELLE_VERDICT[r.verdict]}) : "
                       f"{r.commentaire_verdict}")
