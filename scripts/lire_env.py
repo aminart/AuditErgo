@@ -2,6 +2,7 @@
 
 Usage : python scripts/lire_env.py NOM   -> affiche la valeur, ou rien si elle est absente ou vide.
 """
+import re
 import sys
 from pathlib import Path
 
@@ -15,7 +16,7 @@ if __name__ == "__main__":
         if ligne and not ligne.startswith("#") and "=" in ligne:
             cle, valeur = ligne.split("=", 1)
             if cle.strip() == sys.argv[1]:
-                valeur = valeur.strip().strip('"').strip("'")
+                valeur = re.split(r"\s+#", valeur, maxsplit=1)[0].strip().strip('"').strip("'")
                 if valeur:
                     print(valeur)
                 break

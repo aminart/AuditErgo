@@ -276,6 +276,42 @@ def test_env_enregistre_par_le_bloc_notes(env_vide, tmp_path):
     assert client.api_key == "cle-lm-studio" and str(client.base_url).startswith("http://localhost:1234")
 
 
+def test_env_commentaire_en_fin_de_ligne(env_vide, tmp_path):
+    """Une ligne d'exemple décommentée avec son commentaire (« 1  # … ») autorise bien le serveur interne."""
+    from audit_ergo.suggestion import charger_env
+
+    fichier = tmp_path / ".env"
+    fichier.write_text("API_BASE=https://mistral.interne.example/v1\n"
+                       "AUDIT_ERGO_RESEAU_AUTORISE=1  # À NE METTRE QUE pour un serveur interne\n", encoding="utf-8")
+    env_vide.setattr("audit_ergo.suggestion.charger_env.__defaults__", (fichier,))
+    charger_env(fichier)
+    assert str(client_ou_none().base_url).startswith("https://mistral.interne.example")
+
+
+def test_env_modifie_relu_sans_redemarrer(env_vide, tmp_path):
+    """Une valeur corrigée dans le .env pendant que l'application tourne est prise en compte."""
+    from audit_ergo.suggestion import charger_env
+
+    fichier = tmp_path / ".env"
+    env_vide.setattr("audit_ergo.suggestion.charger_env.__defaults__", (fichier,))
+    fichier.write_text("API_BASE=https://mistral.interne.example/v1\nAUDIT_ERGO_RESEAU_AUTORISE=0\n", encoding="utf-8")
+    charger_env(fichier)
+    with pytest.raises(ErreurSuggestion, match="AUDIT_ERGO_RESEAU_AUTORISE"):
+        client_ou_none()
+    fichier.write_text("API_BASE=https://mistral.interne.example/v1\nAUDIT_ERGO_RESEAU_AUTORISE=1\n", encoding="utf-8")
+    assert client_ou_none() is not None
+
+
+def test_environnement_du_poste_prioritaire(env_vide, tmp_path):
+    from audit_ergo.suggestion import charger_env
+
+    env_vide.setenv("API_KEY", "cle-du-poste")
+    fichier = tmp_path / ".env"
+    fichier.write_text("API_KEY=cle-du-fichier\n", encoding="utf-8")
+    charger_env(fichier)
+    assert client_ou_none().api_key == "cle-du-poste"
+
+
 def test_bout_en_bout_serveur_local_sans_proxy(env_vide, ref):
     """Vrai appel HTTP vers un faux serveur local, alors qu'un proxy est configuré sur le poste : la requête
     doit aller directement au serveur local, jamais passer par le proxy."""

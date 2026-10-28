@@ -16,6 +16,7 @@ validé par l'organisation).
 import ipaddress
 import json
 import os
+import re
 import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -37,8 +38,20 @@ class ErreurSuggestion(Exception):
     """Erreur à afficher telle quelle à l'utilisateur."""
 
 
+_DEPUIS_ENV = {}  # variables venues du fichier .env (et non de l'environnement du poste)
+
+
+def _valeur(brute):
+    """Valeur d'une ligne CLE=valeur : sans commentaire en fin de ligne (« 1  # … ») ni guillemets."""
+    valeur = re.split(r"\s+#", brute, maxsplit=1)[0].strip()
+    return valeur.strip('"').strip("'")
+
+
 def charger_env(chemin=FICHIER_ENV):
-    """Charge les variables d'un fichier .env simple (CLE=valeur) sans écraser l'environnement existant."""
+    """Charge les variables d'un fichier .env simple (CLE=valeur).
+
+    L'environnement du poste reste prioritaire ; une valeur modifiée dans le .env est relue sans redémarrer.
+    """
     if not chemin.exists():
         return
     # utf-8-sig : le Bloc-notes de Windows peut ajouter un BOM en tête de fichier
@@ -46,7 +59,9 @@ def charger_env(chemin=FICHIER_ENV):
         ligne = ligne.strip()
         if ligne and not ligne.startswith("#") and "=" in ligne:
             cle, valeur = ligne.split("=", 1)
-            os.environ.setdefault(cle.strip(), valeur.strip().strip('"').strip("'"))
+            cle, valeur = cle.strip(), _valeur(valeur)
+            if cle not in os.environ or _DEPUIS_ENV.get(cle) == os.environ[cle]:
+                os.environ[cle] = _DEPUIS_ENV[cle] = valeur
 
 
 charger_env()  # avant de lire la configuration ci-dessous, pour qu'elle puisse venir du .env
@@ -89,7 +104,9 @@ def verifier_adresse(adresse):
     """Refuse toute adresse qui ferait sortir les données du poste, sauf autorisation explicite."""
     if urlparse(adresse).scheme not in ("http", "https") or not urlparse(adresse).hostname:
         raise ErreurSuggestion(f"API_BASE invalide : « {adresse} » (attendu : http://localhost:11434/v1).")
-    if not est_locale(adresse) and os.environ.get("AUDIT_ERGO_RESEAU_AUTORISE") != "1":
+    charger_env()
+    autorise = os.environ.get("AUDIT_ERGO_RESEAU_AUTORISE", "").strip().lower()
+    if not est_locale(adresse) and autorise not in ("1", "true", "oui", "yes"):
         raise ErreurSuggestion(
             f"API_BASE ({adresse}) n'est pas une adresse locale : les constats quitteraient le poste. "
             "Utilisez le modèle installé sur ce poste (ex. http://localhost:11434/v1), ou, pour un serveur "
