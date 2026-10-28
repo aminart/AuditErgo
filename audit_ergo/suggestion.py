@@ -1,8 +1,7 @@
-"""Suggestions de l'IA (modèle Mistral local) à partir d'un constat : critère, recommandation, gravité.
+"""Suggestions de l'IA (modèle Mistral) à partir d'un constat : critère, recommandation, gravité.
 
-Principe : AUCUNE donnée ne quitte le poste du designer. L'IA est un modèle installé sur le poste
-(Ollama, LM Studio, llama.cpp…) qui expose une API compatible OpenAI (/v1/chat/completions) sur
-localhost. L'application refuse toute autre adresse, sauf autorisation explicite (serveur interne).
+L'IA est un serveur qui expose une API compatible OpenAI (/v1/chat/completions) : modèle installé sur le
+poste (Ollama, LM Studio…) ou passerelle de l'organisation.
 
 Connexion au modèle : trois paramètres, dans l'environnement ou le fichier .env à la racine du dépôt
 (voir .env.exemple) :
@@ -10,8 +9,6 @@ Connexion au modèle : trois paramètres, dans l'environnement ou le fichier .en
 - API_KEY   : clé d'API exigée par le serveur (laisser vide s'il n'en demande pas) ;
 - CA_BUNDLE : fichier de certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur.
 Plus le nom du modèle : AUDIT_ERGO_MODELE (défaut : mistral-small).
-Une adresse qui n'est pas sur le poste est refusée, sauf AUDIT_ERGO_RESEAU_AUTORISE=1 (serveur interne
-validé par l'organisation).
 """
 import ipaddress
 import json
@@ -101,16 +98,9 @@ def est_locale(adresse):
 
 
 def verifier_adresse(adresse):
-    """Refuse toute adresse qui ferait sortir les données du poste, sauf autorisation explicite."""
+    """Refuse une adresse mal formée."""
     if urlparse(adresse).scheme not in ("http", "https") or not urlparse(adresse).hostname:
-        raise ErreurSuggestion(f"API_BASE invalide : « {adresse} » (attendu : http://localhost:11434/v1).")
-    charger_env()
-    autorise = os.environ.get("AUDIT_ERGO_RESEAU_AUTORISE", "").strip().lower()
-    if not est_locale(adresse) and autorise not in ("1", "true", "oui", "yes"):
-        raise ErreurSuggestion(
-            f"API_BASE ({adresse}) n'est pas une adresse locale : les constats quitteraient le poste. "
-            "Utilisez le modèle installé sur ce poste (ex. http://localhost:11434/v1), ou, pour un serveur "
-            "interne validé par votre organisation, ajoutez AUDIT_ERGO_RESEAU_AUTORISE=1 dans le fichier .env.")
+        raise ErreurSuggestion(f"API_BASE invalide : « {adresse} » (attendu par ex. : http://localhost:11434/v1).")
 
 
 def _contexte_ssl():
@@ -142,9 +132,9 @@ def _base_url(adresse):
 
 
 def client_ou_none(api_key=None):
-    """Client pour le modèle local, ou None si l'IA est désactivée (AUDIT_ERGO_IA=0).
+    """Client du modèle (API_BASE, API_KEY, CA_BUNDLE), ou None si l'IA est désactivée (AUDIT_ERGO_IA=0).
 
-    Lève ErreurSuggestion si l'adresse n'est pas locale (sans autorisation) ou si CA_BUNDLE est invalide.
+    Lève ErreurSuggestion si API_BASE est mal formée ou si CA_BUNDLE est invalide.
     """
     if not ia_configuree():
         return None
@@ -152,9 +142,9 @@ def client_ou_none(api_key=None):
     verifier_adresse(adresse)
     import openai
 
-    # trust_env=False : jamais de proxy, même si HTTPS_PROXY est défini sur le poste ; la connexion va
-    # directement au serveur local
-    options = {"trust_env": False, "timeout": DELAI}
+    # Serveur sur le poste : connexion directe, sans passer par le proxy éventuel du poste.
+    # Serveur distant : réglages réseau du poste (proxy, NO_PROXY), comme le navigateur.
+    options = {"trust_env": not est_locale(adresse), "timeout": DELAI}
     if contexte_ssl := _contexte_ssl():
         options["verify"] = contexte_ssl
     return openai.OpenAI(api_key=api_key or _env("API_KEY") or "local", base_url=_base_url(adresse),

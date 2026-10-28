@@ -1,4 +1,4 @@
-"""Vérifie que le modèle local répond (utilisé par start.bat ; n'empêche jamais le lancement).
+"""Vérifie que le modèle répond (utilisé par start.bat ; n'empêche jamais le lancement).
 
 Usage : python scripts/verifier_ia.py
 """
@@ -19,17 +19,25 @@ def main():
     if client is None:
         print("IA désactivée (AUDIT_ERGO_IA=0) : seuls les contrôles de forme seront disponibles.")
         return
+    import openai
+
     try:
         modeles = [m.id for m in client.models.list()]
-    except Exception:
-        print(f"IA : le modèle local ne répond pas à {adresse_api()}.")
-        print("     Lancez Ollama (ou LM Studio) pour utiliser les suggestions ; l'application démarre quand même.")
+    except openai.NotFoundError:  # passerelle sans /v1/models : elle répond, on ne peut pas lister
+        print(f"IA : le serveur {adresse_api()} répond (modèle « {MODELE} »).")
+        return
+    except openai.AuthenticationError:
+        print(f"IA : clé refusée par {adresse_api()} : vérifiez API_KEY dans .env.")
+        return
+    except Exception as e:
+        print(f"IA : le modèle ne répond pas à {adresse_api()} ({type(e).__name__} : {e}).")
+        print("     Vérifiez API_BASE, API_KEY et CA_BUNDLE dans .env ; l'application démarre quand même.")
         return
     if any(m == MODELE or m.split(":")[0] == MODELE for m in modeles):
-        print(f"IA : modèle local « {MODELE} » prêt ({adresse_api()}). Aucune donnée ne quitte ce poste.")
+        print(f"IA : modèle « {MODELE} » prêt ({adresse_api()}).")
     else:
-        print(f"IA : le modèle « {MODELE} » n'est pas installé. Disponibles : {', '.join(modeles) or 'aucun'}.")
-        print(f"     Installez-le (« ollama pull {MODELE} ») ou corrigez AUDIT_ERGO_MODELE dans .env.")
+        print(f"IA : le modèle « {MODELE} » n'est pas proposé. Disponibles : {', '.join(modeles) or 'aucun'}.")
+        print("     Corrigez AUDIT_ERGO_MODELE dans .env.")
 
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ def serveur_https(certificats):
 
 @pytest.fixture
 def env(monkeypatch):
-    for nom in ("API_KEY", "API_BASE", "CA_BUNDLE", "AUDIT_ERGO_RESEAU_AUTORISE", "AUDIT_ERGO_IA"):
+    for nom in ("API_KEY", "API_BASE", "CA_BUNDLE", "AUDIT_ERGO_IA"):
         monkeypatch.delenv(nom, raising=False)
     monkeypatch.setattr("audit_ergo.suggestion.charger_env.__defaults__", (Path("/inexistant/.env"),))
     return monkeypatch

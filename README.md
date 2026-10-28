@@ -2,7 +2,7 @@
 
 Aide les UX designers à produire des audits ergonomiques (heuristiques) du même standard : contrôle de forme, proposition du critère, de la recommandation et de la gravité de chaque constat, complétion des cellules vides et correction des saisies, en français ou en anglais.
 
-**Aucune donnée ne quitte le poste du designer** : l'IA est un modèle Mistral installé localement (Ollama ou LM Studio), et l'application refuse tout serveur qui n'est pas sur le poste. Voir `CONCEPTION.md` § 2.
+L'IA est un modèle Mistral servi au format OpenAI (`/v1/chat/completions`) : installé sur le poste (Ollama, LM Studio), auquel cas aucune donnée ne quitte le poste, ou passerelle de l'organisation. La connexion se règle avec `API_BASE`, `API_KEY` et `CA_BUNDLE`. Voir `CONCEPTION.md` § 2.
 
 ## Installation
 
@@ -31,7 +31,7 @@ La connexion au modèle se règle avec **trois paramètres** :
 
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `API_BASE` | `http://localhost:11434/v1` | Adresse du serveur du modèle (Ollama, LM Studio ou autre serveur compatible OpenAI). Une adresse qui n'est pas sur le poste est refusée. |
+| `API_BASE` | `http://localhost:11434/v1` | Adresse du serveur du modèle : Ollama ou LM Studio sur le poste, ou passerelle compatible OpenAI. |
 | `API_KEY` | — | Clé d'API exigée par le serveur ; laisser vide s'il n'en demande pas (Ollama). |
 | `CA_BUNDLE` | — | Fichier de certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur (inutile en `http://`). Sert aussi à installer les dépendances derrière un proxy d'entreprise. |
 

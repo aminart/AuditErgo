@@ -2,7 +2,7 @@
 
 > **Objectif** : aider les UX designers à produire des audits ergonomiques **du même standard**, quel que soit l'auteur. L'application relit l'audit (même partiellement rempli), vérifie sa forme, propose le critère, la recommandation et la gravité de chaque constat, corrige ce que le designer a saisi sans jamais l'écraser, et complète les cellules vides.
 >
-> **Contrainte de sécurité** : **aucune donnée ne quitte le poste du designer.** L'IA est un modèle **Mistral installé localement** ; l'application refuse tout autre serveur.
+> **Confidentialité** : l'IA est un modèle **Mistral** joint par `API_BASE`, `API_KEY` et `CA_BUNDLE`. Installé sur le poste, aucune donnée ne quitte le poste du designer ; sur une passerelle, les constats ne vont qu'à ce serveur, choisi par l'organisation.
 
 *Version 2 du document. Elle remplace la première version, qui prévoyait une IA en ligne.*
 
@@ -39,8 +39,8 @@
 
 | Risque | Garde-fou (dans le code) |
 |---|---|
-| Le modèle configuré est un service en ligne | L'adresse `API_BASE` doit être locale (`localhost`, `127.0.0.1`, `::1`) ; toute autre adresse est **refusée** avec un message. Seule exception : `AUDIT_ERGO_RESEAU_AUTORISE=1`, pour un serveur interne validé par l'organisation. |
-| Un proxy d'entreprise intercepte les requêtes | Les appels au modèle **ignorent les variables de proxy** du poste : la connexion va directement au serveur local (testé). |
+| Les constats partent vers un serveur | Les constats ne vont qu'à l'adresse `API_BASE` choisie dans `.env`. Si elle est sur le poste (`localhost`, `127.0.0.1`, `::1`), rien ne sort du poste ; sinon (passerelle de l'organisation), l'interface indique le serveur qui reçoit les constats. Le choix et la validation de ce serveur relèvent de l'organisation. |
+| Un proxy d'entreprise intercepte les requêtes | Vers un modèle sur le poste, les appels **ignorent les variables de proxy** : la connexion reste directe (testé). Vers une passerelle, les réglages réseau du poste s'appliquent (proxy, `NO_PROXY`). |
 | Un collègue ouvre l'application via le réseau | Streamlit n'écoute que sur `localhost` (`.streamlit/config.toml`, et `start.bat`). |
 | Statistiques d'usage | Télémétrie Streamlit désactivée (`gatherUsageStats = false`). |
 | Clé d'API qui fuite | La clé (`API_KEY`), si le serveur en exige une, reste dans le fichier `.env`, ignoré par Git ; l'interface n'affiche jamais sa valeur. |
@@ -202,7 +202,7 @@ La connexion au modèle se règle avec trois paramètres :
 
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `API_BASE` | `http://localhost:11434/v1` | Adresse du serveur du modèle ; doit être sur le poste |
+| `API_BASE` | `http://localhost:11434/v1` | Adresse du serveur du modèle (sur le poste ou passerelle de l'organisation) |
 | `API_KEY` | — | Clé d'API exigée par le serveur, s'il en demande une |
 | `CA_BUNDLE` | — | Certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur ; sert aussi à installer les dépendances derrière un proxy. Les autorités internes sans extension « key usage », refusées par défaut depuis Python 3.13, sont acceptées (la chaîne et le nom du serveur restent vérifiés). |
 
@@ -214,7 +214,6 @@ Autres réglages :
 | `AUDIT_ERGO_LANGUE` | `fr` | Langue par défaut |
 | `AUDIT_ERGO_TEMPERATURE`, `AUDIT_ERGO_MAX_TOKENS`, `AUDIT_ERGO_DELAI`, `AUDIT_ERGO_PARALLELE` | 0,2 · 4000 · 600 s · 1 | Réglages du modèle |
 | `AUDIT_ERGO_IA` | `1` | `0` désactive l'IA (contrôles de forme seuls) |
-| `AUDIT_ERGO_RESEAU_AUTORISE` | — | `1` autorise un serveur non local : **à réserver à un serveur interne validé** |
 
 ---
 
@@ -254,4 +253,4 @@ Autres réglages :
 2. **Installation** : l'équipe informatique autorise-t-elle Ollama (ou LM Studio) ? Faut-il un paquet hors ligne ?
 3. **Validation du référentiel** : qui valide `CHANGEMENTS.md` et les règles de départage ?
 4. **Colonne « Statut »** : faut-il une liste de valeurs (ex. ouvert, en cours, corrigé, rejeté) ?
-5. **Serveur interne** : l'organisation préfère-t-elle, à terme, un modèle partagé sur un serveur interne (plus puissant) plutôt qu'un modèle par poste ? L'application le permet (`AUDIT_ERGO_RESEAU_AUTORISE`), sous réserve de validation par la sécurité.
+5. **Serveur interne** : l'organisation préfère-t-elle, à terme, un modèle partagé sur un serveur interne (plus puissant) plutôt qu'un modèle par poste ? L'application le permet : il suffit de renseigner `API_BASE`, `API_KEY` et `CA_BUNDLE`.

@@ -209,7 +209,7 @@ def test_verifier_audit_vide(audit_xlsx, ref):
 
 @pytest.fixture
 def env_vide(monkeypatch):
-    for nom in ("API_KEY", "API_BASE", "CA_BUNDLE", "AUDIT_ERGO_RESEAU_AUTORISE", "AUDIT_ERGO_IA"):
+    for nom in ("API_KEY", "API_BASE", "CA_BUNDLE", "AUDIT_ERGO_IA"):
         monkeypatch.delenv(nom, raising=False)
     monkeypatch.setattr("audit_ergo.suggestion.FICHIER_ENV", Path("/inexistant/.env"))
     monkeypatch.setattr("audit_ergo.suggestion.charger_env.__defaults__", (Path("/inexistant/.env"),))
@@ -228,15 +228,14 @@ def test_adresses_locales_acceptees(env_vide, adresse):
     assert client_ou_none() is not None
 
 
-@pytest.mark.parametrize("adresse", ["https://api.mistral.ai/v1", "https://api.openai.com/v1",
-                                     "http://192.168.1.20:11434/v1", "http://serveur-gpu.interne/v1"])
-def test_adresses_distantes_refusees(env_vide, adresse):
+@pytest.mark.parametrize("adresse", ["https://passerelle.interne/v1", "http://192.168.1.20:11434/v1",
+                                     "http://serveur-gpu.interne/v1/chat/completions"])
+def test_adresses_distantes_acceptees(env_vide, adresse):
+    """Seuls API_BASE, API_KEY et CA_BUNDLE sont nécessaires, même pour un serveur qui n'est pas sur le poste."""
     env_vide.setenv("API_BASE", adresse)
+    env_vide.setenv("API_KEY", "cle")
     assert not est_locale(adresse)
-    with pytest.raises(ErreurSuggestion, match="quitteraient le poste"):
-        client_ou_none()
-    env_vide.setenv("AUDIT_ERGO_RESEAU_AUTORISE", "1")  # serveur interne validé par l'organisation
-    assert client_ou_none() is not None
+    assert client_ou_none().api_key == "cle"
 
 
 def test_ia_desactivee(env_vide):
@@ -277,15 +276,13 @@ def test_env_enregistre_par_le_bloc_notes(env_vide, tmp_path):
 
 
 def test_env_commentaire_en_fin_de_ligne(env_vide, tmp_path):
-    """Une ligne d'exemple décommentée avec son commentaire (« 1  # … ») autorise bien le serveur interne."""
+    """Un commentaire en fin de ligne (« valeur  # … ») est ignoré."""
     from audit_ergo.suggestion import charger_env
 
     fichier = tmp_path / ".env"
-    fichier.write_text("API_BASE=https://mistral.interne.example/v1\n"
-                       "AUDIT_ERGO_RESEAU_AUTORISE=1  # À NE METTRE QUE pour un serveur interne\n", encoding="utf-8")
-    env_vide.setattr("audit_ergo.suggestion.charger_env.__defaults__", (fichier,))
+    fichier.write_text("API_BASE=https://passerelle.interne/v1  # passerelle Mistral\n", encoding="utf-8")
     charger_env(fichier)
-    assert str(client_ou_none().base_url).startswith("https://mistral.interne.example")
+    assert str(client_ou_none().base_url).startswith("https://passerelle.interne/v1")
 
 
 def test_env_modifie_relu_sans_redemarrer(env_vide, tmp_path):
@@ -294,12 +291,11 @@ def test_env_modifie_relu_sans_redemarrer(env_vide, tmp_path):
 
     fichier = tmp_path / ".env"
     env_vide.setattr("audit_ergo.suggestion.charger_env.__defaults__", (fichier,))
-    fichier.write_text("API_BASE=https://mistral.interne.example/v1\nAUDIT_ERGO_RESEAU_AUTORISE=0\n", encoding="utf-8")
+    fichier.write_text("API_BASE=https://passerelle.interne/v1\nAPI_KEY=ancienne\n", encoding="utf-8")
     charger_env(fichier)
-    with pytest.raises(ErreurSuggestion, match="AUDIT_ERGO_RESEAU_AUTORISE"):
-        client_ou_none()
-    fichier.write_text("API_BASE=https://mistral.interne.example/v1\nAUDIT_ERGO_RESEAU_AUTORISE=1\n", encoding="utf-8")
-    assert client_ou_none() is not None
+    assert client_ou_none().api_key == "ancienne"
+    fichier.write_text("API_BASE=https://passerelle.interne/v1\nAPI_KEY=nouvelle\n", encoding="utf-8")
+    assert client_ou_none().api_key == "nouvelle"
 
 
 def test_environnement_du_poste_prioritaire(env_vide, tmp_path):
