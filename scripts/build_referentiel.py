@@ -160,6 +160,7 @@ class Builder:
         return {
             "code": code,
             "id_source": raw["id"],
+            "nom_source": raw["name"],
             "name": name,
             "label_fr": c["label_fr"],
             "sources": raw["sources"],
@@ -176,6 +177,7 @@ class Builder:
             cat = {
                 "code": cc["code"],
                 "id_source": raw["id"],
+                "label_source": raw["label"],
                 "label": cc["label"],
                 "label_fr": cc["label_fr"],
                 "definition": self.fix(cc.get("definition", raw["definition"])),

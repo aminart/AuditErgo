@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from audit_ergo.lecture import nom_colonne  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-TEMPLATE = ROOT / "template" / "Audit_ergonomique_template.xlsx"
+TEMPLATE = ROOT / "template" / "Audit_ergonomique_FR.xlsx"
 OUT = ROOT / "exemples" / "audit_fictif.xlsx"
 OUT_A_COMPLETER = ROOT / "exemples" / "audit_a_completer.xlsx"
 
@@ -111,7 +111,8 @@ def main():
         ws.cell(row=r, column=col["ecran"], value=ecran)
         ws.cell(row=r, column=col["parcours"], value=parcours or None)
         for champ, valeur in zip(champs, reste):
-            ws.cell(row=r, column=col[champ], value=valeur if valeur != "" else None)
+            if champ in col:  # fréquence, impact et priorité ne sont plus dans le template v2
+                ws.cell(row=r, column=col[champ], value=valeur if valeur != "" else None)
     OUT.parent.mkdir(exist_ok=True)
     wb.save(OUT)
     print(f"{len(CONSTATS)} constats fictifs -> {OUT}")

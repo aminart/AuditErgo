@@ -1,85 +1,79 @@
 # Audit ergonomique assisté
 
-Application d'aide à la relecture des audits ergonomiques (heuristiques) réalisés par les UX designers.
+Aide les UX designers à produire des audits ergonomiques (heuristiques) du même standard : contrôle de forme, proposition du critère, de la recommandation et de la gravité de chaque constat, complétion des cellules vides et correction des saisies, en français ou en anglais.
+
+**Aucune donnée ne quitte le poste du designer** : l'IA est un modèle Mistral installé localement (Ollama ou LM Studio), et l'application refuse tout serveur qui n'est pas sur le poste. Voir `CONCEPTION.md` § 2.
 
 ## Installation
 
-### Windows : double-cliquer sur `start.bat`
+### 1. Le modèle local (une fois)
 
-Prérequis : [Python 3.10 ou plus récent](https://www.python.org/downloads/), installé en cochant « Add python.exe to PATH ».
+1. Installer [Ollama](https://ollama.com/download).
+2. Installer le modèle : `ollama pull mistral-small` (ou `mistral-nemo` sur un poste moins puissant).
+3. **Agrandir la fenêtre de contexte** : définir la variable d'environnement `OLLAMA_CONTEXT_LENGTH=16384`, puis redémarrer Ollama. Sans cela, Ollama tronque le référentiel envoyé au modèle (l'application le détecte et l'indique).
 
-`start.bat` s'occupe du reste :
-1. au premier lancement, il crée le fichier `.env` et l'ouvre dans le Bloc-notes pour y saisir `API_KEY`, `API_BASE`, `CA_BUNDLE` et `AUDIT_ERGO_MODELE` ;
-2. il crée un environnement Python isolé (dossier `.venv`) et y installe les dépendances, en utilisant `CA_BUNDLE` si le proxy de l'entreprise l'exige ; les dépendances ne sont réinstallées que si `requirements.txt` change ;
-3. il lance l'application et ouvre le navigateur sur http://localhost:8501. Pour l'arrêter, fermer la fenêtre.
+LM Studio convient aussi : renseigner alors `API_BASE=http://localhost:1234/v1` dans `.env` et régler la « Context Length » du modèle à 16384.
 
-En cas de problème d'installation, supprimer le dossier `.venv` et relancer `start.bat`.
+### 2. L'application
 
-### Autres systèmes, ou installation manuelle
+**Windows** : double-cliquer sur `start.bat`. Prérequis : [Python 3.10+](https://www.python.org/downloads/), installé en cochant « Add python.exe to PATH ». Au premier lancement, `start.bat` crée le fichier `.env` (à vérifier dans le Bloc-notes), installe les dépendances dans un environnement isolé (`.venv`), vérifie que le modèle local répond, puis ouvre l'application sur http://localhost:8501 (accessible depuis ce poste seulement).
 
+**Autres systèmes** :
 ```bash
 pip install -r requirements.txt
-cp .env.exemple .env      # puis compléter .env (voir ci-dessous)
-streamlit run app.py      # ouvre l'interface dans le navigateur
+cp .env.exemple .env      # à adapter si besoin
+streamlit run app.py
 ```
 
-Le fichier `.env` (ignoré par Git) contient :
+### 3. Configuration (`.env`)
 
-| Variable | Rôle |
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `API_BASE` | `http://localhost:11434/v1` | Adresse du modèle local (Ollama). Une adresse qui n'est pas sur le poste est refusée. |
+| `AUDIT_ERGO_MODELE` | `mistral-small` | Nom du modèle (`ollama list` affiche les modèles installés) |
+| `AUDIT_ERGO_LANGUE` | `fr` | Langue par défaut : `fr` ou `en` |
+| `CA_BUNDLE` | — | Certificats de l'organisation : sert à installer les dépendances derrière un proxy d'entreprise |
+
+Autres réglages (température, délai, cache, désactivation de l'IA…) : voir `.env.exemple`.
+
+## Templates
+
+| Fichier | Langue |
 |---|---|
-| `API_KEY` | Clé d'API. Sans elle, tout fonctionne sauf les suggestions de critères. |
-| `API_BASE` | Adresse de la passerelle, par exemple `https://passerelle.exemple.fr/v1` (la forme `…/v1/chat/completions` est aussi acceptée). Vide = API Anthropic directe. |
-| `CA_BUNDLE` | Chemin du fichier de certificats (PEM) de l'organisation, si la passerelle ou le proxy utilise une autorité de certification interne. |
-| `AUDIT_ERGO_MODELE` | Nom du modèle tel que la passerelle le connaît. |
+| `template/Audit_ergonomique_FR.xlsx` | Français |
+| `template/Ergonomic_audit_EN.xlsx` | Anglais |
 
-**Deux formats d'API sont pris en charge** (variable `API_FORMAT`) :
-- `openai` : passerelle au format OpenAI (`/v1/chat/completions`). C'est le format par défaut quand `API_BASE` est renseigné. Si la passerelle n'accepte pas `response_format`, l'application réessaie automatiquement sans, et valide elle-même la réponse.
-- `anthropic` : API Anthropic (`/v1/messages`), directe ou via une passerelle compatible. Par défaut quand `API_BASE` est vide. Ce format permet en plus la mise en cache du référentiel, le réglage de l'effort de réflexion et la relance automatique en cas de refus.
-
-La clé peut aussi être saisie dans la barre latérale de l'interface (elle n'est alors gardée que le temps de la session). Les noms `ANTHROPIC_API_KEY` et `ANTHROPIC_BASE_URL` sont également acceptés.
+Version 2, issue du template d'origine (`referentiel/source/Heuristic_Evaluation_template.xlsx`) : mêmes colonnes de suivi (cas d'usage, tâche, type de recommandation, statut maquette, statut), même échelle de gravité à 4 niveaux (Faible / Moyenne / Élevée / Critique — Low / Medium / High / Critical), défauts corrigés, colonnes du standard commun ajoutées, onglet « Résultats » qui compte les 24 critères. Détail dans `CONCEPTION.md` § 5. Les audits remplis avec le template d'origine restent acceptés.
 
 ## Fonctionnalités
 
-### 🎯 Suggérer un critère (IA)
+### 🎯 Suggérer un critère
 
-Le designer décrit un constat (et, s'il le souhaite, sa recommandation et sa gravité) ; l'IA propose une recommandation et une gravité, évalue celles du designer, et propose le critère principal du référentiel avec un niveau de confiance, la justification (règle de départage et question de checklist citées), les critères secondaires, les critères envisagés puis écartés, et ce qu'il faudrait préciser si le constat est trop vague. Si le designer indique le critère qu'il envisage, l'IA le confirme ou le remet en question. Le résultat se copie directement dans le template.
+Le designer décrit un constat (et s'il le souhaite le critère, la recommandation et la gravité qu'il envisage). L'IA propose le critère principal avec un niveau de confiance et sa justification (règle de départage et question de checklist citées), les critères secondaires et écartés, une recommandation et son type, une gravité, évalue les choix du designer, et signale ce qu'il faudrait préciser.
 
 ```bash
 python3 -m audit_ergo --suggerer "Après un clic sur Payer, rien ne se passe pendant 5 s" --ecran Paiement
-python3 -m audit_ergo --suggerer "..." --critere GUI-01    # faire vérifier un choix
+python3 -m audit_ergo --suggerer "..." --critere GUI-01 --langue en
 ```
-
-**Les réponses sont mémorisées** dans `.cache/suggestions.sqlite` (ignoré par Git) : un constat déjà analysé, avec le même écran, le même critère envisagé et le même contexte, est repris sans nouvel appel ni coût (badge « Repris du cache »). Toute modification du référentiel, des consignes ou du modèle invalide automatiquement les anciennes réponses. Les erreurs ne sont jamais mémorisées. Pour forcer une nouvelle analyse : case à cocher dans l'interface ou `--sans-cache` ; pour tout effacer : bouton « Vider le cache de l'IA » ou `--vider-cache`. `AUDIT_ERGO_CACHE` permet de changer l'emplacement du cache (ou de le désactiver avec `0`).
-
-Seuls les codes du référentiel sont acceptés : toute réponse citant un code inconnu est rejetée. Le référentiel complet (~9 000 tokens) est envoyé à chaque appel. Au format `anthropic`, il est **mis en cache** et n'est facturé plein tarif qu'au premier appel de chaque série ; au format `openai`, cela dépend de la passerelle.
 
 ### 🔍 Relire, compléter et corriger un audit
 
-Le designer peut déposer un audit **partiellement rempli** : les constats suffisent. Avec l'IA (bouton « Compléter et corriger avec l'IA », ou `--ia`) :
+Fichier accepté : template v2, template d'origine, ou simple tableau avec une colonne « Constat ».
 
-- **les cellules vides sont remplies** : type, catégorie, critère principal, critères secondaires, règle de départage, **justification du critère** (raison, règle appliquée et question de checklist citée), gravité et recommandation. La justification n'est remplie que pour un critère proposé par l'IA ou un critère du designer qu'elle confirme. Elles apparaissent **en violet**, avec l'explication en commentaire, et sont à valider par le designer ;
-- **ce que le designer a déjà saisi n'est jamais écrasé** : l'IA donne son avis à côté, dans les colonnes « IA : critère suggéré / verdict critère / justification critère / recommandation / avis recommandation / gravité / remarques ». Une recommandation vague reçoit une version améliorée qui garde son intention ; un écart de gravité de 2 niveaux ou plus est signalé ;
-- un simple tableau avec une colonne « Constat » suffit : les colonnes manquantes sont ajoutées.
+- **Contrôles de forme**, sans IA : bloquant (champ obligatoire vide, critère inconnu ou hors de sa catégorie, gravité hors échelle), avertissement (constat ou recommandation trop courts, recommandation qui recopie le constat, règle de départage incohérente, doublon…), info (formulations vagues).
+- **Complétion et correction par l'IA**, à la demande : les cellules vides sont remplies **en violet**, avec l'explication en commentaire ; les saisies du designer ne sont **jamais écrasées** : l'avis de l'IA est donné à côté, dans les colonnes « IA : … ».
+- **Fichier annoté** : le fichier d'origine (formules et listes conservées), plus deux onglets de synthèse et d'anomalies.
 
 ```bash
-python3 -m audit_ergo mon_audit.xlsx                       # contrôles de forme -> mon_audit_relu.xlsx
-python3 -m audit_ergo mon_audit.xlsx --ia                  # + complétion et correction par l'IA
-python3 -m audit_ergo mon_audit.xlsx --ia --sans-remplissage   # avis de l'IA seulement, rien n'est rempli
-python3 -m audit_ergo mon_audit.xlsx -o relu.xlsx --json
+python3 -m audit_ergo mon_audit.xlsx                          # contrôles de forme -> mon_audit_relu.xlsx
+python3 -m audit_ergo mon_audit.xlsx --ia                     # + complétion et correction par l'IA locale
+python3 -m audit_ergo mon_audit.xlsx --ia --sans-remplissage  # avis de l'IA seulement
+python3 -m audit_ergo mon_audit.xlsx --langue en              # annotations et textes de l'IA en anglais
 ```
 
-`exemples/audit_a_completer.xlsx` (fictif) contient 8 constats, dont 6 sans critère ni recommandation, un critère discutable et une recommandation vague.
+Les réponses de l'IA sont **mémorisées** dans `.cache/suggestions.sqlite` (local, ignoré par Git) : un constat déjà analysé n'est pas recalculé. `--sans-cache` force une nouvelle analyse, `--vider-cache` efface tout (aussi possible depuis l'interface).
 
-L'outil lit le template, mais aussi un fichier libre : il cherche l'onglet et la ligne d'en-tête, reconnaît les colonnes même déplacées ou renommées (« Préconisation » = Recommandation), et accepte un critère saisi par son code, son nom français ou anglais.
-
-Il renvoie le fichier d'origine **annoté** : cellules fautives surlignées et commentées, colonnes « Relecture » ajoutées (et « IA : critère suggéré / verdict / justification » avec `--ia`), et deux onglets « Relecture – Synthèse » (indicateurs, gravités, couverture des 24 critères) et « Relecture – Anomalies ». Les formules et listes déroulantes du designer sont conservées.
-
-Les contrôles de forme (`audit_ergo/controles.py`) sont classés en trois niveaux :
-- **Bloquant** : champ obligatoire vide, critère ou catégorie inconnus, critère hors de sa catégorie, gravité hors échelle.
-- **Avertissement** : constat ou recommandation trop courts, recommandation qui recopie le constat, priorité ou impact incohérents avec la gravité, règle de départage qui ne mène pas au critère choisi, critère secondaire inconnu, doublon, contexte incomplet, référentiel périmé.
-- **Info** : formulations vagues (« confus », « revoir l'ergonomie »…), gravité 0 pour un problème, critère secondaire identique au principal.
-
-`exemples/audit_fictif.xlsx` est un audit **fictif** contenant des erreurs volontaires (régénérable avec `python3 scripts/generer_audit_fictif.py`).
+Exemples fictifs : `exemples/audit_fictif.xlsx` (erreurs de forme volontaires) et `exemples/audit_a_completer.xlsx` (constats seuls à compléter), régénérables avec `python3 scripts/generer_audit_fictif.py`.
 
 ## Tests
 
@@ -88,34 +82,19 @@ pip install -r requirements-dev.txt
 python3 -m pytest -q
 ```
 
-Les tests de l'IA utilisent de faux clients et une fausse passerelle locale : ils ne nécessitent pas de clé et ne consomment rien.
+Les tests utilisent un faux serveur local : ils ne nécessitent ni modèle ni réseau.
 
 ## Contenu
 
 | Chemin | Rôle |
 |---|---|
-| `audit_ergo/` | Moteur de relecture : lecture du fichier, contrôles, synthèse, export annoté |
-| `app.py`, `interface/` | Interface web (Streamlit) : pages « Suggérer un critère » et « Relire un audit » |
-| `audit_ergo/cache.py` | Cache local des réponses de l'IA |
-| `audit_ergo/completion.py` | Complétion des cellules vides d'un audit à partir des propositions de l'IA |
-| `audit_ergo/suggestion.py` | Suggestion de critères par l'IA (prompt, schéma de réponse, appel API aux formats OpenAI et Anthropic) |
+| `CONCEPTION.md` | Document de conception : confidentialité, modèle local, référentiel, template v2, feuille de route |
+| `app.py`, `interface/` | Interface web (Streamlit), français et anglais |
+| `audit_ergo/` | Moteur : lecture, contrôles, IA locale, complétion, export, cache, textes bilingues |
+| `template/` | Templates v2 en français et en anglais (générés par `scripts/build_template.py`) |
+| `referentiel/source/` | Fichiers d'origine (CSV et template Excel), jamais modifiés |
+| `referentiel/corrections.json`, `regles_departage.json` | Corrections proposées et règles de départage (FR/EN) |
+| `referentiel/referentiel.json`, `CHANGEMENTS.md` | Référentiel final et liste des modifications à valider, **générés** par `scripts/build_referentiel.py` |
+| `.streamlit/config.toml` | Application servie sur ce poste uniquement, sans télémétrie |
 | `start.bat` | Installation et lancement en un double-clic sous Windows |
 | `tests/` | Tests automatiques |
-| `CONCEPTION.md` | Document de conception : fonctionnalités, architecture, règles de départage, score, feuille de route |
-| `template/Audit_ergonomique_template.xlsx` | **Template à remplir par les designers** (listes déroulantes, contrôles automatiques, aide intégrée) |
-| `referentiel/source/` | CSV d'origine (grille des critères et frameworks heuristiques), jamais modifiés |
-| `referentiel/corrections.json` | Corrections proposées : codes des critères, noms français, checklists complétées, doublons retirés |
-| `referentiel/regles_departage.json` | Règles pour choisir entre deux critères proches (R1 à R9) |
-| `referentiel/referentiel.json` | Référentiel final, **généré**, utilisé par le template et par la future application |
-| `referentiel/CHANGEMENTS.md` | Liste lisible des modifications proposées, **générée**, à faire valider |
-
-## Modifier le référentiel
-
-1. Éditer `referentiel/corrections.json` ou `referentiel/regles_departage.json`.
-2. Régénérer :
-   ```bash
-   python3 scripts/build_referentiel.py   # référentiel.json + CHANGEMENTS.md
-   python3 scripts/build_template.py      # template Excel (nécessite openpyxl)
-   ```
-
-`build_referentiel.py` refuse de générer le référentiel si une question d'origine disparaît sans justification, si une question déplacée n'existe pas dans son critère d'origine, ou si une règle de départage cite un critère inconnu.

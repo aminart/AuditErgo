@@ -1,14 +1,52 @@
-"""Éléments partagés par les pages de l'interface."""
+"""Éléments partagés par les pages de l'interface : langue, référentiel, modèle local, barre latérale."""
 from pathlib import Path
 
 import streamlit as st
 
 from audit_ergo import Referentiel
 from audit_ergo.cache import CacheSuggestions
-from audit_ergo.suggestion import ErreurSuggestion, adresse_api, cle_disponible, client_ou_none, format_api
+from audit_ergo.i18n import LANGUES, langue_defaut
+from audit_ergo.suggestion import MODELE, ErreurSuggestion, adresse_api, client_ou_none, ia_configuree
 
-TEMPLATE = Path(__file__).resolve().parent.parent / "template" / "Audit_ergonomique_template.xlsx"
-CLE_SESSION = "cle_api_saisie"
+RACINE = Path(__file__).resolve().parent.parent
+TEMPLATES = {"fr": RACINE / "template" / "Audit_ergonomique_FR.xlsx", "en": RACINE / "template" / "Ergonomic_audit_EN.xlsx"}
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+TEXTES = {
+    "langue": ("Langue", "Language"),
+    "page.suggestion": ("Suggérer un critère", "Suggest a criterion"),
+    "page.relecture": ("Relire un audit", "Review an audit"),
+    "referentiel": ("Référentiel v{v} · {n} critères · {r} règles de départage",
+                    "Referential v{v} · {n} sub-criteria · {r} tie-break rules"),
+    "template": ("Télécharger le template vierge", "Download the blank template"),
+    "ia": ("IA locale", "Local AI"),
+    "ia.modele": ("Modèle **{m}** sur {a}", "Model **{m}** on {a}"),
+    "ia.local": ("🔒 Aucune donnée ne quitte ce poste.", "🔒 No data leaves this computer."),
+    "ia.tester": ("Tester la connexion", "Test the connection"),
+    "ia.ok": ("Modèle local disponible.", "Local model available."),
+    "ia.absent": ("Le serveur répond, mais le modèle « {m} » n'y est pas installé. Modèles disponibles : {liste}. "
+                  "Corrigez AUDIT_ERGO_MODELE dans .env, ou installez-le (« ollama pull {m} »).",
+                  "The server answers, but model “{m}” is not installed. Available models: {liste}. Fix "
+                  "AUDIT_ERGO_MODELE in .env, or install it (“ollama pull {m}”)."),
+    "ia.injoignable": ("Le modèle local ne répond pas à {a}. Lancez Ollama (ou LM Studio), puis réessayez.",
+                       "The local model does not answer at {a}. Start Ollama (or LM Studio), then try again."),
+    "ia.desactivee": ("IA désactivée (AUDIT_ERGO_IA=0) : seuls les contrôles de forme sont disponibles.",
+                      "AI disabled (AUDIT_ERGO_IA=0): only form checks are available."),
+    "cache": ("{n} réponse(s) de l'IA mémorisée(s) : un constat déjà analysé n'est pas recalculé.",
+              "{n} AI answer(s) stored: a finding already analysed is not recomputed."),
+    "cache.vider": ("Vider le cache de l'IA", "Clear the AI cache"),
+}
+
+
+def langue():
+    return st.session_state.get("langue") or langue_defaut()
+
+
+def tr(cle, **valeurs):
+    """Texte de l'interface dans la langue choisie."""
+    fr, en = TEXTES[cle]
+    texte = en if langue() == "en" else fr
+    return texte.format(**valeurs) if valeurs else texte
 
 
 @st.cache_resource
@@ -17,43 +55,50 @@ def referentiel():
 
 
 def client():
-    """Client Anthropic (clé du .env / de l'environnement, sinon clé saisie dans la barre latérale), ou None."""
+    """Client du modèle local, ou None (IA désactivée ou configuration refusée, avec un message)."""
     try:
-        return client_ou_none(st.session_state.get(CLE_SESSION) or None)
-    except ErreurSuggestion as e:  # CA_BUNDLE introuvable ou illisible
+        return client_ou_none()
+    except ErreurSuggestion as e:  # adresse non locale, CA_BUNDLE invalide…
         st.error(str(e))
         return None
 
 
+def _tester_connexion():
+    cl = client()
+    if cl is None:
+        return
+    try:
+        modeles = [m.id for m in cl.models.list()]
+    except Exception:  # serveur injoignable ou sans /v1/models
+        st.error(tr("ia.injoignable", a=adresse_api()))
+        return
+    # Ollama nomme les modèles « nom:étiquette » ; « mistral-small » désigne « mistral-small:latest »
+    if any(m == MODELE or m.split(":")[0] == MODELE for m in modeles):
+        st.success(tr("ia.ok"))
+    else:
+        st.warning(tr("ia.absent", m=MODELE, liste=", ".join(modeles) or "—"))
+
+
 def barre_laterale(ref):
     with st.sidebar:
-        st.caption(f"Référentiel v{ref.version} · {len(ref.criteres)} critères · {len(ref.regles)} règles de départage")
-        st.download_button("Télécharger le template vierge", TEMPLATE.read_bytes(), TEMPLATE.name,
-                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        st.selectbox(tr("langue"), list(LANGUES), format_func=LANGUES.get, key="langue",
+                     index=list(LANGUES).index(langue()))
+        st.caption(tr("referentiel", v=ref.version, n=len(ref.criteres), r=len(ref.regles)))
+        modele = TEMPLATES[langue()]
+        st.download_button(tr("template"), modele.read_bytes(), modele.name, mime=XLSX)
         st.divider()
-        st.subheader("IA")
-        if cle_disponible():
-            st.success("Clé d'API configurée.")
-            try:
-                st.caption(f"API : {adresse_api() or 'Anthropic'} · format {format_api()}")
-            except ErreurSuggestion as e:
-                st.error(str(e))
-        else:
-            st.text_input("Clé d'API Anthropic", type="password", key=CLE_SESSION,
-                          help="Utilisée seulement pendant cette session, jamais enregistrée. Pour ne plus la "
-                               "saisir, renseignez API_KEY dans le fichier .env (voir .env.exemple).")
-            if not st.session_state.get(CLE_SESSION):
-                st.info("Sans clé, les contrôles de forme fonctionnent ; les suggestions de critères sont "
-                        "désactivées.")
+        st.subheader(tr("ia"))
+        if not ia_configuree():
+            st.info(tr("ia.desactivee"))
+            return
+        st.caption(tr("ia.modele", m=MODELE, a=adresse_api()))
+        st.caption(tr("ia.local"))
+        if st.button(tr("ia.tester")):
+            _tester_connexion()
         cache = CacheSuggestions.defaut()
         if cache:
             n = cache.taille()
-            st.caption(f"{n} réponse(s) de l'IA mémorisée(s) : un constat déjà analysé n'est pas refacturé.")
-            if n and st.button("Vider le cache de l'IA"):
+            st.caption(tr("cache", n=n))
+            if n and st.button(tr("cache.vider")):
                 cache.vider()
                 st.rerun()
-
-
-def libelle_critere(ref, code):
-    c = ref.criteres[code]
-    return f"{code} – {c['label_fr']} ({c['name']})"

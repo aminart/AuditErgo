@@ -11,96 +11,263 @@
       "theme": "Guider ou répondre",
       "question": "Le problème se situe-t-il AVANT l'action de l'utilisateur ou APRÈS ?",
       "cas": [
-        { "si": "Ce qui guide ou signale une action possible avant que l'utilisateur agisse (format attendu, élément cliquable, état de survol, titre)", "critere": "GUI-01", "exemple": "Aucun exemple de format sous le champ date de naissance." },
-        { "si": "La réponse du système après l'action (confirmation, chargement, progression, échec d'un traitement)", "critere": "GUI-03", "exemple": "Après clic sur « Payer », rien ne bouge pendant 5 secondes." }
+        {
+          "si": "Ce qui guide ou signale une action possible avant que l'utilisateur agisse (format attendu, élément cliquable, état de survol, titre)",
+          "critere": "GUI-01",
+          "exemple": "Aucun exemple de format sous le champ date de naissance.",
+          "si_en": "What guides or signals a possible action before the user acts (expected format, clickable element, hover state, title)",
+          "exemple_en": "No format example under the date of birth field."
+        },
+        {
+          "si": "La réponse du système après l'action (confirmation, chargement, progression, échec d'un traitement)",
+          "critere": "GUI-03",
+          "exemple": "Après clic sur « Payer », rien ne bouge pendant 5 secondes.",
+          "si_en": "The system's response after the action (confirmation, loading, progress, processing failure)",
+          "exemple_en": "After clicking “Pay”, nothing moves for 5 seconds."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Guide or respond",
+      "question_en": "Is the problem BEFORE the user's action or AFTER it?"
     },
     {
       "id": "R2",
       "theme": "Moment de l'erreur",
       "question": "Le problème concerne-t-il la prévention de l'erreur, le message affiché, ou le moyen de la réparer ?",
       "cas": [
-        { "si": "Empêcher l'erreur de se produire (contraintes de saisie, champs obligatoires signalés, confirmation avant action irréversible)", "critere": "ERR-01", "exemple": "Le bouton « Supprimer le compte » agit sans confirmation." },
-        { "si": "Le contenu ou la forme du message d'erreur (clarté, emplacement, ton, indication de la solution)", "critere": "ERR-02", "exemple": "Message « Erreur 500 » sans explication." },
-        { "si": "Le moyen de corriger ou d'annuler une fois l'erreur commise (annulation, modification sans tout ressaisir)", "critere": "ERR-03", "exemple": "Le formulaire se vide entièrement après une erreur sur un seul champ." }
+        {
+          "si": "Empêcher l'erreur de se produire (contraintes de saisie, champs obligatoires signalés, confirmation avant action irréversible)",
+          "critere": "ERR-01",
+          "exemple": "Le bouton « Supprimer le compte » agit sans confirmation.",
+          "si_en": "Preventing the error (input constraints, flagged mandatory fields, confirmation before an irreversible action)",
+          "exemple_en": "The “Delete account” button acts without confirmation."
+        },
+        {
+          "si": "Le contenu ou la forme du message d'erreur (clarté, emplacement, ton, indication de la solution)",
+          "critere": "ERR-02",
+          "exemple": "Message « Erreur 500 » sans explication.",
+          "si_en": "The content or form of the error message (clarity, location, tone, how to fix)",
+          "exemple_en": "“Error 500” message with no explanation."
+        },
+        {
+          "si": "Le moyen de corriger ou d'annuler une fois l'erreur commise (annulation, modification sans tout ressaisir)",
+          "critere": "ERR-03",
+          "exemple": "Le formulaire se vide entièrement après une erreur sur un seul champ.",
+          "si_en": "The way to correct or undo once the error is made (undo, edit without retyping everything)",
+          "exemple_en": "The whole form is cleared after an error in a single field."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "When the error happens",
+      "question_en": "Is the problem about preventing the error, the message shown, or the way to fix it?"
     },
     {
       "id": "R3",
       "theme": "Niveau de la charge de travail",
       "question": "Le problème concerne-t-il un élément isolé, l'écran dans son ensemble, ou le nombre d'étapes ?",
       "cas": [
-        { "si": "Un élément isolé trop long ou trop exigeant (libellé, champ, texte)", "critere": "WKL-01", "exemple": "Unité « kg » à saisir dans le champ au lieu d'être dans le libellé." },
-        { "si": "L'écran dans son ensemble trop chargé", "critere": "WKL-05", "exemple": "Tableau de bord avec 14 widgets affichés simultanément." },
-        { "si": "Le nombre d'étapes, de clics ou de saisies pour accomplir la tâche", "critere": "WKL-03", "exemple": "7 écrans pour modifier une adresse de livraison." }
+        {
+          "si": "Un élément isolé trop long ou trop exigeant (libellé, champ, texte)",
+          "critere": "WKL-01",
+          "exemple": "Unité « kg » à saisir dans le champ au lieu d'être dans le libellé.",
+          "si_en": "A single element that is too long or demanding (label, field, text)",
+          "exemple_en": "Unit “kg” must be typed in the field instead of being in the label."
+        },
+        {
+          "si": "L'écran dans son ensemble trop chargé",
+          "critere": "WKL-05",
+          "exemple": "Tableau de bord avec 14 widgets affichés simultanément.",
+          "si_en": "The whole screen is overloaded",
+          "exemple_en": "Dashboard showing 14 widgets at once."
+        },
+        {
+          "si": "Le nombre d'étapes, de clics ou de saisies pour accomplir la tâche",
+          "critere": "WKL-03",
+          "exemple": "7 écrans pour modifier une adresse de livraison.",
+          "si_en": "The number of steps, clicks or entries needed for the task",
+          "exemple_en": "7 screens to change a delivery address."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Level of workload",
+      "question_en": "Is the problem about a single element, the whole screen, or the number of steps?"
     },
     {
       "id": "R4",
       "theme": "Qui a la main",
       "question": "Le système agit-il sans que l'utilisateur l'ait demandé, ou l'utilisateur ne peut-il pas reprendre la main ?",
       "cas": [
-        { "si": "Le système déclenche une action sans demande explicite (enregistrement, envoi, navigation automatique)", "critere": "CTL-01", "exemple": "Le formulaire est envoyé dès la sélection d'une option." },
-        { "si": "L'utilisateur ne peut pas interrompre, annuler, revenir en arrière ou reprendre plus tard", "critere": "CTL-02", "exemple": "Pas de bouton « Retour » dans le tunnel de commande." }
+        {
+          "si": "Le système déclenche une action sans demande explicite (enregistrement, envoi, navigation automatique)",
+          "critere": "CTL-01",
+          "exemple": "Le formulaire est envoyé dès la sélection d'une option.",
+          "si_en": "The system triggers an action without an explicit request (save, send, automatic navigation)",
+          "exemple_en": "The form is submitted as soon as an option is selected."
+        },
+        {
+          "si": "L'utilisateur ne peut pas interrompre, annuler, revenir en arrière ou reprendre plus tard",
+          "critere": "CTL-02",
+          "exemple": "Pas de bouton « Retour » dans le tunnel de commande.",
+          "si_en": "The user cannot interrupt, cancel, go back or resume later",
+          "exemple_en": "No “Back” button in the checkout funnel."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Who is in control",
+      "question_en": "Does the system act without being asked, or can the user not take back control?"
     },
     {
       "id": "R5",
       "theme": "Référence de comparaison",
       "question": "Le problème est-il une incohérence interne au produit, un écart avec les conventions extérieures, ou un libellé qui ne dit pas ce qu'il fait ?",
       "cas": [
-        { "si": "Incohérence interne au produit (même action, mot ou composant traité différemment d'un écran à l'autre)", "critere": "CON-01", "exemple": "Le bouton principal est vert sur une page et gris sur la suivante." },
-        { "si": "Écart avec les habitudes des utilisateurs, les conventions du domaine ou du monde réel", "critere": "CPT-01", "exemple": "Champs d'adresse dans un ordre inhabituel (ville avant rue)." },
-        { "si": "Un libellé, une icône ou un code dont le sens ne correspond pas à ce qu'il désigne", "critere": "COD-01", "exemple": "Icône d'engrenage qui ouvre l'historique des commandes." }
+        {
+          "si": "Incohérence interne au produit (même action, mot ou composant traité différemment d'un écran à l'autre)",
+          "critere": "CON-01",
+          "exemple": "Le bouton principal est vert sur une page et gris sur la suivante.",
+          "si_en": "Inconsistency within the product (same action, word or component treated differently from one screen to another)",
+          "exemple_en": "The main button is green on one page and grey on the next."
+        },
+        {
+          "si": "Écart avec les habitudes des utilisateurs, les conventions du domaine ou du monde réel",
+          "critere": "CPT-01",
+          "exemple": "Champs d'adresse dans un ordre inhabituel (ville avant rue).",
+          "si_en": "Gap with users' habits, domain conventions or the real world",
+          "exemple_en": "Address fields in an unusual order (city before street)."
+        },
+        {
+          "si": "Un libellé, une icône ou un code dont le sens ne correspond pas à ce qu'il désigne",
+          "critere": "COD-01",
+          "exemple": "Icône d'engrenage qui ouvre l'historique des commandes.",
+          "si_en": "A label, icon or code whose meaning does not match what it stands for",
+          "exemple_en": "Gear icon that opens the order history."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Point of comparison",
+      "question_en": "Is the problem an inconsistency within the product, a gap with external conventions, or a label that does not say what it does?"
     },
     {
       "id": "R6",
       "theme": "Nature du problème visuel",
       "question": "Le problème touche-t-il la lecture, l'organisation des éléments, la hiérarchie visuelle ou l'esthétique ?",
       "cas": [
-        { "si": "La lecture du texte (taille, contraste, interligne, longueur de ligne)", "critere": "GUI-04", "exemple": "Texte gris clair 11 px sur fond blanc." },
-        { "si": "Le regroupement ou la distinction des éléments (proximité, séparation, format commun)", "critere": "GUI-02", "exemple": "Les filtres et les résultats ne sont pas séparés visuellement." },
-        { "si": "La hiérarchie visuelle, la grille, l'usage de l'espace et de la couleur comme support de compréhension", "critere": "VIS-01", "exemple": "Trois boutons de même poids visuel, aucune action principale identifiable." },
-        { "si": "L'esthétique, l'harmonie, l'image de marque et l'émotion", "critere": "VIS-02", "exemple": "Mélange d'illustrations de styles incompatibles." }
+        {
+          "si": "La lecture du texte (taille, contraste, interligne, longueur de ligne)",
+          "critere": "GUI-04",
+          "exemple": "Texte gris clair 11 px sur fond blanc.",
+          "si_en": "Reading the text (size, contrast, line spacing, line length)",
+          "exemple_en": "Light grey 11 px text on a white background."
+        },
+        {
+          "si": "Le regroupement ou la distinction des éléments (proximité, séparation, format commun)",
+          "critere": "GUI-02",
+          "exemple": "Les filtres et les résultats ne sont pas séparés visuellement.",
+          "si_en": "Grouping or distinction of elements (proximity, separation, shared format)",
+          "exemple_en": "Filters and results are not visually separated."
+        },
+        {
+          "si": "La hiérarchie visuelle, la grille, l'usage de l'espace et de la couleur comme support de compréhension",
+          "critere": "VIS-01",
+          "exemple": "Trois boutons de même poids visuel, aucune action principale identifiable.",
+          "si_en": "Visual hierarchy, grid, use of space and colour to support understanding",
+          "exemple_en": "Three buttons with the same visual weight, no identifiable main action."
+        },
+        {
+          "si": "L'esthétique, l'harmonie, l'image de marque et l'émotion",
+          "critere": "VIS-02",
+          "exemple": "Mélange d'illustrations de styles incompatibles.",
+          "si_en": "Aesthetics, harmony, brand image and emotion",
+          "exemple_en": "Illustrations in incompatible styles."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Nature of the visual problem",
+      "question_en": "Is the problem about reading, organisation of elements, visual hierarchy or aesthetics?"
     },
     {
       "id": "R7",
       "theme": "Adaptation à l'utilisateur",
       "question": "Le problème concerne-t-il la personnalisation, ou la prise en compte du niveau d'expertise ?",
       "cas": [
-        { "si": "L'utilisateur ne peut pas adapter l'interface à ses préférences ou utiliser plusieurs moyens (clavier, souris, réglages)", "critere": "ADA-01", "exemple": "Impossible de masquer les colonnes inutiles du tableau." },
-        { "si": "L'interface ne s'adapte pas aux débutants ou aux experts (guidage pas à pas, mode avancé)", "critere": "ADA-02", "exemple": "Aucune recherche avancée pour les utilisateurs réguliers." }
+        {
+          "si": "L'utilisateur ne peut pas adapter l'interface à ses préférences ou utiliser plusieurs moyens (clavier, souris, réglages)",
+          "critere": "ADA-01",
+          "exemple": "Impossible de masquer les colonnes inutiles du tableau.",
+          "si_en": "The user cannot adapt the interface to their preferences or use several means (keyboard, mouse, settings)",
+          "exemple_en": "Unnecessary table columns cannot be hidden."
+        },
+        {
+          "si": "L'interface ne s'adapte pas aux débutants ou aux experts (guidage pas à pas, mode avancé)",
+          "critere": "ADA-02",
+          "exemple": "Aucune recherche avancée pour les utilisateurs réguliers.",
+          "si_en": "The interface does not adapt to beginners or experts (step-by-step guidance, advanced mode)",
+          "exemple_en": "No advanced search for regular users."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Adapting to the user",
+      "question_en": "Is the problem about personalisation, or about taking the user's expertise into account?"
     },
     {
       "id": "R8",
       "theme": "Forme de l'aide",
       "question": "L'aide est-elle affichée d'emblée dans l'interface, consultable à la demande, ou s'agit-il d'une information à mémoriser ?",
       "cas": [
-        { "si": "Indication affichée d'emblée pour guider l'action en cours", "critere": "GUI-01", "exemple": "Aucune indication sur les caractères requis du mot de passe." },
-        { "si": "Aide consultable à la demande (FAQ, info-bulle, contact support, documentation)", "critere": "GUI-05", "exemple": "Aucun lien vers l'aide ou le support depuis l'espace client." },
-        { "si": "L'utilisateur doit retenir une information d'un écran à l'autre", "critere": "WKL-02", "exemple": "Le numéro de dossier affiché à l'étape 1 doit être ressaisi à l'étape 3." }
+        {
+          "si": "Indication affichée d'emblée pour guider l'action en cours",
+          "critere": "GUI-01",
+          "exemple": "Aucune indication sur les caractères requis du mot de passe.",
+          "si_en": "Guidance shown upfront for the current action",
+          "exemple_en": "No indication of the characters required for the password."
+        },
+        {
+          "si": "Aide consultable à la demande (FAQ, info-bulle, contact support, documentation)",
+          "critere": "GUI-05",
+          "exemple": "Aucun lien vers l'aide ou le support depuis l'espace client.",
+          "si_en": "Help available on demand (FAQ, tooltip, support contact, documentation)",
+          "exemple_en": "No link to help or support from the customer area."
+        },
+        {
+          "si": "L'utilisateur doit retenir une information d'un écran à l'autre",
+          "critere": "WKL-02",
+          "exemple": "Le numéro de dossier affiché à l'étape 1 doit être ressaisi à l'étape 3.",
+          "si_en": "The user must remember information from one screen to another",
+          "exemple_en": "The file number shown at step 1 must be retyped at step 3."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Form of help",
+      "question_en": "Is the help shown upfront in the interface, available on demand, or is it information to memorise?"
     },
     {
       "id": "R9",
       "theme": "Source de la surcharge",
       "question": "Les éléments en trop sont-ils liés à la tâche, ou étrangers à la tâche ?",
       "cas": [
-        { "si": "Trop d'informations utiles affichées en même temps", "critere": "WKL-05", "exemple": "Fiche produit avec 40 caractéristiques techniques sans regroupement." },
-        { "si": "Distractions étrangères à la tâche (publicité, pop-up, sollicitations)", "critere": "WKL-04", "exemple": "Pop-up d'inscription à la newsletter au milieu du paiement." }
+        {
+          "si": "Trop d'informations utiles affichées en même temps",
+          "critere": "WKL-05",
+          "exemple": "Fiche produit avec 40 caractéristiques techniques sans regroupement.",
+          "si_en": "Too much useful information shown at once",
+          "exemple_en": "Product page with 40 ungrouped technical characteristics."
+        },
+        {
+          "si": "Distractions étrangères à la tâche (publicité, pop-up, sollicitations)",
+          "critere": "WKL-04",
+          "exemple": "Pop-up d'inscription à la newsletter au milieu du paiement.",
+          "si_en": "Distractions unrelated to the task (ads, pop-ups, solicitations)",
+          "exemple_en": "Newsletter sign-up pop-up in the middle of payment."
+        }
       ],
-      "statut": "proposee"
+      "statut": "proposee",
+      "theme_en": "Source of overload",
+      "question_en": "Are the extra elements related to the task, or unrelated to it?"
     }
+  ],
+  "principes_en": [
+    "A finding has ONE main criterion: the one matching the cause of the problem, not its symptom.",
+    "Other affected criteria go in “Secondary criteria”.",
+    "When in doubt, ask the deciding question of the relevant rule."
   ]
 }

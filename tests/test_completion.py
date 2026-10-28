@@ -31,23 +31,23 @@ def test_audit_avec_seulement_les_constats(audit_xlsx, ref, tmp_path):
                                                     FauxClient(reponse_complete()))
     ws, entetes, cell = cellules(sortie)
     attendu = {
-        "Type *": "Problème",
+        "Type": "Problème",
         "Catégorie *": "GUI – Guidage",
         "Critère principal *": "GUI-03 – Feedback immédiat (Immediate Feedback)",
         "Critères secondaires (codes séparés par ;)": "ERR-01",
         "Règle de départage": "R1",
-        "Justification du critère": "Réaction après l'action. (règle R1) Checklist : "
+        "Justification du critère": "Réaction après l'action. (R1) Checklist : "
                                     "« Is information displayed during the loading? »",
-        "Gravité (0-4) *": 3,
-        "Recommandation * (si Problème)": RECO_IA,
+        "Gravité * (si problème)": "Élevée",
+        "Recommandation * (si problème)": RECO_IA,
     }
     for titre, valeur in attendu.items():
         assert cell(titre).value == valeur, titre
         assert cell(titre).fill.fgColor.rgb.endswith(VIOLET), titre
         assert "à valider" in cell(titre).comment.text or "à vérifier" in cell(titre).comment.text
-    assert "Proposé par l'IA" in cell("Recommandation * (si Problème)").comment.text
-    assert "Complété automatiquement" in cell("Type *").comment.text
-    assert cell("Écran / Page *").fill.fgColor.rgb.endswith("FFF9E5")  # saisie du designer intacte
+    assert "Proposé par l'IA" in cell("Recommandation * (si problème)").comment.text
+    assert "Complété automatiquement" in cell("Type").comment.text
+    assert cell("Écran / Emplacement *").fill.fgColor.rgb.endswith("FFF9E5")  # saisie du designer intacte
     assert synthese.pret, [a.message for a in anomalies]  # plus aucun champ obligatoire vide
     assert cell("IA : verdict critère").value == "Proposé (cellule remplie)"
     assert cell("IA : avis recommandation").value == "Proposée (cellule remplie)"
@@ -61,23 +61,23 @@ def test_saisies_du_designer_jamais_modifiees(audit_xlsx, ref, tmp_path):
     _, _, _, sortie, ia = relire(audit_xlsx([saisie]), tmp_path / "c.xlsx", ref, client)
     _, _, cell = cellules(sortie)
     assert cell("Critère principal *").value == "GUI-01 – Incitation (Prompting)"
-    assert cell("Gravité (0-4) *").value == 1
-    assert cell("Recommandation * (si Problème)").value == "Améliorer le bouton de paiement."
+    assert cell("Gravité * (si problème)").value == 1  # saisie du designer (ancienne échelle chiffrée) conservée
+    assert cell("Recommandation * (si problème)").value == "Améliorer le bouton de paiement."
     assert not cell("Critère principal *").fill.fgColor.rgb.endswith(VIOLET)
     # Les corrections sont proposées à côté, pas à la place
     assert cell("IA : verdict critère").value == "À revoir"
     assert cell("IA : recommandation").value == "Désactiver le bouton « Payer » pendant le traitement."
     assert cell("IA : avis recommandation").value.startswith("À améliorer : Trop vague")
-    assert cell("IA : gravité").value == "3 – Majeur (vous : 1)"
+    assert cell("IA : gravité").value == "3 – Élevée (vous : Faible)"
     assert "double paiement" in cell("IA : remarques").value
     assert "Recommandations complémentaires" in cell("IA : remarques").value
-    assert cell("IA : justification critère").value.startswith("Réaction après l'action. (règle R1)")
+    assert cell("IA : justification critère").value.startswith("Réaction après l'action. (R1)")
     assert "GUI-01 décrit l'avant" in cell("IA : justification critère").value  # avis sur le choix du designer
     assert cell("Justification du critère").value is None  # critère à revoir : pas de justification remplie
     # Ce qui a été envoyé à l'IA contient bien les choix du designer
-    message = client.appels[0]["messages"][0]["content"]
+    message = client.appels[0]["messages"][-1]["content"]
     assert "Recommandation rédigée par le designer : Améliorer le bouton" in message
-    assert "Gravité indiquée par le designer : 1" in message
+    assert "Gravité indiquée par le designer : 1 (Faible)" in message
 
 
 def test_categorie_deduite_du_critere_du_designer(audit_xlsx, ref, tmp_path):
@@ -94,7 +94,7 @@ def test_justification_du_critere_confirme(audit_xlsx, ref, tmp_path):
               "critere": "GUI-03", "gravite": 3, "recommandation": "Afficher un indicateur de chargement sur le bouton."}
     confirme = reponse_complete(verdict_designer={"statut": "confirme", "commentaire": "OK"})
     audit, *_ = relire(audit_xlsx([saisie]), tmp_path / "a.xlsx", ref, FauxClient(confirme))
-    assert audit.completions[5]["justification"][0].startswith("Réaction après l'action. (règle R1)")
+    assert audit.completions[5]["justification"][0].startswith("Réaction après l'action. (R1)")
 
     a_moi = {**saisie, "justification": "Ma propre justification."}
     _, _, _, sortie, _ = relire(audit_xlsx([a_moi], nom="b.xlsx"), tmp_path / "b_relu.xlsx", ref, FauxClient(confirme))
@@ -114,16 +114,16 @@ def test_sans_remplissage(audit_xlsx, ref, tmp_path):
 
 def test_point_fort_sans_recommandation(audit_xlsx, ref, tmp_path):
     point_fort = {"ecran": "Fiche produit", "type": "Point fort", "constat": "Les photos sont zoomables et nettes."}
-    audit, *_ = relire(audit_xlsx([point_fort]), tmp_path / "c.xlsx", ref, FauxClient(reponse_complete(gravite=0)))
+    audit, *_ = relire(audit_xlsx([point_fort]), tmp_path / "c.xlsx", ref, FauxClient(reponse_complete(gravite=1)))
     assert "recommandation" not in audit.completions[5]
-    assert audit.completions[5]["gravite"][0] == 0
+    assert "gravite" not in audit.completions[5]  # pas de gravité pour un point fort
 
 
 def test_erreur_ia_seul_le_type_est_complete(audit_xlsx, ref, tmp_path):
-    import anthropic
+    import openai
 
     chemin = audit_xlsx([{"ecran": "Paiement", "constat": "Après un clic sur Payer, rien ne se passe."}])
-    audit, *_ = relire(chemin, tmp_path / "c.xlsx", ref, FauxClient(erreur_api(anthropic.RateLimitError, 429)))
+    audit, *_ = relire(chemin, tmp_path / "c.xlsx", ref, FauxClient(erreur_api(openai.InternalServerError, 500)))
     assert set(audit.completions[5]) == {"type"}
 
 
@@ -150,7 +150,7 @@ def test_fichier_libre_colonnes_creees(tmp_path, ref):
     relu = lire_audit(sortie)  # le fichier produit se relit : colonnes ajoutées reconnues
     assert {"categorie", "critere", "gravite", "recommandation"} <= set(relu.colonnes)
     assert relu.constats[0]["critere"].startswith("GUI-03") and relu.constats[1]["recommandation"] == RECO_IA
-    assert relu.constats[0]["type"] == "Problème"
+    assert "type" not in relu.colonnes  # pas de colonne Type ajoutée à un tableau libre : problème par défaut
 
 
 def test_tableau_avec_une_seule_colonne_constat(tmp_path, ref):
@@ -174,5 +174,5 @@ def test_avis_reco_ignore_sans_reco_du_designer(ref):
 
 
 def test_schema_demande_recommandation_et_gravite(ref):
-    schema = construire_requete(ref, "x")["output_config"]["format"]["schema"]
+    schema = construire_requete(ref, "x")["response_format"]["json_schema"]["schema"]
     assert {"recommandation", "gravite"} <= set(schema["required"])

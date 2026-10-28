@@ -1,7 +1,7 @@
 from openpyxl import Workbook, load_workbook
 
 from audit_ergo import relire
-from audit_ergo.export import ONGLET_ANOMALIES, ONGLET_SYNTHESE
+from audit_ergo.i18n import t
 from audit_ergo.lecture import lire_audit
 from conftest import CONSTAT_VALIDE
 
@@ -34,7 +34,7 @@ def test_export_annote_et_conserve_le_fichier(audit_xlsx, tmp_path):
     assert synthese.nb_constats == 2 and not synthese.pret
 
     wb = load_workbook(sortie)
-    assert wb.sheetnames[:2] == [ONGLET_SYNTHESE, ONGLET_ANOMALIES]
+    assert wb.sheetnames[:2] == [t("onglet.synthese"), t("onglet.anomalies")]
     ws = wb["Audit"]
     entetes = [c.value for c in ws[3]]
     assert entetes[-2:] == ["Relecture : niveau", "Relecture : remarques"]
@@ -43,7 +43,7 @@ def test_export_annote_et_conserve_le_fichier(audit_xlsx, tmp_path):
     col_gravite = next(c.column for c in ws[3] if str(c.value).startswith("Gravité"))
     assert ws.cell(row=6, column=col_gravite).comment is not None  # cellule Gravité fautive commentée
     assert str(ws["A5"].value).startswith("=")  # formules du designer conservées
-    assert len(ws.data_validations.dataValidation) >= 8  # listes déroulantes conservées
+    assert len(ws.data_validations.dataValidation) >= 7  # listes déroulantes conservées
 
     # Relire le fichier déjà relu ne duplique pas les colonnes de relecture
     _, _, _, sortie2, _ = relire(sortie, tmp_path / "relu2.xlsx")

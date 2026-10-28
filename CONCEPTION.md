@@ -1,293 +1,249 @@
 # Audit ergonomique assisté : document de conception
 
-> **Objectif** : l'application relit l'audit rempli par un·e UX designer. Elle vérifie le critère choisi pour chaque constat, propose une correction si besoin, évalue la qualité des recommandations et en ajoute d'autres. Le but est que tous les audits de l'équipe atteignent **le même niveau de qualité et la même rigueur**, quel que soit le ou la designer.
+> **Objectif** : aider les UX designers à produire des audits ergonomiques **du même standard**, quel que soit l'auteur. L'application relit l'audit (même partiellement rempli), vérifie sa forme, propose le critère, la recommandation et la gravité de chaque constat, corrige ce que le designer a saisi sans jamais l'écraser, et complète les cellules vides.
+>
+> **Contrainte de sécurité** : **aucune donnée ne quitte le poste du designer.** L'IA est un modèle **Mistral installé localement** ; l'application refuse tout autre serveur.
+
+*Version 2 du document. Elle remplace la première version, qui prévoyait une IA en ligne.*
 
 ---
 
-## 1. Principes directeurs
+## 1. Principes
 
-1. **Assister, pas remplacer** : l'application *suggère*, le ou la designer *décide*. Chaque suggestion est acceptée, modifiée ou refusée, et le choix est tracé.
-2. **Un référentiel unique et versionné** : toutes les vérifications s'appuient sur le même référentiel (vos deux fichiers, nettoyés), pas sur la mémoire du modèle d'IA. C'est ce qui garantit le standard commun.
-3. **Contrôles déterministes d'abord, IA ensuite** : tout ce qui se vérifie par une règle (champ vide, critère inexistant, gravité hors échelle) est fait par du code, ce qui est gratuit, instantané et fiable. L'IA intervient seulement pour le jugement (pertinence du critère, qualité de la recommandation).
-4. **Expliquer chaque suggestion** : toute proposition cite la définition ou la question de la checklist qui la justifie. Le ou la designer apprend en corrigeant, et l'audit gagne en homogénéité dans le temps.
-5. **Mesurable** : un score de qualité par audit permet de comparer et de faire progresser les pratiques.
+1. **Assister, pas remplacer** : l'application *propose*, le designer *décide*. Les cellules qu'elle remplit sont signalées (en violet, « à valider ») ; celles du designer ne sont jamais modifiées.
+2. **Un référentiel unique et versionné** : toutes les propositions s'appuient sur le même référentiel (24 critères, checklists, 9 règles de départage), pas sur la « culture générale » du modèle. C'est ce qui garantit le standard commun.
+3. **Confidentialité par construction** : traitement 100 % local, et des garde-fous dans le code plutôt que des consignes (§ 2).
+4. **Règles d'abord, IA ensuite** : tout ce qui se vérifie par une règle (champ vide, critère inconnu, gravité hors échelle…) est fait sans IA, instantanément et sans erreur possible. L'IA sert au jugement.
+5. **Expliquer** : chaque proposition cite la règle de départage et la question de checklist qui la justifient. Le designer apprend en corrigeant.
+6. **Mesurer** : indicateurs par audit, puis jeu de référence pour mesurer la fiabilité de l'IA (§ 10).
 
 ---
 
-## 2. Analyse des fichiers fournis
+## 2. Confidentialité : aucune sortie du poste
 
-### 2.1 `criterias_Evaluation_template.csv`, la grille d'évaluation
-Elle compte 9 catégories et 24 critères. Chaque critère a une **définition** et une **checklist de questions** (« Is a title given to each page? »…).
+### 2.1 Architecture
 
-| Catégorie | Critères |
+```
+ Poste du designer (rien ne sort de ce cadre)
+ ┌──────────────────────────────────────────────────────────────────────────────┐
+ │  Navigateur ──▶ Application (Streamlit, http://localhost:8501)               │
+ │                     │                                                        │
+ │                     ├── Lecture / contrôles / export Excel (Python, local)   │
+ │                     ├── Cache des réponses (.cache/suggestions.sqlite)       │
+ │                     └──▶ Modèle Mistral local (Ollama, http://localhost:11434)│
+ │  Fichiers d'audit : lus et écrits sur le disque du poste uniquement          │
+ └──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.2 Garde-fous intégrés à l'application
+
+| Risque | Garde-fou (dans le code) |
 |---|---|
-| Guidance | Prompting, Grouping/Distinction, Immediate Feedback, Legibility, Help & Documentation |
-| Workload | Concision, Recognition rather than recall, Minimal Actions, Focused attention, Information density |
-| Explicit control | Actions explicit, User Control & Freedom |
-| Adaptability | Flexibility, Universal Usability & UX (Expertise) |
-| Consistency | Consistency & Standard |
-| Errors management | Protection against errors, Quality of error messages, Error correction |
-| Significance of codes | Significance of codes |
-| Compatibility | Compatibility & real world, Fit the intended contexts, Utility & Clear Goals |
-| Visual design | Opt for a perfect visual design 1 & 2 |
+| Le modèle configuré est un service en ligne | L'adresse `API_BASE` doit être locale (`localhost`, `127.0.0.1`, `::1`) ; toute autre adresse est **refusée** avec un message. Seule exception : `AUDIT_ERGO_RESEAU_AUTORISE=1`, pour un serveur interne validé par l'organisation. |
+| Un proxy d'entreprise intercepte les requêtes | Les appels au modèle **ignorent les variables de proxy** du poste : la connexion va directement au serveur local (testé). |
+| Un collègue ouvre l'application via le réseau | Streamlit n'écoute que sur `localhost` (`.streamlit/config.toml`, et `start.bat`). |
+| Statistiques d'usage | Télémétrie Streamlit désactivée (`gatherUsageStats = false`). |
+| Clé d'API qui fuite | Aucune clé n'est nécessaire en local. |
+| Données conservées ailleurs | Le cache des réponses est un fichier SQLite local, ignoré par Git ; il peut être vidé depuis l'interface. |
 
-### 2.2 `Heuristic_Evaluation_template.csv`, les frameworks de référence
-Ce fichier contient 125 heuristiques issues de 7 frameworks (Bastien & Scapin, Nielsen, Amélie Boucher, Colombo & Pasch, Shneiderman, Arhippainen, CARMEL). Chacune est rattachée à une **composante qualité** : Learnability, Memorability, Efficiency, Errors, Satisfaction, Utility.
+### 2.3 Ce qui demande Internet, une seule fois
 
-Ces deux fichiers sont convertis en un référentiel JSON par `scripts/build_referentiel.py`, avec pour résultat `referentiel/referentiel.json`.
+- **L'installation** : Python, les dépendances (`pip`), Ollama et le modèle Mistral. `start.bat` utilise `CA_BUNDLE` pour passer le proxy d'entreprise. Si les postes n'ont pas accès à Internet, l'équipe informatique peut préparer un paquet d'installation hors ligne (dépendances téléchargées à l'avance, modèle copié).
+- **Ensuite, plus rien** : l'application et le modèle fonctionnent hors ligne.
 
-### 2.3 Anomalies à corriger *avant* de construire l'application
-L'application sera aussi fiable que son référentiel. Voici ce que j'ai relevé :
+### 2.4 Points de vigilance (hors de l'application)
 
-| # | Problème | Impact | Correction proposée |
-|---|---|---|---|
-| 1 | La checklist de **Minimal Actions** est une copie exacte de celle de **Concision** | L'IA ne peut pas distinguer les deux critères | Réécrire Minimal Actions : nombre de clics/étapes, saisies déductibles, valeurs par défaut |
-| 2 | **CARMEL « Recovery_Confirmation dialogs »** reprend le texte de « Font size » | Définition fausse | « Les actions destructrices ou irréversibles demandent une confirmation explicite » |
-| 3 | 5 critères **sans checklist** (Focused attention, Fit the intended contexts, Utility & Clear Goals, Visual design 1 & 2) et 1 critère avec seulement 2 questions (Recognition rather than recall) | Ces critères seront mal vérifiés | Compléter avec 4 à 6 questions chacun |
-| 4 | Identifiants incohérents : `Significances_of_Codes` / `Significance_of_Codes`, `Errors_Management` / ` Errors_management` (espace en tête), coquilles `Leagibility`, `checjked`, `Correspondance` | Erreurs de correspondance entre le fichier du designer et le référentiel | Un identifiant stable par critère (ex. `GUI-01`) |
-| 5 | Questions **en doublon dans plusieurs critères** (« hover effect » dans Prompting *et* Immediate Feedback ; « confirmation avant action irréversible » dans Actions explicit *et* Protection against errors ; « guidance on how to correct » dans Quality of error messages *et* Error correction) | C'est précisément là que les designers divergent | Ajouter des **règles de départage** (§ 5.3) |
-| 6 | Bastien & Scapin distingue *Grouping by location* et *by format*, alors que la grille les fusionne | Perte de précision | Garder un critère et ajouter un sous-type facultatif |
-| 7 | Colombo & Pasch : « *steep* learning curve to help novice users » | Formulation ambiguë (contresens fréquent) | Remplacer par « courbe d'apprentissage douce » |
-
-> **Statut :** les corrections 1 à 5 et 7 sont proposées dans `referentiel/corrections.json` (les CSV d'origine restent intacts). Elles sont listées pour validation dans `referentiel/CHANGEMENTS.md`. La correction 6 est traitée par une note sur le critère `GUI-02`.
+- **Mises à jour automatiques** d'Ollama ou de LM Studio : à désactiver ou à faire valider par l'équipe informatique, selon la politique de l'organisation.
+- **Stockage des audits** : l'application ne chiffre pas les fichiers ; ils suivent les règles de stockage du poste (disque chiffré, dossiers de projet…).
+- **Captures d'écran** : non transmises à l'IA à ce stade.
 
 ---
 
-## 3. Le fichier d'entrée : ce que remplit le ou la designer
+## 3. Le modèle IA local (Mistral)
 
-Le fichier d'audit rempli ne figure pas dans les fichiers fournis. Pour qu'il puisse être relu automatiquement, je propose **un template Excel verrouillé**, avec une ligne par constat :
+### 3.1 Serveur local
 
-| Colonne | Type | Obligatoire | Contrôle |
-|---|---|---|---|
-| `ID` | texte (auto) | oui | unique |
-| `Écran / Page` | texte | oui | non vide |
-| `Parcours / Tâche` | texte | recommandé | – |
-| `Capture` | lien ou nom d'image | recommandé | le fichier existe |
-| `Type` | liste : Problème / Point fort | oui | valeur de la liste |
-| `Constat` (description) | texte long | oui | 20 caractères minimum, factuel |
-| `Catégorie` | liste déroulante (9) | oui | existe dans le référentiel |
-| `Critère principal` | liste dépendante (24) | oui | appartient à la catégorie |
-| `Critères secondaires` | multi | non | – |
-| `Gravité` | 0–4 (échelle de Nielsen) | oui | dans l'échelle |
-| `Fréquence` / `Impact` | faible / moyen / fort | recommandé | – |
-| `Recommandation` | texte long | oui si Problème | non vide |
-| `Priorité` | P1 / P2 / P3 | recommandé | cohérente avec la gravité |
+L'application dialogue avec tout serveur local **compatible OpenAI** (`/v1/chat/completions`) :
 
-Avec des listes déroulantes dépendantes dans Excel (validation de données), la moitié des erreurs disparaît avant même l'analyse.
+| Outil | Adresse par défaut | Remarque |
+|---|---|---|
+| **Ollama** (recommandé) | `http://localhost:11434/v1` | Valeur par défaut de l'application. Installation du modèle : `ollama pull mistral-small`. |
+| LM Studio | `http://localhost:1234/v1` | Interface graphique ; renseigner `API_BASE` dans `.env`. |
 
-> **Statut :** ce template existe : `template/Audit_ergonomique_template.xlsx`, généré par `scripts/build_template.py`. Il ajoute deux colonnes au tableau ci-dessus : `Règle de départage` (R1 à R9, facultative) et `Contrôle`, une formule qui signale directement dans Excel les champs manquants, un critère hors catégorie, une recommandation absente, une priorité incohérente avec la gravité ou un constat trop court.
+### 3.2 Choix du modèle
 
-**Échelle de gravité commune** (indispensable pour le standard) :
-- **0** : pas un problème d'utilisabilité
-- **1** : cosmétique, à corriger si le temps le permet
-- **2** : mineur, gêne ponctuelle, faible priorité
-- **3** : majeur, l'utilisateur est ralenti ou commet des erreurs, priorité haute
-- **4** : bloquant, la tâche ne peut pas être accomplie, à corriger avant mise en production
+| Modèle (famille Mistral) | Mémoire indicative (quantification 4 bits) | Pour cet usage |
+|---|---|---|
+| **Mistral Small** (24 B) | environ 15 Go | **Recommandé** : bonne compréhension du français, respect du format de réponse. Idéalement avec une carte graphique. |
+| Mistral Nemo (12 B) | environ 8 Go | Compromis possible sur un poste sans carte graphique puissante. |
+| Mistral 7B / Ministral | environ 5 Go | Déconseillé : le prompt est long et les règles fines ; risque élevé de critères mal choisis. |
+
+Ces chiffres sont des ordres de grandeur, à vérifier sur les postes réels. Le bouton « Tester la connexion » (barre latérale) et `start.bat` vérifient que le modèle configuré est bien installé.
+
+### 3.3 Réglages importants
+
+- **Fenêtre de contexte : 16 384 tokens au moins.** Le prompt (consignes + référentiel complet + schéma de réponse) fait environ 9 000 à 10 000 tokens. Ollama tronque **sans prévenir** ce qui dépasse sa fenêtre (souvent 4 096 par défaut) : le modèle répondrait alors sans avoir lu le référentiel. Réglage : variable d'environnement `OLLAMA_CONTEXT_LENGTH=16384` puis redémarrage d'Ollama (LM Studio : « Context Length »). **L'application détecte cette troncature** et affiche la marche à suivre.
+- **Température basse (0,2)** : un même constat doit donner la même réponse d'un designer à l'autre.
+- **Une requête à la fois** : un modèle local traite les constats l'un après l'autre ; en lancer plusieurs ne fait que les ralentir.
+- **Délai d'attente long (10 minutes)** : sur un poste sans carte graphique, une réponse peut prendre plus d'une minute.
+- **Réponse au format JSON contraint** (`response_format` avec schéma) : les codes de critères, les règles et la gravité sont limités aux valeurs du référentiel. Si le serveur ne gère pas ce format, l'application réessaie sans, puis **revalide entièrement** la réponse (code inconnu = réponse rejetée).
+- **Début de prompt identique d'un appel à l'autre** : Ollama réutilise alors ce début déjà calculé, ce qui accélère nettement les constats suivants.
+- **Cache local** : un constat déjà analysé (même texte, même écran, mêmes choix, même langue, même référentiel) n'est pas recalculé.
+
+### 3.4 Ce que cela change par rapport à une IA en ligne
+
+Un modèle local de 12 à 24 milliards de paramètres est moins performant qu'un grand modèle en ligne : la **fiabilité des propositions doit être mesurée** sur de vrais constats avant un usage généralisé (§ 10). Les contrôles de forme, eux, ne dépendent pas de l'IA.
 
 ---
 
-## 4. Fonctionnalités
+## 4. Le référentiel
 
-### 4.1 Niveau 1 : contrôles de forme (règles, sans IA)
-- Colonnes manquantes ou renommées (avec une correspondance tolérante des noms)
-- Champs obligatoires vides
-- Critère inexistant, mal orthographié, ou incohérent avec sa catégorie
-- Gravité hors échelle, et priorité incohérente avec la gravité (ex. gravité 4 et P3)
-- Doublons (même écran et constat quasi identique)
-- Recommandation vide, trop courte ou identique au constat
+- **Sources** : les deux CSV d'origine (grille des 9 catégories / 24 critères avec checklists ; 125 heuristiques de 7 frameworks), jamais modifiés.
+- **Codes stables** : `GUI-01` à `VIS-02`, conservés dans le template v2 et ses listes déroulantes.
+- **Corrections proposées** (`referentiel/corrections.json`, détail dans `referentiel/CHANGEMENTS.md`, **à valider par les designers seniors**) : checklists de *Concision* et *Actions minimales* distinguées (elles étaient identiques), 37 questions ajoutées aux critères qui n'en avaient pas, 17 doublons déplacés, définitions erronées corrigées (CARMEL « Confirmation dialogs », « steep learning curve »).
+- **9 règles de départage** (R1 à R9), en français et en anglais : la question à se poser pour choisir entre deux critères proches (ex. R1 : le problème est-il *avant* l'action — Incitation — ou *après* — Feedback ?).
+- **Compatibilité** : les noms de critères du template d'origine sont reconnus tels quels, coquilles comprises (« Leagibility/Readability »).
 
-### 4.2 Niveau 2 : vérification du critère (IA)
-Pour chaque constat :
-- **Le critère choisi est-il le bon ?** Réponse *Confirmé / À revoir / Incorrect*, avec un indice de confiance.
-- Si le critère est à revoir : **critère suggéré** et justification, en citant la définition et la question de checklist concernées.
-- **Critères secondaires** pertinents (un même problème touche souvent 2 critères).
-- **Gravité suggérée** si l'écart avec celle du designer est d'au moins 2 niveaux.
-- **Qualité du constat** : est-il factuel, observable et localisé (« le bouton X de l'écran Y »), ou vague (« la page est confuse ») ?
+---
 
-### 4.3 Niveau 3 : qualité de la recommandation (IA)
-Chaque recommandation est notée selon une grille fixe :
+## 5. Le template Excel v2
 
-| Dimension | Question |
+### 5.1 Analyse du template d'origine (`Heuristic_Evaluation_template.xlsx`)
+
+Ce qui est **repris** : la logique de grille (cas d'usage, tâche, critère, sous-critère, description, capture, emplacement, gravité, type de recommandation, recommandation, statut de maquette, statut), l'**échelle de gravité à 4 niveaux** (Low, Medium, High, Critical) avec ses définitions, l'onglet de résultats, l'onglet des frameworks.
+
+Défauts **corrigés** :
+
+| Défaut constaté dans le template d'origine | Correction dans la v2 |
 |---|---|
-| Spécifique | Nomme-t-elle l'élément concerné ? |
-| Actionnable | Une équipe peut-elle l'implémenter sans réinterpréter ? |
-| Cohérente | Traite-t-elle la *cause* du constat, et relève-t-elle du critère choisi ? |
-| Vérifiable | Peut-on vérifier qu'elle est appliquée ? |
-| Référencée | S'appuie-t-elle sur une norme ou un pattern (WCAG, Material, etc.) si pertinent ? |
+| L'onglet « Results » ne compte que 22 sous-critères sur 24 (les deux critères « Visual design » sont absents) | Les 24 critères sont comptés, par gravité, avec les points forts à part et un total par catégorie |
+| « Results » mélange des plages différentes (`F7:F1048576` d'un côté, `$F$7:$F$472` de l'autre) | Une seule plage cohérente |
+| Les sous-critères des listes contiennent un retour à la ligne final (« Prompting⏎ ») : les comptages dépendent de ce caractère invisible | Listes propres, préfixées par le code (« GUI-01 – … ») ; comptage par code |
+| La liste déroulante des sous-critères ne va que jusqu'à la ligne 38, et la ligne 12 pointe vers une catégorie fixe (`$E$12`) | Listes sur 300 lignes, toutes dépendantes de la catégorie de leur ligne |
+| Une liste de gravité est posée sur la cellule d'en-tête (`J6`) | Supprimé |
+| Coquilles et noms incohérents (« Leagibility », « Significances_of_Codes », « Mock up solution status␣ ») | Noms corrigés ; les anciens restent reconnus à la lecture |
+| Pas d'identifiant de constat, pas de type (problème / point fort), pas de justification du critère | Colonnes ID (automatique), Type, Critères secondaires, Règle de départage, Justification du critère |
+| Rien ne signale une ligne incomplète | Colonne « Contrôle » (formule) : champ manquant, sous-critère hors de sa catégorie, gravité ou recommandation manquante, constat trop court |
+| Zone d'impression (`Print_Area`) invalide | Mise en page paysage, ajustée à la largeur, en-tête répété |
 
-L'IA propose alors une **reformulation améliorée** (sans perdre l'intention du designer) et des **recommandations complémentaires**, clairement marquées comme « ajoutées par l'assistant ».
+À la lecture, les audits déjà remplis avec le template d'origine restent **acceptés tels quels** (colonnes, noms de critères, cellules fusionnées d'un même cas d'usage). Seule limite : en réécrivant un fichier au format d'origine, la liste déroulante « Mock up solution status » et deux mises en forme conditionnelles (format Excel non géré par la bibliothèque) sont perdues ; le template v2 n'a pas ce problème.
 
-### 4.4 Niveau 4 : analyse globale de l'audit
-- **Couverture** : carte des 24 critères et des questions de checklist couvertes ou non. Exemple : « aucun constat sur Error management, alors que l'interface contient 3 formulaires ; à vérifier ».
-- **Distribution** des gravités et des composantes qualité (Learnability, Efficiency…), pour repérer un audit trop centré sur le visuel.
-- **Points de vigilance** : questions de la checklist que l'IA suggère de vérifier, au vu des captures ou de la description de l'interface.
-- **Synthèse** : top 5 des problèmes à corriger en priorité.
+### 5.2 Structure de la v2
 
-### 4.5 (Option) Analyse des captures d'écran
-Si les captures sont jointes, le modèle (multimodal) peut confirmer que le constat est visible, détecter des problèmes non relevés (contraste, alignement, densité, absence de feedback) et vérifier la cohérence entre écrans.
+Deux fichiers générés par `scripts/build_template.py` : `template/Audit_ergonomique_FR.xlsx` et `template/Ergonomic_audit_EN.xlsx`.
+
+| Onglet | Contenu |
+|---|---|
+| Mode d'emploi / How to use | Étapes, code couleur, bonnes pratiques de rédaction |
+| Contexte / Context | Produit, cible, plateforme, parcours, designer, date de l'audit, langue, versions |
+| Audit | Une ligne par constat (colonnes ci-dessous), 300 lignes prêtes, une ligne d'exemple |
+| Résultats / Results | Comptage automatique par critère × gravité, points forts, total par catégorie |
+| Critères / Criteria | Définition et checklist de chaque critère (questions proposées signalées) |
+| Règles de départage / Tie-break rules | R1 à R9 avec exemples |
+| Gravité / Severity | Les 4 niveaux et leurs définitions |
+
+Colonnes de l'onglet Audit : ID · Parcours / cas d'usage · Tâche · **Écran / emplacement** · Capture · Type · **Constat** · **Catégorie** · **Critère principal** · Critères secondaires · Règle de départage · Justification du critère · **Gravité** (si problème) · Type de recommandation · **Recommandation** (si problème) · Statut maquette · Statut · Contrôle. En gras : obligatoire. La date par ligne du template d'origine est remplacée par la date de l'audit, dans l'onglet Contexte (une date par ligne reste lue si elle existe).
 
 ---
 
-## 5. Architecture
+## 6. Fonctionnalités
 
-### 5.1 Vue d'ensemble
+### 6.1 Suggérer un critère
+Le designer décrit un constat (et, s'il le souhaite, le critère, la recommandation et la gravité qu'il envisage). Le modèle local renvoie : critère principal et niveau de confiance, justification (règle de départage et question de checklist citées), critères secondaires, critères écartés et pourquoi, recommandation et type de recommandation, avis sur la recommandation du designer avec une version améliorée, gravité et sa justification, et ce qu'il faudrait préciser si le constat est trop vague. Le résultat se copie dans le template.
 
-```
- ┌──────────────┐   ┌────────────────┐   ┌─────────────────┐   ┌────────────────┐
- │ Import .xlsx │──▶│ Normalisation  │──▶│ Contrôles règles│──▶│ Analyse IA     │
- │ (+ captures) │   │ (mapping cols, │   │ (niveau 1)      │   │ par constat    │
- └──────────────┘   │  ID critères)  │   └─────────────────┘   │ (niveaux 2 & 3)│
-                    └────────────────┘                         └───────┬────────┘
-                            ▲                                          │
-                    ┌───────┴────────┐                         ┌───────▼────────┐
-                    │ Référentiel    │────────────────────────▶│ Analyse globale│
-                    │ JSON versionné │                         │ (niveau 4)     │
-                    └────────────────┘                         └───────┬────────┘
-                                                                       │
- ┌──────────────────┐   ┌──────────────────────────┐          ┌────────▼───────┐
- │ Export .xlsx     │◀──│ Revue par le designer    │◀─────────│ Suggestions    │
- │ enrichi + rapport│   │ accepter/modifier/refuser│          │ structurées    │
- └──────────────────┘   └──────────────────────────┘          └────────────────┘
-```
+### 6.2 Relire, compléter et corriger un audit
+Le designer dépose son fichier (template v2, template d'origine ou simple tableau avec une colonne « Constat ») :
 
-### 5.2 Moteur IA
-- **Modèle** : Claude via l'API Anthropic (`claude-opus-5-5` par défaut), avec **sorties structurées** (`output_config.format` et un schéma JSON) pour obtenir des résultats exploitables par le code.
-- **Le référentiel complet tient dans le prompt** (environ 15 000 tokens) : pas besoin de RAG ni de base vectorielle. Il est placé en tête du prompt avec du **prompt caching**, si bien qu'on ne le paie qu'une fois par audit.
-- **Un appel par lot de constats** (ex. 10 à 20), puis un appel de synthèse globale. Pour de gros audits non urgents, l'API Batch divise le coût par deux.
-- **Garde-fous** : le prompt système impose de ne jamais inventer de critère hors référentiel, de citer la question de checklist, et de répondre « confiance faible » plutôt que de trancher arbitrairement.
+1. **Contrôles de forme** (sans IA), en trois niveaux : bloquant, avertissement, info.
+2. **Complétion et correction par l'IA** (à la demande) : les cellules vides sont remplies (en violet, avec l'explication en commentaire) ; les saisies du designer ne sont jamais modifiées, l'avis de l'IA est donné dans des colonnes « IA : … » à côté.
+3. **Fichier annoté** : le fichier d'origine, avec ses formules et listes déroulantes, plus les colonnes de relecture et deux onglets « Synthèse » et « Anomalies ».
 
-**Schéma de sortie par constat (exemple)** :
-```json
-{
-  "finding_id": "F-012",
-  "criterion_check": {
-    "verdict": "a_revoir",
-    "designer_criterion": "GUI-01",
-    "suggested_criterion": "GUI-03",
-    "secondary_criteria": ["WKL-05"],
-    "confidence": 0.82,
-    "justification": "Le constat décrit l'absence de réaction APRÈS le clic (règle de départage R1).",
-    "checklist_reference": "Is information displayed during the loading of an action, file, or page?"
-  },
-  "severity_check": { "designer": 1, "suggested": 3, "reason": "Bloque la soumission du formulaire" },
-  "finding_quality": { "factual": true, "located": false, "comment": "Préciser l'écran et le composant" },
-  "recommendation_quality": {
-    "scores": { "specific": 1, "actionable": 2, "coherent": 3, "verifiable": 1, "referenced": 0 },
-    "improved_recommendation": "Afficher un indicateur de chargement sur le bouton « Valider » dès le clic, et le désactiver jusqu'à la réponse serveur.",
-    "additional_recommendations": [
-      "Afficher un message de confirmation explicite après l'enregistrement."
-    ]
-  }
-}
-```
+Les valeurs écrites dans les cellules suivent la **langue du fichier** (pour rester cohérentes avec ses listes) ; les commentaires et annotations suivent la langue choisie dans l'application.
 
-### 5.3 Règles de départage : le cœur du « même standard »
-Ce sont les cas où deux designers choisissent des critères différents pour le même problème. Ces règles sont intégrées au référentiel et au prompt. La version complète (9 règles, avec une question à se poser et un exemple par cas) se trouve dans `referentiel/regles_departage.json` et dans l'onglet « Règles de départage » du template. En voici l'essentiel :
+---
 
-| Règle | Si le problème concerne… | Critère |
+## 7. Français / anglais
+
+| Élément | Français | Anglais |
 |---|---|---|
-| R1 | ce qui guide **avant** l'action | Prompting |
-| | la réponse du système **après** l'action | Immediate Feedback |
-| R2 | **empêcher** l'erreur | Protection against errors |
-| | le **texte** du message d'erreur | Quality of error messages |
-| | le **moyen de réparer** l'erreur | Error correction |
-| R3 | un élément **isolé** trop long ou trop chargé | Concision |
-| | l'écran **dans son ensemble** trop chargé | Information density |
-| | le **nombre d'étapes** ou de clics | Minimal actions |
-| R4 | le système agit **sans demande** de l'utilisateur | Actions explicit |
-| | l'utilisateur **ne peut pas interrompre ou annuler** | User control & freedom |
-| R5 | une incohérence **interne** au produit | Consistency |
-| | un écart avec les **conventions externes** ou le monde réel | Compatibility |
-| | un libellé ou une icône **qui ne dit pas ce qu'il fait** | Significance of codes |
-| R6 | la **lecture** du texte (taille, contraste, interligne) | Legibility |
-| | l'**organisation** visuelle (regroupement, séparation) | Grouping / Distinction |
-| | l'**esthétique** et l'émotion | Visual design |
-| R7 | la **personnalisation** par l'utilisateur | Flexibility |
-| | l'adaptation au **niveau d'expertise** | Universal usability |
+| Interface (sélecteur dans la barre latérale) | ✓ | ✓ |
+| Template Excel | ✓ | ✓ |
+| Messages des contrôles, annotations, onglets de synthèse | ✓ | ✓ |
+| Textes rédigés par l'IA (justifications, recommandations) | ✓ | ✓ |
+| Règles de départage | ✓ | ✓ |
+| Définitions et checklists des critères | — | ✓ (langue du référentiel d'origine) |
 
-Ces règles sont à valider et compléter avec vos designers seniors : c'est le livrable métier le plus important du projet.
+**À faire** : traduire les définitions et les 143 questions de checklist en français, puis les faire valider.
+
+La langue par défaut se règle dans `.env` (`AUDIT_ERGO_LANGUE=fr` ou `en`).
 
 ---
 
-## 6. Score de qualité de l'audit
+## 8. Architecture logicielle
 
-Chaque audit reçoit un score sur 100, affiché de façon pédagogique et non punitive :
+| Module | Rôle |
+|---|---|
+| `audit_ergo/lecture.py` | Lecture tolérante : onglet et ligne d'en-tête trouvés automatiquement, colonnes reconnues en français, en anglais et au format d'origine, cellules fusionnées, langue du fichier |
+| `audit_ergo/controles.py` | Contrôles de forme, messages bilingues |
+| `audit_ergo/suggestion.py` | Dialogue avec le modèle local : garde-fous réseau, prompt, schéma, validation, gestion des erreurs |
+| `audit_ergo/completion.py` | Remplissage des cellules vides, jamais des cellules saisies |
+| `audit_ergo/export.py` | Fichier annoté, onglets de synthèse |
+| `audit_ergo/cache.py` | Cache local des réponses |
+| `audit_ergo/i18n.py` | Textes bilingues, échelle de gravité, listes communes |
+| `interface/` | Interface Streamlit (pages « Suggérer un critère » et « Relire un audit ») |
+| `scripts/` | Génération du référentiel, des templates et des exemples ; vérification du modèle local |
+| `start.bat` | Installation et lancement en un double-clic sous Windows |
 
-| Composante | Poids | Mesure |
+---
+
+## 9. Configuration (`.env`)
+
+| Variable | Défaut | Rôle |
 |---|---|---|
-| Complétude | 15 % | Champs obligatoires remplis |
-| Justesse des critères | 30 % | Part des critères confirmés par l'IA (après revue humaine) |
-| Qualité des constats | 15 % | Constats factuels et localisés |
-| Qualité des recommandations | 25 % | Moyenne de la grille du § 4.3 |
-| Couverture | 15 % | Part des critères pertinents examinés |
-
-Ce score permet de suivre la progression d'un·e designer, de repérer les critères mal compris par l'équipe (et de cibler les formations), et de comparer deux audits du même produit.
-
----
-
-## 7. Parcours utilisateur (écrans)
-
-1. **Accueil** : déposer le fichier `.xlsx` et éventuellement un dossier de captures. Indiquer le contexte : type de produit, cible, plateforme.
-2. **Contrôle de forme** : liste des erreurs bloquantes et non bloquantes, avec correction possible directement dans l'outil.
-3. **Revue constat par constat** : vue en 2 colonnes, « Designer » et « Suggestion ». Boutons ✅ Accepter / ✏️ Modifier / ❌ Refuser, avec un champ de commentaire en cas de refus. Filtres par verdict, critère et gravité.
-4. **Vue globale** : carte de couverture des 24 critères, distribution des gravités, score, points de vigilance.
-5. **Export** :
-   - le **fichier Excel d'origine enrichi** de colonnes : `Critère suggéré`, `Verdict`, `Reco améliorée`, `Recos complémentaires`, `Statut revue` ;
-   - un **rapport d'audit** (PDF/HTML) prêt à livrer au client ;
-   - un **journal des décisions** (traçabilité).
-
-Les refus des designers sont précieux : ils servent à améliorer le prompt et les règles de départage (§ 9).
+| `API_BASE` | `http://localhost:11434/v1` | Adresse du modèle local (doit être locale) |
+| `AUDIT_ERGO_MODELE` | `mistral-small` | Nom du modèle sur le serveur local |
+| `AUDIT_ERGO_LANGUE` | `fr` | Langue par défaut |
+| `CA_BUNDLE` | — | Certificats de l'organisation (installation derrière un proxy) |
+| `AUDIT_ERGO_TEMPERATURE`, `AUDIT_ERGO_MAX_TOKENS`, `AUDIT_ERGO_DELAI`, `AUDIT_ERGO_PARALLELE` | 0,2 · 4000 · 600 s · 1 | Réglages du modèle |
+| `AUDIT_ERGO_IA` | `1` | `0` désactive l'IA (contrôles de forme seuls) |
+| `AUDIT_ERGO_RESEAU_AUTORISE` | — | `1` autorise un serveur non local : **à réserver à un serveur interne validé** |
 
 ---
 
-## 8. Stack technique recommandée
+## 10. Qualité et fiabilité
 
-| Brique | Choix | Pourquoi |
-|---|---|---|
-| Lecture/écriture Excel | Python + `openpyxl` (ou `pandas`) | Robuste, conserve la mise en forme d'origine à l'export |
-| Backend | Python **FastAPI** | Même langage que le traitement Excel et le SDK `anthropic` |
-| IA | API Claude (SDK Python `anthropic`), sorties structurées, prompt caching | Fiabilité du JSON, coût maîtrisé |
-| Front | **MVP** : Streamlit (quelques jours). **V2** : React/Next.js | Valider la valeur vite, puis industrialiser |
-| Stockage | SQLite, puis PostgreSQL | Audits, décisions, scores, versions du référentiel |
-| Référentiel | `referentiel.json` versionné dans Git | Chaque audit enregistre la version utilisée |
-
-**Coût indicatif** : un audit de 50 constats représente environ 5 à 8 appels, soit quelques dizaines de centimes à environ 1 € selon la taille. C'est à mesurer sur vos vrais audits.
-
-**Confidentialité** : les audits clients peuvent être sensibles. Il faut vérifier les conditions de traitement des données (rétention API, hébergement), anonymiser le nom du client si besoin, et ne jamais envoyer d'informations personnelles d'utilisateurs finaux.
+- **Tests automatiques** : 115 tests, dont un véritable appel HTTP vers un faux serveur local (vérifie aussi que le proxy du poste est contourné), la lecture du template d'origine, la complétion, le cache et les deux langues. Ils ne nécessitent ni modèle ni réseau.
+- **À faire avant un usage généralisé : un jeu de référence.**
+  1. Réunir 3 à 5 audits passés (100 à 150 constats).
+  2. Faire classer chaque constat par deux designers seniors ; mesurer leur accord (il donne le plafond atteignable).
+  3. Mesurer l'accord du modèle local avec eux, et le taux de propositions inutiles.
+  4. Ajuster les règles de départage, le prompt ou le modèle, puis mesurer à nouveau.
+- **Boucle d'amélioration** (prévue) : boutons 👍 / 👎 sur chaque proposition, pour constituer ce jeu de référence au fil des audits.
 
 ---
 
-## 9. Garantir la fiabilité : jeu de référence (« golden set »)
+## 11. Feuille de route
 
-Avant de déployer l'outil, il faut prouver qu'il améliore vraiment les audits :
-1. Rassembler **3 à 5 audits passés** (environ 100 à 150 constats).
-2. Faire annoter par **2 designers seniors** le critère correct et la gravité de chaque constat. Mesurer leur accord (kappa de Cohen) : il donne le plafond atteignable.
-3. Lancer l'outil et mesurer :
-   - le **taux d'accord** de l'outil avec les seniors (objectif : au moins égal à l'accord entre seniors) ;
-   - le **taux de faux positifs**, c'est-à-dire de suggestions inutiles (une source de fatigue si trop élevé).
-4. Ajuster les règles de départage et le prompt, puis re-mesurer. Recommencer à chaque modification du référentiel.
-
----
-
-## 10. Feuille de route
-
-| Phase | Contenu | Durée indicative |
-|---|---|---|
-| **0. Référentiel** | Corriger les anomalies (§ 2.3), compléter les checklists, écrire les règles de départage, figer le template Excel | 1 à 2 semaines (travail métier) |
-| **1. MVP** | Import Excel, contrôles niveau 1, vérification des critères (niveau 2), export Excel enrichi. Interface Streamlit | 2 à 3 semaines |
-| **2. Qualité** | Niveaux 3 et 4, score, rapport PDF, golden set et mesures | 3 à 4 semaines |
-| **3. Industrialisation** | Front React, comptes utilisateurs, historique, tableau de bord équipe, analyse des captures | selon besoin |
-
-> **Statut :** phase 0 proposée (référentiel, règles, template : à valider). Phase 1 réalisée **sans la partie IA** : import tolérant, contrôles de niveau 1, synthèse, export annoté, interface Streamlit et tests. Les niveaux 2 et 3 (critère, recommandation, gravité par l'IA) sont prêts, avec en plus la **complétion** d'un audit partiellement rempli : les cellules vides reçoivent les propositions de l'IA (en violet, à valider), les saisies du designer ne sont jamais écrasées. Pas encore testés avec l'API réelle : à valider dès qu'une clé est branchée.
+| Étape | Statut |
+|---|---|
+| Référentiel structuré, codes stables, règles de départage FR/EN | ✓ fait — **corrections à valider** par les seniors |
+| Template v2 (FR/EN), corrigé et compatible avec l'origine | ✓ fait — à tester dans Excel |
+| Contrôles de forme, fichier annoté, synthèse | ✓ fait |
+| IA locale : suggestion, complétion, correction, justification | ✓ fait — **à tester avec le vrai modèle Mistral** |
+| Confidentialité : 100 % local, garde-fous | ✓ fait |
+| Interface bilingue, lancement Windows en un clic | ✓ fait — `start.bat` à tester sur un poste Windows |
+| Premier essai sur un poste avec Ollama et Mistral, réglage du contexte | à faire |
+| Avis des designers (👍 / 👎) et jeu de référence | à faire |
+| Traduction française des définitions et checklists | à faire |
+| Score de qualité d'un audit, rapport client (PDF) | à faire |
+| Paquet d'installation hors ligne pour l'équipe informatique | à faire si les postes n'ont pas Internet |
 
 ---
 
-## 11. Questions à trancher
+## 12. Questions ouvertes
 
-1. **Le fichier du designer** : avez-vous un exemple d'audit rempli ? Sa structure réelle conditionne le module d'import.
-2. **Langue** : le référentiel est en anglais. Les audits et recommandations sont-ils rédigés en français, en anglais, ou les deux ?
-3. **Échelle de gravité** : utilisez-vous déjà celle de Nielsen (0–4) ou une échelle interne ?
-4. **Frameworks** : les designers doivent-ils citer le framework source (Nielsen, Bastien & Scapin…) ou seulement la grille des 9 catégories ?
-5. **Captures d'écran** : sont-elles systématiquement jointes ? (Cela détermine si l'analyse visuelle doit être prévue dès le MVP.)
-6. **Utilisateurs** : outil individuel pour le ou la designer, ou outil de relecture pour un·e lead (avec un tableau de bord d'équipe) ?
-7. **Hébergement** : outil interne (SSO, cloud de l'entreprise) ou application web simple ?
+1. **Postes** : mémoire et carte graphique disponibles ? Cela décide du modèle (Mistral Small ou Nemo).
+2. **Installation** : l'équipe informatique autorise-t-elle Ollama (ou LM Studio) ? Faut-il un paquet hors ligne ?
+3. **Validation du référentiel** : qui valide `CHANGEMENTS.md` et les règles de départage ?
+4. **Colonne « Statut »** : faut-il une liste de valeurs (ex. ouvert, en cours, corrigé, rejeté) ?
+5. **Serveur interne** : l'organisation préfère-t-elle, à terme, un modèle partagé sur un serveur interne (plus puissant) plutôt qu'un modèle par poste ? L'application le permet (`AUDIT_ERGO_RESEAU_AUTORISE`), sous réserve de validation par la sécurité.

@@ -45,16 +45,19 @@ class Referentiel:
     def _alias_criteres(self):
         alias = {}
         for code, c in self.criteres.items():
-            for nom in (code, c["name"], c["label_fr"], c["id_source"]):
-                alias[normaliser(nom)] = code
+            # nom_source : le nom du template d'origine, coquilles comprises (« Leagibility/Readability »)
+            for nom in (code, c["name"], c["label_fr"], c["id_source"], c.get("nom_source", "")):
+                if nom:
+                    alias[normaliser(nom)] = code
         return alias
 
     @cached_property
     def _alias_categories(self):
         alias = {}
         for code, c in self.categories.items():
-            for nom in (code, c["label"], c["label_fr"], c["id_source"]):
-                alias[normaliser(nom)] = code
+            for nom in (code, c["label"], c["label_fr"], c["id_source"], c.get("label_source", "")):
+                if nom:
+                    alias[normaliser(nom)] = code
         return alias
 
     def trouver_critere(self, saisie):
@@ -79,11 +82,13 @@ class Referentiel:
         trouves = CODE_CRITERE.findall(str(saisie or ""))
         return [c for c in trouves if c in self.criteres], [c for c in trouves if c not in self.criteres]
 
-    def libelle_categorie(self, code):
-        """Libellé tel qu'il apparaît dans les listes du template (ex. « GUI – Guidage »)."""
-        return f"{code} – {self.categories[code]['label_fr']}"
+    def libelle_categorie(self, code, langue="fr"):
+        """Libellé des listes du template : « GUI – Guidage » (fr) ou « GUI – Guidance » (en)."""
+        cat = self.categories[code]
+        return f"{code} – {cat['label'] if langue == 'en' else cat['label_fr']}"
 
-    def libelle_critere(self, code):
-        """Libellé tel qu'il apparaît dans les listes du template (ex. « GUI-03 – Feedback immédiat (…) »)."""
+    def libelle_critere(self, code, langue="fr"):
+        """Libellé des listes du template : « GUI-03 – Feedback immédiat (Immediate Feedback) » (fr) ou
+        « GUI-03 – Immediate Feedback » (en)."""
         c = self.criteres[code]
-        return f"{code} – {c['label_fr']} ({c['name']})"
+        return f"{code} – {c['name']}" if langue == "en" else f"{code} – {c['label_fr']} ({c['name']})"

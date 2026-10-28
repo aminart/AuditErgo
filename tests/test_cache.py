@@ -5,9 +5,9 @@ import pytest
 
 from audit_ergo import Referentiel, relire
 from audit_ergo.cache import CacheSuggestions
-from audit_ergo.suggestion import ClientIA, ErreurSuggestion, suggerer
+from audit_ergo.suggestion import ErreurSuggestion, suggerer
 from conftest import CONSTAT_VALIDE
-from test_suggestion import FauxClient, FauxOpenAI, erreur_api, reponse_ia
+from test_suggestion import FauxClient, erreur_api, reponse_ia
 
 CONSTAT = "Aucun indicateur de chargement après le clic sur Payer."
 
@@ -54,17 +54,17 @@ def test_referentiel_modifie_invalide_le_cache(ref):
     assert len(client.appels) == 2
 
 
-def test_format_different_refait_l_appel(ref):
-    anthropic_client, openai_client = FauxClient(reponse_ia()), FauxOpenAI(reponse_ia())
-    suggerer(anthropic_client, ref, CONSTAT)
-    suggerer(ClientIA("openai", openai_client), ref, CONSTAT)
-    assert len(anthropic_client.appels) == 1 and len(openai_client.appels) == 1
+def test_langue_differente_refait_l_appel(ref):
+    client = FauxClient(reponse_ia())
+    suggerer(client, ref, CONSTAT, langue="fr")
+    suggerer(client, ref, CONSTAT, langue="en")
+    assert len(client.appels) == 2
 
 
 def test_erreurs_et_reponses_invalides_non_memorisees(ref):
-    import anthropic
+    import openai
 
-    client = FauxClient(erreur_api(anthropic.RateLimitError, 429), reponse_ia(code="XYZ-99"), reponse_ia())
+    client = FauxClient(erreur_api(openai.InternalServerError, 500), reponse_ia(code="XYZ-99"), reponse_ia())
     for _ in range(2):
         with pytest.raises(ErreurSuggestion):
             suggerer(client, ref, CONSTAT)

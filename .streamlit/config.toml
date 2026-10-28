@@ -1,0 +1,16 @@
+# Aucune donnée ne quitte le poste : l'interface n'est servie qu'à ce poste, sans télémétrie.
+
+[server]
+# Par défaut, Streamlit écoute sur toutes les interfaces réseau : un collègue (ou n'importe qui sur le même
+# réseau) pourrait ouvrir l'application et les audits déposés. On la limite à ce poste.
+address = "localhost"
+port = 8501
+headless = true
+
+[browser]
+# Pas de statistiques d'usage envoyées à Streamlit
+gatherUsageStats = false
+serverAddress = "localhost"
+
+[client]
+toolbarMode = "minimal"

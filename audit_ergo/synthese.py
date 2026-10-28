@@ -2,10 +2,10 @@
 from collections import Counter
 from dataclasses import dataclass
 
-from .controles import AVERTISSEMENT, BLOQUANT, _gravite
-from .referentiel import normaliser
+from .controles import AVERTISSEMENT, BLOQUANT
+from .i18n import GRAVITES, lire_gravite, lire_type
 
-RECOMMANDES = ["parcours", "capture", "frequence", "impact", "priorite"]
+RECOMMANDES = ["parcours", "tache", "capture", "type_reco"]  # champs facultatifs du template
 
 
 @dataclass
@@ -13,7 +13,7 @@ class Synthese:
     nb_constats: int
     nb_problemes: int
     nb_points_forts: int
-    gravites: dict  # niveau -> nombre de problèmes
+    gravites: dict  # niveau (1 à 4) -> nombre de problèmes
     par_critere: dict  # code -> nombre de constats (critère principal)
     secondaires: dict  # code -> nombre de mentions en critère secondaire
     non_couverts: list  # codes jamais cités
@@ -31,11 +31,11 @@ class Synthese:
 
 def synthetiser(audit, anomalies, ref):
     constats = audit.constats
-    problemes = [c for c in constats if normaliser(c["type"] or "") != "point fort"]
+    problemes = [c for c in constats if lire_type(c["type"]) != "point_fort"]
     par_critere = Counter(code for c in constats if (code := ref.trouver_critere(c["critere"])))
     secondaires = Counter(code for c in constats for code in ref.codes_mentionnes(c["secondaires"])[0])
     cites = set(par_critere) | set(secondaires)
-    gravites = Counter(g for c in problemes if (g := _gravite(c["gravite"])) is not None)
+    gravites = Counter(g for c in problemes if (g := lire_gravite(c["gravite"])) is not None)
 
     lignes_bloquees = {a.ligne for a in anomalies if a.niveau == BLOQUANT and a.ligne}
     lignes_remarques = {a.ligne for a in anomalies if a.ligne}
@@ -45,7 +45,7 @@ def synthetiser(audit, anomalies, ref):
         nb_constats=len(constats),
         nb_problemes=len(problemes),
         nb_points_forts=len(constats) - len(problemes),
-        gravites={g: gravites.get(g, 0) for g in range(5)},
+        gravites={g: gravites.get(g, 0) for g in GRAVITES},
         par_critere=dict(sorted(par_critere.items())),
         secondaires=dict(sorted(secondaires.items())),
         non_couverts=[code for code in ref.criteres if code not in cites],

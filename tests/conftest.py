@@ -8,9 +8,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from audit_ergo import Referentiel  # noqa: E402
-from audit_ergo.lecture import nom_colonne  # noqa: E402
+from audit_ergo.lecture import libelle_champ, nom_colonne  # noqa: E402
 
-TEMPLATE = ROOT / "template" / "Audit_ergonomique_template.xlsx"
+TEMPLATE = ROOT / "template" / "Audit_ergonomique_FR.xlsx"
 
 CONSTAT_VALIDE = {
     "ecran": "Paiement", "type": "Problème",
@@ -35,6 +35,9 @@ def audit_xlsx(tmp_path):
         colonnes = {nom_colonne(c.value): c.column for c in ws[3] if c.value}
         for i, valeurs in enumerate(constats):
             for champ, valeur in valeurs.items():
+                if champ not in colonnes:  # colonne d'un ancien template (fréquence, impact, priorité)
+                    colonnes[champ] = ws.max_column + 1
+                    ws.cell(row=3, column=colonnes[champ], value=libelle_champ(champ))
                 ws.cell(row=5 + i, column=colonnes[champ], value=valeur)
         ctx = {"Produit / interface auditée *": "Produit test", "Cible utilisateurs *": "Tous",
                "Plateforme *": "Web desktop", "Parcours audités *": "Commande", "Designer *": "Test",

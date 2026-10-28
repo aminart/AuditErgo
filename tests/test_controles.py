@@ -35,8 +35,11 @@ def test_ligne_exemple_et_lignes_vides_ignorees(audit_xlsx, ref):
     ({"regle": "R2"}, "REGLE_INCOHERENTE"),
     ({"regle": "R42"}, "REGLE_INCONNUE"),
     ({"gravite": 5}, "GRAVITE_INVALIDE"),
-    ({"gravite": "élevée"}, "GRAVITE_INVALIDE"),
-    ({"gravite": 4, "impact": "Faible", "priorite": "P1"}, "GRAVITE_IMPACT"),
+    ({"gravite": 0}, "GRAVITE_INVALIDE"),  # l'échelle du template d'origine va de 1 à 4
+    ({"gravite": "Très grave"}, "GRAVITE_INVALIDE"),
+    ({"gravite": "Critique", "impact": "Faible", "priorite": "P1"}, "GRAVITE_IMPACT_HAUTE"),
+    ({"gravite": "Low", "impact": "High", "frequence": "Systematic", "priorite": "P3"}, "GRAVITE_IMPACT_BASSE"),
+    ({"type_reco": "Marketing"}, "TYPE_RECO_INVALIDE"),
     ({"gravite": 3, "priorite": "P3"}, "PRIORITE_GRAVITE"),
     ({"priorite": "Urgent"}, "PRIORITE_INVALIDE"),
     ({"frequence": "Souvent"}, "FREQUENCE_INVALIDE"),
@@ -53,9 +56,26 @@ def test_regle_coherente_acceptee(audit_xlsx, ref):
 
 
 def test_point_fort(audit_xlsx, ref):
-    point_fort = {**CONSTAT_VALIDE, "type": "Point fort", "recommandation": None, "priorite": None}
-    assert codes(audit_xlsx, ref, [{**point_fort, "gravite": 0}]) == []
+    point_fort = {**CONSTAT_VALIDE, "type": "Point fort", "recommandation": None, "priorite": None, "gravite": None}
+    assert codes(audit_xlsx, ref, [point_fort]) == []  # ni recommandation ni gravité exigées
     assert "POINT_FORT_GRAVE" in codes(audit_xlsx, ref, [{**point_fort, "gravite": 2}])
+
+
+@pytest.mark.parametrize("gravite", [3, "3", "High", "Élevée", "élevée", "HIGH", "3 – Élevée"])
+def test_gravite_saisie_dans_les_deux_langues(audit_xlsx, ref, gravite):
+    assert codes(audit_xlsx, ref, [{**CONSTAT_VALIDE, "gravite": gravite}]) == []
+
+
+@pytest.mark.parametrize("type_", ["Problème", "Issue", "Point fort", "Strength"])
+def test_type_dans_les_deux_langues(audit_xlsx, ref, type_):
+    assert "TYPE_INVALIDE" not in codes(audit_xlsx, ref, [{**CONSTAT_VALIDE, "type": type_}])
+
+
+def test_messages_en_anglais(audit_xlsx, ref):
+    audit = lire_audit(audit_xlsx([{**CONSTAT_VALIDE, "ecran": None, "gravite": 9}]))
+    messages = [a.message for a in controler(audit, ref, "en")]
+    assert "“Screen / Location” is empty." in messages
+    assert any(m.startswith("Severity “9” not on the scale (1 Low, 2 Medium, 3 High, 4 Critical)") for m in messages)
 
 
 def test_doublon(audit_xlsx, ref):

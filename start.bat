@@ -23,9 +23,9 @@ rem --- 2. Fichier de configuration .env ---------------------------------------
 if not exist ".env" (
     copy ".env.exemple" ".env" >nul
     echo Premier lancement : le fichier de configuration .env vient d'être créé.
-    echo Renseignez API_KEY, API_BASE, CA_BUNDLE et AUDIT_ERGO_MODELE dans le Bloc-notes,
+    echo Vérifiez l'adresse du modèle local API_BASE et son nom AUDIT_ERGO_MODELE,
     echo enregistrez, puis fermez le Bloc-notes pour continuer.
-    echo Sans clé, l'application fonctionne quand même, sans les suggestions de l'IA.
+    echo Les valeurs par défaut conviennent à Ollama avec le modèle mistral-small.
     echo.
     start /wait notepad ".env"
 )
@@ -62,11 +62,13 @@ if errorlevel 1 (
 )
 
 rem --- 6. Lancement --------------------------------------------------------------------------------
+"%VPY%" scripts\verifier_ia.py
+echo.
 echo L'application s'ouvre dans votre navigateur : http://localhost:8501
-echo Pour l'arrêter, fermez cette fenêtre.
+echo Elle n'est accessible que depuis ce poste. Pour l'arrêter, fermez cette fenêtre.
 echo.
 start "" /b "%VPY%" -c "import time, webbrowser; time.sleep(5); webbrowser.open('http://localhost:8501')"
-"%VPY%" -m streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false
+"%VPY%" -m streamlit run app.py --server.address localhost --server.headless true --server.port 8501 --browser.gatherUsageStats false
 echo.
 echo L'application s'est arrêtée.
 pause

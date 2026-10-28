@@ -3,6 +3,8 @@
 Relire un audit :            python3 -m audit_ergo AUDIT.xlsx [-o SORTIE.xlsx] [--ia [--sans-remplissage]] [--json]
 Suggérer un critère :        python3 -m audit_ergo --suggerer "texte du constat" [--ecran PAGE] [--critere CODE]
 Les réponses de l'IA sont mémorisées : --sans-cache force une nouvelle analyse, --vider-cache les efface.
+--langue en : annotations du fichier et textes de l'IA en anglais (défaut : AUDIT_ERGO_LANGUE, sinon fr).
+L'IA est le modèle local configuré dans .env : aucune donnée ne quitte le poste.
 """
 import argparse
 import json
@@ -12,13 +14,12 @@ from dataclasses import asdict
 from . import ErreurLecture, Referentiel, relire
 from .cache import CacheSuggestions
 from .controles import NIVEAUX
-from .export import LIBELLE_NIVEAU
-from .suggestion import LIBELLE_RECO, LIBELLE_VERDICT, ErreurSuggestion, client_ou_none, suggerer
+from .i18n import LANGUES, langue_defaut, t
+from .suggestion import ErreurSuggestion, client_ou_none, libelle_reco, libelle_verdict, suggerer
 
 
-def afficher_suggestion(s, ref):
-    c = ref.criteres[s.code]
-    print(f"Critère proposé : {c['code']} – {c['label_fr']} ({c['name']})  [confiance {s.confiance}]"
+def afficher_suggestion(s, ref, langue="fr"):
+    print(f"Critère proposé : {ref.libelle_critere(s.code, langue)}  [confiance {s.confiance}]"
           + ("  (repris du cache)" if s.depuis_cache else ""))
     print(f"  {s.justification}")
     if s.regle != "aucune":
@@ -30,20 +31,20 @@ def afficher_suggestion(s, ref):
     for x in s.alternatives:
         print(f"Écarté : {x['code']} – {ref.criteres[x['code']]['label_fr']} : {x['pourquoi_pas']}")
     if s.critere_designer:
-        print(f"Choix du designer ({s.critere_designer}) : {LIBELLE_VERDICT[s.verdict]} – {s.commentaire_verdict}")
+        print(f"Choix du designer ({s.critere_designer}) : {libelle_verdict(s.verdict, langue)} – {s.commentaire_verdict}")
     if s.question_a_se_poser:
         print(f"À se demander : {s.question_a_se_poser}")
     for p in s.precisions_manquantes:
         print(f"À préciser : {p}")
     if s.reco_statut != "non_fournie":
-        print(f"Votre recommandation : {LIBELLE_RECO[s.reco_statut]} – {s.reco_commentaire}")
+        print(f"Votre recommandation : {libelle_reco(s.reco_statut, langue)} – {s.reco_commentaire}")
     if s.reco_a_retenir:
         print(f"Recommandation{' améliorée' if s.reco_amelioree else ' proposée'} : {s.reco_a_retenir}")
     for x in s.reco_complementaires:
         print(f"Piste complémentaire : {x}")
     if s.gravite is not None:
         print(f"Gravité proposée : {s.gravite} – {s.justification_gravite}")
-    print(f"\nÀ coller dans l'audit : {s.ligne_excel(ref)}")
+    print(f"\nÀ coller dans l'audit : {s.ligne_excel(ref, langue)}")
     if not s.critere_designer or s.verdict == "confirme":
         print(f"Justification du critère : {s.justification_critere}")
 
@@ -64,7 +65,10 @@ def main(argv=None):
     parser.add_argument("--sans-cache", action="store_true",
                         help="refaire l'analyse IA même pour les constats déjà analysés")
     parser.add_argument("--vider-cache", action="store_true", help="effacer les réponses IA mémorisées")
+    parser.add_argument("--langue", choices=list(LANGUES), default=None,
+                        help="langue des annotations et des textes de l'IA (fr ou en)")
     args = parser.parse_args(argv)
+    langue = args.langue or langue_defaut()
     if args.vider_cache:
         cache = CacheSuggestions.defaut()
         print(f"{cache.vider() if cache else 0} réponse(s) effacée(s) du cache.")
@@ -82,8 +86,7 @@ def main(argv=None):
             print(f"Erreur : {e}", file=sys.stderr)
             return 2
         if client is None:
-            print("Erreur : aucune clé d'API. Renseignez API_KEY dans le fichier .env (voir .env.exemple).",
-                  file=sys.stderr)
+            print("Erreur : IA désactivée (AUDIT_ERGO_IA=0 dans le fichier .env).", file=sys.stderr)
             return 2
 
     if args.suggerer:
@@ -93,14 +96,14 @@ def main(argv=None):
             return 2
         try:
             s = suggerer(client, ref, args.suggerer, args.ecran, critere, forcer=args.sans_cache,
-                         recommandation_designer=args.recommandation)
+                         recommandation_designer=args.recommandation, langue=langue)
         except ErreurSuggestion as e:
             print(f"Erreur : {e}", file=sys.stderr)
             return 2
         if args.json:
             print(json.dumps(asdict(s), ensure_ascii=False, indent=2))
         else:
-            afficher_suggestion(s, ref)
+            afficher_suggestion(s, ref, langue)
         return 0
 
     def progression(fait, total):
@@ -108,7 +111,8 @@ def main(argv=None):
 
     try:
         audit, anomalies, synthese, sortie, ia = relire(args.audit, args.sortie, ref, client, progression,
-                                                        forcer=args.sans_cache, remplir=not args.sans_remplissage)
+                                                        forcer=args.sans_cache, remplir=not args.sans_remplissage,
+                                                        langue=langue)
     except (ErreurLecture, FileNotFoundError) as e:
         print(f"Erreur : {e}", file=sys.stderr)
         return 2
@@ -124,7 +128,7 @@ def main(argv=None):
         for niveau in NIVEAUX:
             liste = [a for a in anomalies if a.niveau == niveau]
             if liste:
-                print(f"\n{LIBELLE_NIVEAU[niveau]} ({len(liste)})")
+                print(f"\n{t(f'niveau.{niveau}', langue)} ({len(liste)})")
                 for a in liste:
                     lieu = f"ligne {a.ligne} [{a.constat}]" if a.ligne else "fichier"
                     print(f"  - {lieu} : {a.message}")
@@ -134,16 +138,16 @@ def main(argv=None):
             erreurs = [lg for lg, r in ia.items() if isinstance(r, ErreurSuggestion)]
             caches = sum(1 for r in ia.values() if not isinstance(r, ErreurSuggestion) and r.depuis_cache)
             print(f"\nIA : {len(revoir)} critère(s) à revoir" + (f", {len(erreurs)} erreur(s)" if erreurs else "")
-                  + (f" ({caches} constat(s) repris du cache, sans coût)" if caches else ""))
+                  + (f" ({caches} constat(s) repris du cache)" if caches else ""))
             for lg, r in revoir:
-                print(f"  - ligne {lg} : {r.critere_designer} → {r.code} ({LIBELLE_VERDICT[r.verdict]}) : "
+                print(f"  - ligne {lg} : {r.critere_designer} → {r.code} ({libelle_verdict(r.verdict, langue)}) : "
                       f"{r.commentaire_verdict}")
             recos = [(lg, r) for lg, r in sorted(ia.items())
                      if not isinstance(r, ErreurSuggestion) and r.reco_statut in ("a_ameliorer", "hors_sujet")]
             if recos:
                 print(f"IA : {len(recos)} recommandation(s) à améliorer")
                 for lg, r in recos:
-                    print(f"  - ligne {lg} : {LIBELLE_RECO[r.reco_statut]} → {r.reco_a_retenir}")
+                    print(f"  - ligne {lg} : {libelle_reco(r.reco_statut, langue)} → {r.reco_a_retenir}")
             nb = sum(len(a) for a in audit.completions.values())
             if nb:
                 print(f"IA : {nb} cellule(s) complétée(s) pour {len(audit.completions)} constat(s) "

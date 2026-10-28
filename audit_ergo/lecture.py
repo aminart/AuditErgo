@@ -9,48 +9,80 @@ from openpyxl import load_workbook
 
 from .referentiel import normaliser
 
-# Champ interne -> noms de colonnes acceptés (comparés après normalisation)
+# Champ interne -> noms de colonnes acceptés (comparés après normalisation), en français, en anglais et
+# tels qu'ils figurent dans le template d'origine (« Heuristic_Evaluation_template.xlsx »)
 COLONNES = {
     "id": ["id", "identifiant", "n", "numero"],
-    "ecran": ["ecran page", "ecran", "page", "ecran vue"],
-    "parcours": ["parcours tache", "parcours", "tache"],
-    "capture": ["capture", "capture fichier ou lien", "captures", "screenshot"],
-    "type": ["type", "type de constat"],
-    "constat": ["constat", "description", "probleme", "observation"],
-    "categorie": ["categorie"],
-    "critere": ["critere principal", "critere", "critere ergonomique"],
-    "secondaires": ["criteres secondaires", "criteres secondaires codes separes par"],
-    "regle": ["regle de departage", "regle"],
-    "gravite": ["gravite", "gravite 0 4", "severite"],
-    "frequence": ["frequence"],
+    "ecran": ["ecran page", "ecran", "page", "ecran vue", "ecran emplacement", "emplacement", "location",
+              "screen", "screen location", "screen page"],
+    "parcours": ["parcours tache", "parcours", "parcours cas d usage", "cas d usage", "workflow use cases",
+                 "workflow use case", "workflow", "use case", "use cases"],
+    "tache": ["tache", "taches", "task", "tasks"],
+    "date": ["date"],
+    "capture": ["capture", "capture fichier ou lien", "captures", "screenshot", "screenshots"],
+    "type": ["type", "type de constat", "finding type"],
+    "constat": ["constat", "description", "probleme", "observation", "finding", "issue", "findings"],
+    "categorie": ["categorie", "criteria", "category", "criteria category"],
+    "critere": ["critere principal", "critere", "critere ergonomique", "sub criteria", "sub criterion",
+                "subcriteria", "subcriterion", "main criterion"],
+    "secondaires": ["criteres secondaires", "criteres secondaires codes separes par", "secondary criteria"],
+    "regle": ["regle de departage", "regle", "tie break rule", "rule"],
+    "justification": ["justification du critere", "justification", "justification critere", "pourquoi ce critere",
+                      "criterion justification", "rationale"],
+    "gravite": ["gravite", "gravite 0 4", "severite", "severity"],
+    "frequence": ["frequence", "frequency"],
     "impact": ["impact"],
-    "justification": ["justification du critere", "justification", "justification critere", "pourquoi ce critere"],
-    "recommandation": ["recommandation", "recommandation si probleme", "recommandations", "preconisation"],
-    "priorite": ["priorite"],
-    "controle": ["controle"],
+    "type_reco": ["type de recommandation", "type of ux recommendation", "type of recommendation",
+                  "recommendation type"],
+    "recommandation": ["recommandation", "recommandation si probleme", "recommandations", "preconisation",
+                       "detail of ux recommendation", "ux recommendation", "recommendation", "recommendations"],
+    "priorite": ["priorite", "priority"],
+    "statut_maquette": ["statut maquette", "mock up solution status", "mock up status", "mockup status"],
+    "statut": ["statut", "status"],
+    "controle": ["controle", "check"],
 }
-OBLIGATOIRES = ["ecran", "type", "constat", "categorie", "critere", "gravite", "recommandation"]
+# Le type est facultatif : sans colonne Type (template d'origine), un constat est un problème
+OBLIGATOIRES = ["ecran", "constat", "categorie", "critere", "gravite", "recommandation"]
 LIBELLES = {
-    "ecran": "Écran / Page", "parcours": "Parcours / Tâche", "capture": "Capture", "type": "Type",
-    "constat": "Constat", "categorie": "Catégorie", "critere": "Critère principal",
-    "secondaires": "Critères secondaires", "regle": "Règle de départage", "gravite": "Gravité",
-    "frequence": "Fréquence", "impact": "Impact", "recommandation": "Recommandation", "priorite": "Priorité",
-    "justification": "Justification du critère",
+    "ecran": ("Écran / Emplacement", "Screen / Location"), "parcours": ("Parcours / Cas d'usage", "Workflow / Use case"),
+    "tache": ("Tâche", "Task"), "date": ("Date", "Date"), "capture": ("Capture", "Screenshot"), "type": ("Type", "Type"),
+    "constat": ("Constat", "Finding"), "categorie": ("Catégorie", "Criteria"),
+    "critere": ("Critère principal", "Sub-criterion"), "secondaires": ("Critères secondaires", "Secondary criteria"),
+    "regle": ("Règle de départage", "Tie-break rule"), "justification": ("Justification du critère", "Criterion justification"),
+    "gravite": ("Gravité", "Severity"), "frequence": ("Fréquence", "Frequency"), "impact": ("Impact", "Impact"),
+    "type_reco": ("Type de recommandation", "Type of UX recommendation"),
+    "recommandation": ("Recommandation", "Detail of UX recommendation"), "priorite": ("Priorité", "Priority"),
+    "statut_maquette": ("Statut maquette", "Mock-up status"), "statut": ("Statut", "Status"),
+    "controle": ("Contrôle", "Check"),
 }
+
+
+def libelle_champ(champ, langue="fr"):
+    paire = LIBELLES.get(champ)
+    return (paire[1] if langue == "en" else paire[0]) if paire else champ
+
+
 CHAMPS_CONTEXTE = {
-    "produit": "produit interface auditee",
-    "version_produit": "version url ou build",
-    "client": "client equipe",
-    "cible": "cible utilisateurs",
-    "plateforme": "plateforme",
-    "contexte_usage": "contexte d usage",
-    "parcours": "parcours audites",
-    "designer": "designer",
-    "date": "date de l audit",
-    "version_template": "version du template",
-    "version_referentiel": "version du referentiel",
+    "produit": ["produit interface auditee", "audited product interface"],
+    "version_produit": ["version url ou build", "version url or build"],
+    "client": ["client equipe", "client team"],
+    "cible": ["cible utilisateurs", "target users"],
+    "plateforme": ["plateforme", "platform"],
+    "contexte_usage": ["contexte d usage", "context of use"],
+    "parcours": ["parcours audites", "audited journeys"],
+    "designer": ["designer"],
+    "date": ["date de l audit", "audit date"],
+    "langue": ["langue", "language"],
+    "version_template": ["version du template", "template version"],
+    "version_referentiel": ["version du referentiel", "referential version"],
 }
 CONTEXTE_OBLIGATOIRE = ["produit", "cible", "plateforme", "parcours", "designer", "date"]
+
+
+# En-têtes propres à l'anglais : servent à deviner la langue d'un fichier sans onglet Contexte
+ENTETES_ANGLAIS = {"severity", "sub criteria", "sub criterion", "finding", "location", "screen location",
+                   "detail of ux recommendation", "criteria", "workflow use cases", "workflow use case", "tasks",
+                   "task", "tie break rule", "criterion justification", "secondary criteria", "mock up solution status"}
 
 
 def nom_colonne(entete):
@@ -78,7 +110,7 @@ class Constat:
 
     @property
     def ref(self):
-        return self["id"] or f"ligne {self.ligne}"
+        return self["id"] or f"#{self.ligne}"
 
 
 @dataclass
@@ -91,6 +123,7 @@ class Audit:
     contexte: dict = field(default_factory=dict)
     colonnes_inconnues: list = field(default_factory=list)
     completions: dict = field(default_factory=dict)  # {ligne: {champ: (valeur, origine, explication)}}
+    langue: str = "fr"  # langue du fichier (en-têtes, listes) : les valeurs complétées la suivent
 
     @property
     def colonnes_manquantes(self):
@@ -120,7 +153,7 @@ def _lire_contexte(wb):
     if "Contexte" not in wb.sheetnames:
         return {}
     ws = wb["Contexte"]
-    par_libelle = {v: k for k, v in CHAMPS_CONTEXTE.items()}
+    par_libelle = {variante: k for k, variantes in CHAMPS_CONTEXTE.items() for variante in variantes}
     contexte = {}
     for row in ws.iter_rows(min_col=1, max_col=2):
         libelle, valeur = row[0].value, row[1].value
@@ -135,7 +168,7 @@ def lire_audit(chemin):
     wb = load_workbook(chemin, data_only=True)
     # Onglet « Audit » du template en priorité ; sinon l'onglet dont l'en-tête est le mieux reconnu.
     # Les onglets ajoutés par une relecture précédente (« Relecture – … ») sont ignorés.
-    candidats = [n for n in wb.sheetnames if not normaliser(n).startswith("relecture")]
+    candidats = [n for n in wb.sheetnames if not normaliser(n).startswith(("relecture", "review"))]
     scores = {n: _trouver_entete(wb[n]) for n in candidats}
     nom = "Audit" if scores.get("Audit", (0, None))[1] else max(candidats, key=lambda n: scores[n][0], default=None)
     if nom is None or not scores[nom][1]:
@@ -146,7 +179,7 @@ def lire_audit(chemin):
     for cell in ws[entete]:
         if cell.value is None:
             continue
-        if normaliser(str(cell.value)).startswith(("relecture", "ia ")):
+        if normaliser(str(cell.value)).startswith(("relecture", "ia ", "review", "ai ")):
             continue  # colonnes ajoutées par une relecture précédente
         champ = nom_colonne(cell.value)
         if champ and champ not in colonnes:
@@ -154,14 +187,31 @@ def lire_audit(chemin):
         elif not champ:
             inconnues.append(str(cell.value))
 
+    # Cellules fusionnées (ex. un même cas d'usage sur plusieurs lignes) : la valeur vaut pour chaque ligne
+    fusions = {}
+    for plage in ws.merged_cells.ranges:
+        if plage.min_row > entete:
+            haut_gauche = ws.cell(row=plage.min_row, column=plage.min_col).value
+            for r in range(plage.min_row, plage.max_row + 1):
+                for col in range(plage.min_col, plage.max_col + 1):
+                    fusions[(r, col)] = haut_gauche
+
     constats = []
     for r in range(entete + 1, ws.max_row + 1):
-        valeurs = {champ: ws.cell(row=r, column=col).value for champ, col in colonnes.items()}
-        if str(valeurs.get("id") or "").strip().upper() == "EXEMPLE":
+        propres = {champ: ws.cell(row=r, column=col).value for champ, col in colonnes.items()}
+        if str(propres.get("id") or "").strip().upper() in ("EXEMPLE", "EXAMPLE"):
             continue
-        if not any(v not in (None, "") for k, v in valeurs.items() if k not in ("id", "controle")):
+        # Une ligne n'est un constat que si elle a un contenu propre (pas seulement une cellule fusionnée)
+        if not any(v not in (None, "") for k, v in propres.items()
+                   if k not in ("id", "controle") and (r, colonnes[k]) not in fusions):
             continue
+        valeurs = {champ: fusions.get((r, colonnes[champ]), v) for champ, v in propres.items()}
         constats.append(Constat(ligne=r, valeurs=valeurs))
 
+    contexte = _lire_contexte(wb)
+    langue = str(contexte.get("langue") or "").strip().lower()[:2]
+    if langue not in ("fr", "en"):
+        entetes = {normaliser(str(c.value).split("(")[0].replace("*", "")) for c in ws[entete] if c.value}
+        langue = "en" if entetes & ENTETES_ANGLAIS else "fr"
     return Audit(chemin=str(chemin), onglet=ws.title, ligne_entete=entete, colonnes=colonnes,
-                 constats=constats, contexte=_lire_contexte(wb), colonnes_inconnues=inconnues)
+                 constats=constats, contexte=contexte, colonnes_inconnues=inconnues, langue=langue)
