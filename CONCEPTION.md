@@ -43,7 +43,7 @@
 | Un proxy d'entreprise intercepte les requêtes | Les appels au modèle **ignorent les variables de proxy** du poste : la connexion va directement au serveur local (testé). |
 | Un collègue ouvre l'application via le réseau | Streamlit n'écoute que sur `localhost` (`.streamlit/config.toml`, et `start.bat`). |
 | Statistiques d'usage | Télémétrie Streamlit désactivée (`gatherUsageStats = false`). |
-| Clé d'API qui fuite | Aucune clé n'est nécessaire en local. |
+| Clé d'API qui fuite | La clé (`API_KEY`), si le serveur en exige une, reste dans le fichier `.env`, ignoré par Git ; l'interface n'affiche jamais sa valeur. |
 | Données conservées ailleurs | Le cache des réponses est un fichier SQLite local, ignoré par Git ; il peut être vidé depuis l'interface. |
 
 ### 2.3 Ce qui demande Internet, une seule fois
@@ -198,12 +198,20 @@ La langue par défaut se règle dans `.env` (`AUDIT_ERGO_LANGUE=fr` ou `en`).
 
 ## 9. Configuration (`.env`)
 
+La connexion au modèle se règle avec trois paramètres :
+
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `API_BASE` | `http://localhost:11434/v1` | Adresse du modèle local (doit être locale) |
-| `AUDIT_ERGO_MODELE` | `mistral-small` | Nom du modèle sur le serveur local |
+| `API_BASE` | `http://localhost:11434/v1` | Adresse du serveur du modèle ; doit être sur le poste |
+| `API_KEY` | — | Clé d'API exigée par le serveur, s'il en demande une |
+| `CA_BUNDLE` | — | Certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur ; sert aussi à installer les dépendances derrière un proxy. Les autorités internes sans extension « key usage », refusées par défaut depuis Python 3.13, sont acceptées (la chaîne et le nom du serveur restent vérifiés). |
+
+Autres réglages :
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `AUDIT_ERGO_MODELE` | `mistral-small` | Nom du modèle sur le serveur |
 | `AUDIT_ERGO_LANGUE` | `fr` | Langue par défaut |
-| `CA_BUNDLE` | — | Certificats de l'organisation (installation derrière un proxy) |
 | `AUDIT_ERGO_TEMPERATURE`, `AUDIT_ERGO_MAX_TOKENS`, `AUDIT_ERGO_DELAI`, `AUDIT_ERGO_PARALLELE` | 0,2 · 4000 · 600 s · 1 | Réglages du modèle |
 | `AUDIT_ERGO_IA` | `1` | `0` désactive l'IA (contrôles de forme seuls) |
 | `AUDIT_ERGO_RESEAU_AUTORISE` | — | `1` autorise un serveur non local : **à réserver à un serveur interne validé** |
@@ -212,7 +220,7 @@ La langue par défaut se règle dans `.env` (`AUDIT_ERGO_LANGUE=fr` ou `en`).
 
 ## 10. Qualité et fiabilité
 
-- **Tests automatiques** : 115 tests, dont un véritable appel HTTP vers un faux serveur local (vérifie aussi que le proxy du poste est contourné), la lecture du template d'origine, la complétion, le cache et les deux langues. Ils ne nécessitent ni modèle ni réseau.
+- **Tests automatiques** : 118 tests, dont de véritables appels vers un faux serveur local : en HTTP (vérifie que le proxy du poste est contourné) et en HTTPS avec `API_BASE`, `API_KEY` et `CA_BUNDLE` (certificat signé par une autorité interne, clé exigée), la lecture du template d'origine, la complétion, le cache et les deux langues. Ils ne nécessitent ni modèle ni réseau.
 - **À faire avant un usage généralisé : un jeu de référence.**
   1. Réunir 3 à 5 audits passés (100 à 150 constats).
   2. Faire classer chaque constat par deux designers seniors ; mesurer leur accord (il donne le plafond atteignable).

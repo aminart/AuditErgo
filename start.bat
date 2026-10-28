@@ -23,9 +23,8 @@ rem --- 2. Fichier de configuration .env ---------------------------------------
 if not exist ".env" (
     copy ".env.exemple" ".env" >nul
     echo Premier lancement : le fichier de configuration .env vient d'être créé.
-    echo Vérifiez l'adresse du modèle local API_BASE et son nom AUDIT_ERGO_MODELE,
-    echo enregistrez, puis fermez le Bloc-notes pour continuer.
-    echo Les valeurs par défaut conviennent à Ollama avec le modèle mistral-small.
+    echo Renseignez la connexion au modèle : API_BASE, API_KEY et CA_BUNDLE,
+    echo ainsi que le nom du modèle AUDIT_ERGO_MODELE, enregistrez, puis fermez le Bloc-notes.
     echo.
     start /wait notepad ".env"
 )

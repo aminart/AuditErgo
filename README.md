@@ -27,12 +27,15 @@ streamlit run app.py
 
 ### 3. Configuration (`.env`)
 
+La connexion au modèle se règle avec **trois paramètres** :
+
 | Variable | Défaut | Rôle |
 |---|---|---|
-| `API_BASE` | `http://localhost:11434/v1` | Adresse du modèle local (Ollama). Une adresse qui n'est pas sur le poste est refusée. |
-| `AUDIT_ERGO_MODELE` | `mistral-small` | Nom du modèle (`ollama list` affiche les modèles installés) |
-| `AUDIT_ERGO_LANGUE` | `fr` | Langue par défaut : `fr` ou `en` |
-| `CA_BUNDLE` | — | Certificats de l'organisation : sert à installer les dépendances derrière un proxy d'entreprise |
+| `API_BASE` | `http://localhost:11434/v1` | Adresse du serveur du modèle (Ollama, LM Studio ou autre serveur compatible OpenAI). Une adresse qui n'est pas sur le poste est refusée. |
+| `API_KEY` | — | Clé d'API exigée par le serveur ; laisser vide s'il n'en demande pas (Ollama). |
+| `CA_BUNDLE` | — | Fichier de certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur (inutile en `http://`). Sert aussi à installer les dépendances derrière un proxy d'entreprise. |
+
+S'y ajoutent `AUDIT_ERGO_MODELE` (nom du modèle sur ce serveur, défaut `mistral-small`) et `AUDIT_ERGO_LANGUE` (`fr` ou `en`). La barre latérale de l'application affiche la configuration utilisée et propose un bouton « Tester la connexion ».
 
 Autres réglages (température, délai, cache, désactivation de l'IA…) : voir `.env.exemple`.
 

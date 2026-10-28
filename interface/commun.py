@@ -1,4 +1,5 @@
 """Éléments partagés par les pages de l'interface : langue, référentiel, modèle local, barre latérale."""
+import os
 from pathlib import Path
 
 import streamlit as st
@@ -20,7 +21,11 @@ TEXTES = {
                     "Referential v{v} · {n} sub-criteria · {r} tie-break rules"),
     "template": ("Télécharger le template vierge", "Download the blank template"),
     "ia": ("IA locale", "Local AI"),
-    "ia.modele": ("Modèle **{m}** sur {a}", "Model **{m}** on {a}"),
+    "ia.modele": ("Modèle : **{m}**", "Model: **{m}**"),
+    "ia.connexion": ("`API_BASE` : {a}  \n`API_KEY` : {k}  \n`CA_BUNDLE` : {c}",
+                     "`API_BASE`: {a}  \n`API_KEY`: {k}  \n`CA_BUNDLE`: {c}"),
+    "ia.cle_oui": ("renseignée", "set"), "ia.cle_non": ("non renseignée", "not set"),
+    "ia.ca_non": ("non renseigné", "not set"),
     "ia.local": ("🔒 Aucune donnée ne quitte ce poste.", "🔒 No data leaves this computer."),
     "ia.tester": ("Tester la connexion", "Test the connection"),
     "ia.ok": ("Modèle local disponible.", "Local model available."),
@@ -91,7 +96,10 @@ def barre_laterale(ref):
         if not ia_configuree():
             st.info(tr("ia.desactivee"))
             return
-        st.caption(tr("ia.modele", m=MODELE, a=adresse_api()))
+        st.caption(tr("ia.modele", m=MODELE))
+        cle, ca = os.environ.get("API_KEY", "").strip(), os.environ.get("CA_BUNDLE", "").strip()
+        st.caption(tr("ia.connexion", a=adresse_api(), k=tr("ia.cle_oui") if cle else tr("ia.cle_non"),
+                      c=Path(ca).name if ca else tr("ia.ca_non")))
         st.caption(tr("ia.local"))
         if st.button(tr("ia.tester")):
             _tester_connexion()

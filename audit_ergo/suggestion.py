@@ -4,12 +4,14 @@ Principe : AUCUNE donnée ne quitte le poste du designer. L'IA est un modèle in
 (Ollama, LM Studio, llama.cpp…) qui expose une API compatible OpenAI (/v1/chat/completions) sur
 localhost. L'application refuse toute autre adresse, sauf autorisation explicite (serveur interne).
 
-Configuration (environnement ou fichier .env à la racine du dépôt, voir .env.exemple) :
-- API_BASE        : adresse du serveur local (défaut : http://localhost:11434/v1, celle d'Ollama) ;
-- AUDIT_ERGO_MODELE : nom du modèle sur ce serveur (défaut : mistral-small) ;
-- API_KEY         : facultative en local ;
-- CA_BUNDLE       : certificats (PEM), seulement pour un serveur interne en HTTPS ;
-- AUDIT_ERGO_RESEAU_AUTORISE=1 : autorise une adresse qui n'est pas locale (ex. serveur GPU interne).
+Connexion au modèle : trois paramètres, dans l'environnement ou le fichier .env à la racine du dépôt
+(voir .env.exemple) :
+- API_BASE  : adresse du serveur du modèle (défaut : http://localhost:11434/v1, celle d'Ollama) ;
+- API_KEY   : clé d'API exigée par le serveur (laisser vide s'il n'en demande pas) ;
+- CA_BUNDLE : fichier de certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur.
+Plus le nom du modèle : AUDIT_ERGO_MODELE (défaut : mistral-small).
+Une adresse qui n'est pas sur le poste est refusée, sauf AUDIT_ERGO_RESEAU_AUTORISE=1 (serveur interne
+validé par l'organisation).
 """
 import ipaddress
 import json
@@ -103,9 +105,14 @@ def _contexte_ssl():
     if not chemin.is_file():
         raise ErreurSuggestion(f"CA_BUNDLE : fichier introuvable ({chemin}).")
     try:
-        return ssl.create_default_context(cafile=str(chemin))
+        contexte = ssl.create_default_context(cafile=str(chemin))
     except (ssl.SSLError, OSError) as e:
         raise ErreurSuggestion(f"CA_BUNDLE : fichier de certificats illisible ({chemin}) : {e}") from e
+    # Python 3.13 active par défaut une vérification X.509 « stricte » qui refuse les autorités de certification
+    # internes sans extension « key usage », pourtant courantes en entreprise et acceptées par curl et les
+    # navigateurs. On la retire : la chaîne de certificats et le nom du serveur restent entièrement vérifiés.
+    contexte.verify_flags &= ~getattr(ssl, "VERIFY_X509_STRICT", 0)
+    return contexte
 
 
 def _base_url(adresse):
@@ -439,6 +446,10 @@ def _erreur_api(e):
 
     adresse = adresse_api()
     if isinstance(e, openai.APIConnectionError):
+        cause = repr(e.__cause__ or e)
+        if "CERTIFICATE_VERIFY_FAILED" in cause or "SSL" in cause:
+            return ErreurSuggestion(f"Certificat HTTPS de {adresse} refusé : renseignez CA_BUNDLE avec le fichier de "
+                                    "certificats (PEM) de l'autorité qui l'a signé.")
         return ErreurSuggestion(
             f"Le modèle local ne répond pas à {adresse}. Vérifiez qu'il est lancé (Ollama : application "
             "ouverte, ou « ollama serve ») et que API_BASE est correct.")
@@ -447,7 +458,7 @@ def _erreur_api(e):
             f"Modèle « {MODELE} » introuvable sur {adresse}. Vérifiez AUDIT_ERGO_MODELE (Ollama : « ollama list » "
             f"affiche les modèles installés ; « ollama pull {MODELE} » l'installe).")
     if isinstance(e, (openai.AuthenticationError, openai.PermissionDeniedError)):
-        return ErreurSuggestion("Le serveur local refuse la clé : vérifiez API_KEY (souvent inutile en local).")
+        return ErreurSuggestion("Le serveur du modèle refuse la clé : vérifiez API_KEY.")
     if isinstance(e, openai.BadRequestError):
         return ErreurSuggestion(f"Requête refusée par le serveur local : {e.message}")
     if isinstance(e, openai.APITimeoutError):
