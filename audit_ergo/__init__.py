@@ -1,4 +1,4 @@
-"""Relecture automatique des audits ergonomiques (IA locale : aucune donnée ne quitte le poste)."""
+"""Relecture automatique des audits ergonomiques et rapport Word de synthèse."""
 from pathlib import Path
 
 from .completion import completer
@@ -6,11 +6,12 @@ from .controles import controler
 from .export import exporter
 from .i18n import langue_defaut
 from .lecture import ErreurLecture, lire_audit
+from .rapport import generer_rapport
 from .referentiel import Referentiel
 from .suggestion import verifier_audit
 from .synthese import synthetiser
 
-__all__ = ["relire", "Referentiel", "ErreurLecture"]
+__all__ = ["relire", "generer_rapport", "Referentiel", "ErreurLecture"]
 
 
 def relire(chemin, sortie=None, ref=None, client=None, progression=None, forcer=False, remplir=True, langue=None):

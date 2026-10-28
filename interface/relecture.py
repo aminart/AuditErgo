@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from audit_ergo import ErreurLecture, relire
+from audit_ergo import ErreurLecture, generer_rapport, relire
 from audit_ergo.controles import AVERTISSEMENT, BLOQUANT, INFO
 from audit_ergo.i18n import GRAVITES, libelle_gravite, t
 from audit_ergo.lecture import libelle_champ
@@ -91,7 +91,28 @@ TXT = {
     "redigee_ia": ("🟣 Rédigée par l'IA", "🟣 Written by the AI"),
     "erreur": ("⚠ Erreur", "⚠ Error"),
     "technique": ("Détail technique", "Technical details"),
+    "r.titre": ("📄 Rapport Word de synthèse", "📄 Summary report (Word)"),
+    "r.intro": ("Rapport à remettre à l'équipe produit : synthèse générale et maturité UX, problèmes principaux "
+                "regroupés par thématique, grands chantiers UX/UI hiérarchisés, quick wins et suites à moyen et long "
+                "terme. Les chiffres sont calculés à partir de l'audit ; l'IA rédige les analyses.",
+                "Report for the product team: executive summary and UX maturity, main issues grouped by theme, "
+                "prioritised UX/UI initiatives, quick wins and medium to long-term next steps. Figures are computed "
+                "from the audit; the AI writes the analysis."),
+    "r.avant_ia": ("Conseil : lancez d'abord « Compléter et corriger avec l'IA », pour que le rapport parte d'un "
+                   "audit complet (critères, gravités, recommandations).",
+                   "Tip: run “Complete and correct with the AI” first, so that the report starts from a complete "
+                   "audit (criteria, severities, recommendations)."),
+    "r.bouton": ("Générer le rapport", "Generate the report"),
+    "r.progression": ("Rédaction du rapport par l'IA : étape {f}/{n}", "AI writing the report: step {f}/{n}"),
+    "r.sans_ia": ("Rapport produit sans IA : les faits sont complets, les passages surlignés en jaune sont à rédiger.",
+                  "Report produced without AI: facts are complete, passages highlighted in yellow are to be written."),
+    "r.erreur": ("L'IA n'a pas pu tout rédiger ({e}) : les passages surlignés en jaune sont à rédiger.",
+                 "The AI could not write everything ({e}): passages highlighted in yellow are to be written."),
+    "r.ok": ("Rapport rédigé avec l'IA : relisez-le avant de le diffuser.",
+             "Report drafted with the AI: review it before sharing."),
+    "r.telecharger": ("📥 Télécharger le rapport Word", "📥 Download the Word report"),
 }
+DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 CHAMPS_VIDES = ["type", "categorie", "critere", "gravite", "recommandation"]
 
 
@@ -177,6 +198,32 @@ with col_ia:
             st.session_state["relecture"] = {"empreinte": (empreinte, lg),
                                              **lancer(contenu, fichier.name, True, forcer=True)}
             st.rerun()
+
+st.divider()
+st.subheader(x("r.titre"))
+st.write(x("r.intro"))
+if ia is None:
+    st.caption(x("r.avant_ia"))
+# Le rapport correspond à un état de l'audit : il est à refaire après une complétion par l'IA
+cle_rapport = (empreinte, lg, ia is not None)
+rapport = st.session_state.get("rapport")
+if st.button(x("r.bouton")):
+    barre = st.progress(0.0, x("r.progression", f=0, n=2))
+    r, octets = generer_rapport(audit, ref, None, client(), lg,
+                                progression=lambda fait, total: barre.progress(fait / total,
+                                                                               x("r.progression", f=fait, n=total)))
+    barre.empty()
+    st.session_state["rapport"] = rapport = {"cle": cle_rapport, "octets": octets, "ia": r.ia, "erreur": r.erreur}
+if rapport and rapport["cle"] == cle_rapport:
+    if rapport["erreur"]:
+        st.warning(x("r.erreur", e=rapport["erreur"]))
+    elif rapport["ia"]:
+        st.success(x("r.ok"))
+    else:
+        st.info(x("r.sans_ia"))
+    st.download_button(x("r.telecharger"), rapport["octets"], f"{Path(fichier.name).stem}_rapport.docx",
+                       mime=DOCX, type="primary")
+st.divider()
 
 ctx = audit.contexte
 st.caption(" · ".join(str(v) for v in (ctx.get("produit"), ctx.get("designer"), ctx.get("plateforme")) if v)

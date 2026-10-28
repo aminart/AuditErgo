@@ -160,6 +160,24 @@ Le designer dépose son fichier (template v2, template d'origine ou simple table
 
 Les valeurs écrites dans les cellules suivent la **langue du fichier** (pour rester cohérentes avec ses listes) ; les commentaires et annotations suivent la langue choisie dans l'application.
 
+### 6.3 Rapport Word de synthèse
+À partir de l'audit relu (et de préférence complété par l'IA), l'application produit un rapport Word destiné à l'équipe produit et à ses décideurs :
+
+| Partie | Contenu |
+|---|---|
+| 1. Synthèse générale | L'essentiel en quelques phrases, niveau de maturité UX (échelle à 5 niveaux), chiffres clés, problèmes par gravité, principaux points forts, principales faiblesses, problèmes récurrents, impact sur les utilisateurs et leurs activités |
+| 2. Problèmes UX principaux | Problèmes regroupés par grandes thématiques, de la plus pénalisante à la moins pénalisante : problèmes observés, pourquoi l'expérience est dégradée, conséquences, constats représentatifs ; puis tendances récurrentes et cas isolés. Aucune solution dans cette partie. |
+| 3. Recommandations UX et UI | 3 à 6 grands chantiers transverses (pas de corrections écran par écran), hiérarchisés par impact attendu : objectif, importance, bénéfices attendus, problèmes résolus, thématiques traitées, effort |
+| 4. Prochaines étapes | Quick wins (faible effort, valeur immédiate, constats concernés), chantiers à moyen et long terme, démarche d'amélioration continue |
+| Annexes | Méthode, échelles de gravité et de maturité, liste complète des problèmes, points forts |
+
+**Partage des rôles, pour des rapports comparables d'un designer à l'autre :**
+- Les **faits** sont calculés sans IA : nombres, gravités, écrans touchés, thématique récurrente (au moins deux problèmes sur au moins deux écrans) ou isolée, ordre des thématiques (problèmes pondérés par leur gravité : 1, 2, 4, 8), et **niveau de maturité indicatif** par une règle fixe (voir l'annexe du rapport).
+- L'IA **rédige**, en deux appels : (1) regroupement des problèmes en thématiques, avec leur description, la raison et les conséquences ; (2) synthèse, chantiers, quick wins et suites. Elle ne cite que des constats existants (les clés inconnues sont écartées, un constat non classé va dans « Autres constats ») et ne peut s'écarter que d'un niveau de la maturité indicative.
+- Le prompt ne contient pas tout le référentiel mais seulement les constats, en version courte si l'audit est long : il tient dans la fenêtre de contexte d'un modèle local, même pour 200 constats.
+- **Sans IA**, ou si elle échoue, le rapport est produit quand même : les faits sont complets, les thématiques suivent les catégories du référentiel, les quick wins sont des candidats (effort à confirmer), et les passages à rédiger sont surlignés en jaune.
+- Les réponses sont mémorisées dans le cache, comme les suggestions.
+
 ---
 
 ## 7. Français / anglais
@@ -188,6 +206,7 @@ La langue par défaut se règle dans `.env` (`AUDIT_ERGO_LANGUE=fr` ou `en`).
 | `audit_ergo/suggestion.py` | Dialogue avec le modèle local : garde-fous réseau, prompt, schéma, validation, gestion des erreurs |
 | `audit_ergo/completion.py` | Remplissage des cellules vides, jamais des cellules saisies |
 | `audit_ergo/export.py` | Fichier annoté, onglets de synthèse |
+| `audit_ergo/rapport.py` | Rapport Word de synthèse : faits calculés, rédaction par l'IA, mise en page (python-docx) |
 | `audit_ergo/cache.py` | Cache local des réponses |
 | `audit_ergo/i18n.py` | Textes bilingues, échelle de gravité, listes communes |
 | `interface/` | Interface Streamlit (pages « Suggérer un critère » et « Relire un audit ») |
@@ -219,7 +238,7 @@ Autres réglages :
 
 ## 10. Qualité et fiabilité
 
-- **Tests automatiques** : 118 tests, dont de véritables appels vers un faux serveur local : en HTTP (vérifie que le proxy du poste est contourné) et en HTTPS avec `API_BASE`, `API_KEY` et `CA_BUNDLE` (certificat signé par une autorité interne, clé exigée), la lecture du template d'origine, la complétion, le cache et les deux langues. Ils ne nécessitent ni modèle ni réseau.
+- **Tests automatiques** : 138 tests, dont de véritables appels vers un faux serveur local : en HTTP (vérifie que le proxy du poste est contourné) et en HTTPS avec `API_BASE`, `API_KEY` et `CA_BUNDLE` (certificat signé par une autorité interne, clé exigée), la lecture du template d'origine, la complétion, le rapport Word (avec et sans IA, repli en cas d'erreur, gros audit), le cache et les deux langues. Ils ne nécessitent ni modèle ni réseau.
 - **À faire avant un usage généralisé : un jeu de référence.**
   1. Réunir 3 à 5 audits passés (100 à 150 constats).
   2. Faire classer chaque constat par deux designers seniors ; mesurer leur accord (il donne le plafond atteignable).
@@ -242,7 +261,8 @@ Autres réglages :
 | Premier essai sur un poste avec Ollama et Mistral, réglage du contexte | à faire |
 | Avis des designers (👍 / 👎) et jeu de référence | à faire |
 | Traduction française des définitions et checklists | à faire |
-| Score de qualité d'un audit, rapport client (PDF) | à faire |
+| Rapport Word de synthèse (FR/EN) | ✓ fait — **à relire sur un vrai audit avec le modèle Mistral** |
+| Score de qualité d'un audit | à faire |
 | Paquet d'installation hors ligne pour l'équipe informatique | à faire si les postes n'ont pas Internet |
 
 ---

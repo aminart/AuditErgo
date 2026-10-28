@@ -76,6 +76,23 @@ python3 -m audit_ergo mon_audit.xlsx --langue en              # annotations et t
 
 Les réponses de l'IA sont **mémorisées** dans `.cache/suggestions.sqlite` (local, ignoré par Git) : un constat déjà analysé n'est pas recalculé. `--sans-cache` force une nouvelle analyse, `--vider-cache` efface tout (aussi possible depuis l'interface).
 
+### 📄 Rapport Word de synthèse
+
+Depuis la page « Relire un audit » (bouton « Générer le rapport »), ou en ligne de commande, l'application produit un rapport Word à remettre à l'équipe produit :
+
+1. **Synthèse générale** : l'essentiel, niveau de maturité UX, chiffres clés, points forts, faiblesses, problèmes récurrents, impact sur les utilisateurs ;
+2. **Problèmes UX principaux**, regroupés par thématique (problèmes observés, pourquoi l'expérience est dégradée, conséquences), tendances récurrentes et cas isolés ;
+3. **Recommandations UX et UI** : grands chantiers transverses, hiérarchisés par impact attendu (objectif, importance, bénéfices, problèmes résolus) ;
+4. **Prochaines étapes** : quick wins, chantiers à moyen et long terme, démarche d'amélioration continue ;
+5. Annexes : méthode, échelles, liste des problèmes.
+
+Les chiffres (gravités, écrans, récurrence, maturité indicative) sont calculés sans IA ; l'IA rédige les analyses. Sans IA, le rapport contient tous les faits et les passages à rédiger sont surlignés.
+
+```bash
+python3 -m audit_ergo mon_audit.xlsx --ia --rapport   # complète l'audit, puis rédige mon_audit_rapport.docx
+python3 -m audit_ergo mon_audit_complete.xlsx --rapport   # rapport à partir d'un audit déjà complété
+```
+
 Exemples fictifs : `exemples/audit_fictif.xlsx` (erreurs de forme volontaires) et `exemples/audit_a_completer.xlsx` (constats seuls à compléter), régénérables avec `python3 scripts/generer_audit_fictif.py`.
 
 ## Tests
@@ -93,7 +110,7 @@ Les tests utilisent un faux serveur local : ils ne nécessitent ni modèle ni r�
 |---|---|
 | `CONCEPTION.md` | Document de conception : confidentialité, modèle local, référentiel, template v2, feuille de route |
 | `app.py`, `interface/` | Interface web (Streamlit), français et anglais |
-| `audit_ergo/` | Moteur : lecture, contrôles, IA locale, complétion, export, cache, textes bilingues |
+| `audit_ergo/` | Moteur : lecture, contrôles, IA, complétion, export, rapport Word, cache, textes bilingues |
 | `template/` | Templates v2 en français et en anglais (générés par `scripts/build_template.py`) |
 | `referentiel/source/` | Fichiers d'origine (CSV et template Excel), jamais modifiés |
 | `referentiel/corrections.json`, `regles_departage.json` | Corrections proposées et règles de départage (FR/EN) |

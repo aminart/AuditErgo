@@ -1,20 +1,23 @@
 """Ligne de commande.
 
 Relire un audit :            python3 -m audit_ergo AUDIT.xlsx [-o SORTIE.xlsx] [--ia [--sans-remplissage]] [--json]
+Rapport Word de synthèse :   python3 -m audit_ergo AUDIT.xlsx --rapport [--ia]
 Suggérer un critère :        python3 -m audit_ergo --suggerer "texte du constat" [--ecran PAGE] [--critere CODE]
 Les réponses de l'IA sont mémorisées : --sans-cache force une nouvelle analyse, --vider-cache les efface.
 --langue en : annotations du fichier et textes de l'IA en anglais (défaut : AUDIT_ERGO_LANGUE, sinon fr).
-L'IA est le modèle local configuré dans .env : aucune donnée ne quitte le poste.
+L'IA est le modèle configuré dans .env (API_BASE, API_KEY, CA_BUNDLE).
 """
 import argparse
 import json
 import sys
 from dataclasses import asdict
+from pathlib import Path
 
 from . import ErreurLecture, Referentiel, relire
 from .cache import CacheSuggestions
 from .controles import NIVEAUX
 from .i18n import LANGUES, langue_defaut, t
+from .rapport import generer_rapport
 from .suggestion import ErreurSuggestion, client_ou_none, libelle_reco, libelle_verdict, suggerer
 
 
@@ -57,6 +60,9 @@ def main(argv=None):
                         help="compléter les cellules vides et corriger critère, recommandation et gravité avec l'IA")
     parser.add_argument("--sans-remplissage", action="store_true",
                         help="avec --ia : ne rien remplir, seulement donner l'avis de l'IA dans les colonnes « IA : … »")
+    parser.add_argument("--rapport", action="store_true",
+                        help="produire aussi le rapport Word de synthèse (<audit>_rapport.docx), rédigé par l'IA "
+                             "si elle est disponible")
     parser.add_argument("--json", action="store_true", help="afficher le résultat en JSON")
     parser.add_argument("--suggerer", metavar="CONSTAT", help="proposer un critère pour un constat (IA)")
     parser.add_argument("--ecran", help="avec --suggerer : écran ou page concerné")
@@ -88,6 +94,11 @@ def main(argv=None):
         if client is None:
             print("Erreur : IA désactivée (AUDIT_ERGO_IA=0 dans le fichier .env).", file=sys.stderr)
             return 2
+    elif args.rapport:  # l'IA rédige le rapport si elle est disponible ; sinon, rapport sans IA
+        try:
+            client = client_ou_none()
+        except ErreurSuggestion as e:
+            print(f"IA indisponible pour le rapport : {e}", file=sys.stderr)
 
     if args.suggerer:
         critere = ref.trouver_critere(args.critere) if args.critere else None
@@ -110,15 +121,27 @@ def main(argv=None):
         print(f"\rIA : {fait}/{total} constats", end="" if fait < total else "\n", file=sys.stderr)
 
     try:
-        audit, anomalies, synthese, sortie, ia = relire(args.audit, args.sortie, ref, client, progression,
+        audit, anomalies, synthese, sortie, ia = relire(args.audit, args.sortie, ref, client if args.ia else None,
+                                                        progression,
                                                         forcer=args.sans_cache, remplir=not args.sans_remplissage,
                                                         langue=langue)
     except (ErreurLecture, FileNotFoundError) as e:
         print(f"Erreur : {e}", file=sys.stderr)
         return 2
 
+    rapport = None
+    if args.rapport:
+        def etapes(fait, total):
+            print(f"\rRapport : rédaction par l'IA {fait}/{total}", end="" if fait < total else "\n", file=sys.stderr)
+
+        chemin = Path(sortie).with_name(f"{Path(sortie).stem.removesuffix('_relu')}_rapport.docx")
+        r, rapport = generer_rapport(audit, ref, chemin, client, langue, args.sans_cache, etapes)
+        if r.erreur:
+            print(f"IA : {r.erreur} (rapport produit sans la rédaction de l'IA)", file=sys.stderr)
+
     if args.json:
         print(json.dumps({
+            "rapport": str(rapport) if rapport else None,
             "synthese": asdict(synthese), "anomalies": [asdict(a) for a in anomalies], "sortie": str(sortie),
             "ia": None if ia is None else {ligne: (str(r) if isinstance(r, ErreurSuggestion) else asdict(r))
                                            for ligne, r in ia.items()},
@@ -155,6 +178,8 @@ def main(argv=None):
         print("\n" + ("✓ Prêt pour la relecture des critères" if synthese.pret
                       else f"⚠ {synthese.nb_bloquants} anomalie(s) bloquante(s) à corriger"))
         print(f"Fichier annoté : {sortie}")
+        if rapport:
+            print(f"Rapport Word : {rapport}")
     return 0 if synthese.pret else 1
 
 
