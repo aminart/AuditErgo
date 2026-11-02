@@ -11,6 +11,7 @@ from .i18n import TYPES, TYPES_RECO, ajouter, libelle_gravite, lire_type, t
 from .suggestion import ErreurSuggestion
 
 IA, AUTO = "ia", "auto"  # origine d'une valeur : proposée par l'IA, ou déduite sans IA
+VALIDE = "valide"  # proposition relue dans l'application : validée telle quelle ou corrigée par le designer
 # Champs remplis seulement si le fichier a déjà la colonne (on n'ajoute pas ces colonnes à un fichier libre)
 SI_COLONNE = {"type", "type_reco"}
 
@@ -96,3 +97,29 @@ def completer(audit, ia, ref, langue="fr"):
             completions[c.ligne] = ajouts
     audit.completions = completions
     return completions
+
+
+def decider(audit, ligne, champ, action, valeur=None):
+    """Décision du designer sur une cellule complétée : « valider » (la proposition est gardée), « modifier »
+    (remplacée par `valeur`) ou « refuser » (la cellule redevient vide, comme dans le fichier d'origine).
+
+    Une cellule validée ou modifiée n'est plus signalée « à valider » dans le fichier exporté.
+    """
+    ajouts = audit.completions.get(ligne, {})
+    if champ not in ajouts:
+        raise KeyError(f"Aucune proposition pour la ligne {ligne}, champ {champ}.")
+    constat = next(c for c in audit.constats if c.ligne == ligne)
+    actuelle, _, explication = ajouts[champ]
+    if action == "refuser":
+        del ajouts[champ]
+        constat.valeurs[champ] = None
+        if not ajouts:
+            del audit.completions[ligne]
+    elif action in ("valider", "modifier"):
+        nouvelle = actuelle if action == "valider" else valeur
+        if _vide(nouvelle):
+            return decider(audit, ligne, champ, "refuser")
+        ajouts[champ] = (nouvelle, VALIDE, explication)
+        constat.valeurs[champ] = nouvelle
+    else:
+        raise ValueError(f"Action inconnue : {action}")

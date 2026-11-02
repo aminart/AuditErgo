@@ -26,7 +26,7 @@
 ```
  Poste du designer (rien ne sort de ce cadre)
  ┌──────────────────────────────────────────────────────────────────────────────┐
- │  Navigateur ──▶ Application (Streamlit, http://localhost:8501)               │
+ │  Navigateur ──▶ Application (FastAPI + React, http://localhost:8501)         │
  │                     │                                                        │
  │                     ├── Lecture / contrôles / export Excel (Python, local)   │
  │                     ├── Cache des réponses (.cache/suggestions.sqlite)       │
@@ -41,8 +41,10 @@
 |---|---|
 | Les constats partent vers un serveur | Les constats ne vont qu'à l'adresse `API_BASE` choisie dans `.env`. Si elle est sur le poste (`localhost`, `127.0.0.1`, `::1`), rien ne sort du poste ; sinon (passerelle de l'organisation), l'interface indique le serveur qui reçoit les constats. Le choix et la validation de ce serveur relèvent de l'organisation. |
 | Un proxy d'entreprise intercepte les requêtes | Vers un modèle sur le poste, les appels **ignorent les variables de proxy** : la connexion reste directe (testé). Vers une passerelle, les réglages réseau du poste s'appliquent (proxy, `NO_PROXY`). |
-| Un collègue ouvre l'application via le réseau | Streamlit n'écoute que sur `localhost` (`.streamlit/config.toml`, et `start.bat`). |
-| Statistiques d'usage | Télémétrie Streamlit désactivée (`gatherUsageStats = false`). |
+| Un collègue ouvre l'application via le réseau | Le serveur n'écoute que sur `127.0.0.1` (`serveur/__main__.py`). |
+| Une page web malveillante joint l'application (« DNS rebinding ») | Le serveur refuse toute requête adressée à un autre nom que `localhost` ou `127.0.0.1` (testé). |
+| Statistiques d'usage, ressources externes | Aucune télémétrie ; l'interface est compilée et servie par l'application, sans police, script ni service tiers : elle fonctionne hors ligne. |
+| Audits conservés | Les audits déposés restent en mémoire et dans un dossier temporaire, supprimé à l'arrêt de l'application. |
 | Clé d'API qui fuite | La clé (`API_KEY`), si le serveur en exige une, reste dans le fichier `.env`, ignoré par Git ; l'interface n'affiche jamais sa valeur. |
 | Données conservées ailleurs | Le cache des réponses est un fichier SQLite local, ignoré par Git ; il peut être vidé depuis l'interface. |
 
@@ -160,8 +162,8 @@ Le designer dépose son fichier (template v2, template d'origine ou simple table
 
 Les valeurs écrites dans les cellules suivent la **langue du fichier** (pour rester cohérentes avec ses listes) ; les commentaires et annotations suivent la langue choisie dans l'application.
 
-### 6.3 Rapport Word de synthèse
-À partir de l'audit relu (et de préférence complété par l'IA), l'application produit un rapport Word destiné à l'équipe produit et à ses décideurs :
+### 6.3 Rapport de synthèse (HTML et Word)
+À partir de l'audit relu (et de préférence complété par l'IA), l'application produit un rapport destiné à l'équipe produit et à ses décideurs. Il s'affiche dans l'application en HTML (avec graphiques), s'imprime en PDF, s'exporte en page HTML autonome ou en Word ; le contenu est le même :
 
 | Partie | Contenu |
 |---|---|
@@ -209,7 +211,9 @@ La langue par défaut se règle dans `.env` (`AUDIT_ERGO_LANGUE=fr` ou `en`).
 | `audit_ergo/rapport.py` | Rapport Word de synthèse : faits calculés, rédaction par l'IA, mise en page (python-docx) |
 | `audit_ergo/cache.py` | Cache local des réponses |
 | `audit_ergo/i18n.py` | Textes bilingues, échelle de gravité, listes communes |
-| `interface/` | Interface Streamlit (pages « Suggérer un critère » et « Relire un audit ») |
+| `serveur/api.py` | API de l'application (FastAPI) : dépôt et relecture d'un audit, analyse par l'IA en tâche de fond avec progression, décisions du designer sur les propositions, suggestion, rapport (JSON pour l'affichage HTML, Word) |
+| `serveur/serialisation.py` | Conversion des objets du moteur en JSON, libellés dans la langue choisie |
+| `web/` | Interface React + TypeScript + Tailwind : pages « Relire un audit », « Suggérer un critère », « Rapport de synthèse », « Réglages » ; thème clair et sombre ; compilée dans `web/dist/` |
 | `scripts/` | Génération du référentiel, des templates et des exemples ; vérification du modèle local |
 | `start.bat` | Installation et lancement en un double-clic sous Windows |
 
@@ -262,6 +266,7 @@ Autres réglages :
 | Avis des designers (👍 / 👎) et jeu de référence | à faire |
 | Traduction française des définitions et checklists | à faire |
 | Rapport Word de synthèse (FR/EN) | ✓ fait — **à relire sur un vrai audit avec le modèle Mistral** |
+| Interface React + Tailwind, rapport HTML dans l'application, validation des propositions de l'IA | ✓ fait — `start.bat` à tester sur un poste Windows |
 | Score de qualité d'un audit | à faire |
 | Paquet d'installation hors ligne pour l'équipe informatique | à faire si les postes n'ont pas Internet |
 
