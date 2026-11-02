@@ -112,7 +112,8 @@ def etat_audit(session, ref):
         },
         "nb_completions": sum(len(a) for a in audit.completions.values()),
         "a_valider": sum(1 for a in audit.completions.values() for (_, o, _) in a.values() if o != "valide"),
-        "rapport": session.rapport is not None,
+        "rapport": "aucun" if session.rapport is None else "perime" if session.rapport_perime else "a_jour",
+        "cree": session.cree,
     }
 
 
@@ -138,7 +139,7 @@ def rapport(r, ref):
     if f.gravites.get(None):
         gravites["aucune"] = f.gravites[None]
     return {
-        "langue": lg, "ia": r.ia, "erreur": r.erreur, "modele": MODELE,
+        "langue": lg, "ia": r.ia, "erreur": r.erreur, "modele": MODELE, "modifie": getattr(r, "modifie", False),
         "libelles": {cle: (en if lg == "en" else fr) for cle, (fr, en) in L.items()},
         "maturites": [{"niveau": n, "libelle": m[lg], "definition": m[f"def_{lg}"]} for n, m in MATURITES.items()],
         "gravites": [{"niveau": g, "libelle": v[lg], "definition": v[f"def_{lg}"]} for g, v in GRAVITES.items()],

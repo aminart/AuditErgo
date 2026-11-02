@@ -57,3 +57,11 @@ def cache_isole(tmp_path, monkeypatch):
     chemin = tmp_path / "cache" / "suggestions.sqlite"
     monkeypatch.setenv("AUDIT_ERGO_CACHE", str(chemin))
     return chemin
+
+
+@pytest.fixture(autouse=True)
+def historique_isole(tmp_path, monkeypatch):
+    """Chaque test a son propre historique d'audits : jamais celui de l'utilisateur."""
+    chemin = tmp_path / "historique"
+    monkeypatch.setenv("AUDIT_ERGO_HISTORIQUE", str(chemin))
+    return chemin

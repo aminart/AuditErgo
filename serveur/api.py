@@ -1,11 +1,9 @@
 """API de l'application : relecture d'un audit, suggestion d'un critère, rapport de synthèse (HTML et Word).
 
-Les audits déposés restent en mémoire, sur ce poste, le temps de la session : rien n'est écrit ailleurs que dans
-un dossier temporaire, supprimé à l'arrêt du serveur.
+Les audits déposés sont enregistrés sur ce poste (voir `historique.py`) et se rouvrent après un redémarrage.
 """
 import io
 import os
-import tempfile
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -24,12 +22,13 @@ from audit_ergo.completion import decider
 from audit_ergo.controles import controler
 from audit_ergo.export import exporter
 from audit_ergo.i18n import LANGUES, langue_defaut
-from audit_ergo.rapport import ecrire_docx, rediger
+from audit_ergo.rapport import ecrire_docx, faits, maturite_indicative, rediger
 from audit_ergo.suggestion import (MODELE, ErreurSuggestion, adresse_api, client_ou_none, est_locale, ia_configuree,
                                    suggerer)
 from audit_ergo.synthese import synthetiser
 
 from . import serialisation as ser
+from .historique import Historique, maintenant
 from .taches import Taches
 
 RACINE = Path(__file__).resolve().parent.parent
@@ -79,8 +78,9 @@ class Session:
     """Un audit déposé : fichier d'origine, relecture en cours et rapport."""
     id: str
     nom: str
-    dossier: tempfile.TemporaryDirectory
+    dossier: Path
     langue: str
+    cree: str = ""
     audit: object = None
     anomalies: list = field(default_factory=list)
     synthese: object = None
@@ -88,19 +88,51 @@ class Session:
     fichier: bytes = b""
     nom_sortie: str = ""
     rapport: object = None
+    rapport_perime: bool = False  # l'audit a changé depuis la génération du rapport
     verrou: threading.RLock = field(default_factory=threading.RLock)
 
     @property
     def entree(self):
-        return Path(self.dossier.name) / self.nom
+        return self.dossier / self.nom
+
+    @property
+    def sortie(self):
+        return self.dossier / f"{self.stem}_relu.xlsx"
 
     @property
     def stem(self):
         return Path(self.nom).stem
 
 
-def creer_app(ref=None):
+# Parties du rapport que le designer peut modifier dans l'application
+TEXTES_RAPPORT = {"resume", "maturite_justification", "impact"}
+LISTES_RAPPORT = {"points_forts", "faiblesses", "recurrents", "demarche"}
+OBJETS_RAPPORT = {"themes": {"titre", "description", "pourquoi", "consequences"},
+                  "recommandations": {"titre", "objectif", "importance", "benefices", "problemes_resolus"},
+                  "quick_wins": {"titre", "description", "valeur"},
+                  "suites": {"titre", "description"}}
+
+
+def modifier_rapport(r, chemin, valeur):
+    """Applique une modification du designer : « resume », « points_forts », « themes.0.description »…"""
+    parties = chemin.split(".")
+    if len(parties) == 1 and parties[0] in TEXTES_RAPPORT and isinstance(valeur, str):
+        setattr(r, parties[0], valeur.strip())
+    elif len(parties) == 1 and parties[0] in LISTES_RAPPORT and isinstance(valeur, list):
+        setattr(r, parties[0], [str(v).strip() for v in valeur if str(v).strip()])
+    elif chemin == "maturite" and valeur in (1, 2, 3, 4, 5):
+        r.maturite = valeur
+    elif (len(parties) == 3 and parties[0] in OBJETS_RAPPORT and parties[2] in OBJETS_RAPPORT[parties[0]]
+          and parties[1].isdigit() and int(parties[1]) < len(getattr(r, parties[0])) and isinstance(valeur, str)):
+        setattr(getattr(r, parties[0])[int(parties[1])], parties[2], valeur.strip())
+    else:
+        raise ValueError(f"Modification refusée : {chemin}")
+    r.modifie = True
+
+
+def creer_app(ref=None, historique=None):
     ref = ref or Referentiel.charger()
+    historique = historique or Historique.defaut()
     sessions: dict[str, Session] = {}
     taches = Taches()
     app = FastAPI(title="Audit ergonomique assisté", docs_url=None, redoc_url=None, openapi_url=None)
@@ -117,28 +149,61 @@ def creer_app(ref=None):
 
     def session(id_, lg="fr"):
         s = sessions.get(id_)
-        if s is None:
-            raise HTTPException(404, message("introuvable", lg))
+        if s is None:  # audit d'une séance précédente : rouvert depuis l'historique
+            etat = historique.charger(id_)
+            if etat is None:
+                raise HTTPException(404, message("introuvable", lg))
+            s = Session(id=id_, dossier=historique.dossier(id_), **{k: v for k, v in etat.items() if k != "version"})
+            s.audit.chemin = str(s.entree)  # le dossier de l'application a pu être déplacé
+            if s.sortie.exists():
+                s.fichier = s.sortie.read_bytes()
+            else:
+                recalculer(s, perime=False)
+            sessions[id_] = s
         return s
 
-    def recalculer(s, lg=None):
+    def resume(s):
+        """Ce qu'affiche la liste des audits enregistrés."""
+        ctx, syn = s.audit.contexte, s.synthese
+        gravites = {int(k): v for k, v in syn.gravites.items()}
+        return {
+            "nom": s.nom, "produit": ser.valeur(ctx.get("produit")), "designer": ser.valeur(ctx.get("designer")),
+            "date": ser.valeur(ctx.get("date")), "plateforme": ser.valeur(ctx.get("plateforme")),
+            "nb_constats": syn.nb_constats, "nb_problemes": syn.nb_problemes, "nb_points_forts": syn.nb_points_forts,
+            "gravites": {str(k): v for k, v in gravites.items()}, "nb_bloquants": syn.nb_bloquants,
+            "maturite_indicative": maturite_indicative(gravites, syn.nb_problemes),
+            "ia": s.ia is not None, "rapport": s.rapport is not None,
+            "a_valider": sum(1 for a in s.audit.completions.values() for (_, o, _) in a.values() if o != "valide"),
+        }
+
+    def sauver(s):
+        try:
+            historique.enregistrer(s, resume(s))
+        except OSError:  # disque plein, droits… : l'audit reste utilisable pendant la séance
+            pass
+
+    def etat(s):
+        return {**ser.etat_audit(s, ref), "persistant": historique.persistant}
+
+    def recalculer(s, lg=None, perime=True):
         """Contrôles, synthèse et fichier annoté à partir de l'audit en mémoire (sans IA)."""
         s.langue = _langue(lg or s.langue)
         s.anomalies = controler(s.audit, ref, s.langue)
         s.synthese = synthetiser(s.audit, s.anomalies, ref)
-        sortie = Path(s.dossier.name) / f"{s.stem}_relu.xlsx"
-        exporter(s.audit, s.anomalies, s.synthese, ref, sortie, s.ia, s.langue)
-        s.fichier = sortie.read_bytes()
+        exporter(s.audit, s.anomalies, s.synthese, ref, s.sortie, s.ia, s.langue)
+        s.fichier = s.sortie.read_bytes()
         s.nom_sortie = f"{s.stem}_complete.xlsx" if s.audit.completions else f"{s.stem}_relu.xlsx"
-        s.rapport = None  # le rapport correspond à un état de l'audit : il est à refaire
+        # Le rapport correspond à un état de l'audit : il est gardé (avec les modifications du designer), mais
+        # signalé comme à régénérer
+        s.rapport_perime = s.rapport_perime or (perime and s.rapport is not None)
 
     def analyser(s, cl=None, progression=None, forcer=False, remplir=True):
-        audit, anomalies, synthese, sortie, ia = relire(s.entree, Path(s.dossier.name) / f"{s.stem}_relu.xlsx", ref,
-                                                        cl, progression, forcer, remplir, s.langue)
+        audit, anomalies, synthese, sortie, ia = relire(s.entree, s.sortie, ref, cl, progression, forcer, remplir,
+                                                        s.langue)
         s.audit, s.anomalies, s.synthese, s.ia = audit, anomalies, synthese, ia
         s.fichier = Path(sortie).read_bytes()
         s.nom_sortie = f"{s.stem}_complete.xlsx" if audit.completions else f"{s.stem}_relu.xlsx"
-        s.rapport = None
+        s.rapport_perime = s.rapport is not None
 
     # --- Configuration ---------------------------------------------------------------------------------
 
@@ -236,33 +301,58 @@ def creer_app(ref=None):
         contenu = await fichier.read()
         if len(contenu) > TAILLE_MAX:
             raise HTTPException(413, message("trop_gros", lg))
-        s = Session(id=uuid.uuid4().hex, nom=nom, dossier=tempfile.TemporaryDirectory(prefix="audit_ergo_"), langue=lg)
+        id_ = uuid.uuid4().hex
+        s = Session(id=id_, nom=nom, dossier=historique.dossier(id_), langue=lg, cree=maintenant())
         s.entree.write_bytes(contenu)
         try:
             analyser(s)
         except ErreurLecture as e:
-            s.dossier.cleanup()
+            historique.supprimer(id_)
             raise HTTPException(400, message("illisible", lg, e=e)) from e
         except Exception as e:  # noqa: BLE001 : fichier corrompu, protégé par mot de passe…
-            s.dossier.cleanup()
+            historique.supprimer(id_)
             raise HTTPException(400, message("corrompu", lg, e=type(e).__name__)) from e
         sessions[s.id] = s
-        return ser.etat_audit(s, ref)
+        sauver(s)
+        return etat(s)
+
+    @app.get("/api/audits")
+    def lister():
+        return {"audits": historique.lister(), "persistant": historique.persistant}
 
     @app.get("/api/audits/{id_}")
     def lire(id_: str, langue: str = ""):
         s = session(id_, _langue(langue))
         with s.verrou:
             if langue and _langue(langue) != s.langue:  # messages et annotations dans la nouvelle langue
-                recalculer(s, langue)
-            return ser.etat_audit(s, ref)
+                recalculer(s, langue, perime=False)
+                sauver(s)
+            return etat(s)
 
     @app.delete("/api/audits/{id_}")
-    def fermer(id_: str):
-        s = sessions.pop(id_, None)
-        if s:
-            s.dossier.cleanup()
+    def supprimer(id_: str):
+        """Supprime l'audit de ce poste (fichier déposé, relecture et rapport)."""
+        sessions.pop(id_, None)
+        historique.supprimer(id_)
         return {"ok": True}
+
+    @app.get("/api/comparaison")
+    def comparer(a: str, b: str, langue: str = ""):
+        """Deux audits côte à côte (deux versions d'un même produit, par exemple) : progrès mesurés sans IA."""
+        lg = _langue(langue)
+
+        def profil(id_):
+            s = session(id_, lg)
+            f = faits(s.audit, ref)
+            par_categorie = {code: 0 for code in ref.categories}
+            for p in f.problemes:
+                if p.critere:
+                    par_categorie[ref.criteres[p.critere]["categorie"]] += 1
+            return {**resume(s), "id": id_, "cree": s.cree, "ecrans": f.ecrans, "graves": f.graves,
+                    "par_categorie": par_categorie, "maturite": s.rapport.maturite if s.rapport else None}
+
+        return {"a": profil(a), "b": profil(b),
+                "categories": [{"code": c, "libelle": ref.libelle_categorie(c, lg)} for c in ref.categories]}
 
     class DemandeIA(BaseModel):
         remplir: bool = True
@@ -281,7 +371,8 @@ def creer_app(ref=None):
             with s.verrou:
                 s.langue = lg
                 analyser(s, cl, tache.progression, d.forcer, d.remplir)
-                return ser.etat_audit(s, ref)
+                sauver(s)
+                return etat(s)
 
         return taches.lancer("ia", executer).vue()
 
@@ -306,7 +397,8 @@ def creer_app(ref=None):
                 except (KeyError, ValueError, StopIteration) as e:
                     raise HTTPException(400, str(e)) from e
             recalculer(s, lg)
-            return ser.etat_audit(s, ref)
+            sauver(s)
+            return etat(s)
 
     @app.get("/api/audits/{id_}/fichier")
     def fichier_annote(id_: str):
@@ -330,6 +422,8 @@ def creer_app(ref=None):
         def executer(tache):
             with s.verrou:
                 s.rapport = rediger(s.audit, ref, cl, lg, forcer=d.forcer, progression=tache.progression)
+                s.rapport_perime = False
+                sauver(s)
                 return ser.rapport(s.rapport, ref)
 
         return taches.lancer("rapport", executer).vue()
@@ -340,6 +434,24 @@ def creer_app(ref=None):
         if s.rapport is None:
             raise HTTPException(404, message("pas_de_rapport", s.langue))
         return ser.rapport(s.rapport, ref)
+
+    class Modification(BaseModel):
+        chemin: str
+        valeur: str | int | list[str]
+
+    @app.patch("/api/audits/{id_}/rapport")
+    def modifier(id_: str, m: Modification):
+        """Le designer corrige ou complète un passage du rapport ; les exports (HTML, PDF, Word) le reprennent."""
+        s = session(id_)
+        if s.rapport is None:
+            raise HTTPException(404, message("pas_de_rapport", s.langue))
+        with s.verrou:
+            try:
+                modifier_rapport(s.rapport, m.chemin, m.valeur)
+            except ValueError as e:
+                raise HTTPException(400, str(e)) from e
+            sauver(s)
+            return ser.rapport(s.rapport, ref)
 
     @app.get("/api/audits/{id_}/rapport.docx")
     def rapport_word(id_: str):

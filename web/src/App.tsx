@@ -7,12 +7,14 @@ import PageRelecture from "./pages/Relecture";
 import PageSuggestion from "./pages/Suggestion";
 import PageRapport from "./pages/Rapport";
 import PageReglages from "./pages/Reglages";
+import PageHistorique from "./pages/Historique";
 
-type Page = "relecture" | "suggestion" | "rapport" | "reglages";
+type Page = "relecture" | "suggestion" | "rapport" | "historique" | "reglages";
 const PAGES: { id: Page; cle: Cle; icone: string }[] = [
   { id: "relecture", cle: "nav.relecture", icone: "relecture" },
   { id: "suggestion", cle: "nav.suggestion", icone: "suggestion" },
   { id: "rapport", cle: "nav.rapport", icone: "rapport" },
+  { id: "historique", cle: "nav.historique", icone: "historique" },
   { id: "reglages", cle: "nav.reglages", icone: "reglages" },
 ];
 
@@ -69,6 +71,24 @@ export default function App() {
   }, []);
   useEffect(() => { chargerConfig(langue); }, [langue, chargerConfig]);
 
+  // L'audit ouvert est retrouvé après un rechargement de la page ou un redémarrage de l'application
+  useEffect(() => {
+    if (etat) ecrire("audit", etat.id);
+  }, [etat?.id]); // eslint-disable-line
+  useEffect(() => {
+    const id = lire("audit");
+    if (id) api.audit(id, langue).then(setEtat).catch(() => ecrire("audit", ""));
+  }, []); // eslint-disable-line
+  // Le rapport affiché est celui de l'audit ouvert
+  useEffect(() => { setRapport(null); }, [etat?.id]);
+
+  const ouvrir = async (id: string) => {
+    try { setEtat(await api.audit(id, langue)); aller("relecture"); } catch (e) { setErreur((e as Error).message); }
+  };
+  const oublier = (id: string) => {
+    if (etat?.id === id) { setEtat(null); ecrire("audit", ""); }
+  };
+
   // Changer de langue relance les contrôles de l'audit (sans IA) dans la nouvelle langue
   useEffect(() => {
     if (etat && etat.langue !== langue) api.audit(etat.id, langue).then(setEtat).catch((e) => setErreur(e.message));
@@ -101,7 +121,7 @@ export default function App() {
                   <Icone nom={p.icone} className="size-[18px]" />
                   {t(p.cle)}
                   {p.id === "relecture" && etat && <span className="ml-auto size-1.5 rounded-full bg-ok" aria-hidden="true" />}
-                  {p.id === "rapport" && rapport && etat?.rapport && <span className="ml-auto size-1.5 rounded-full bg-ok" aria-hidden="true" />}
+                  {p.id === "rapport" && etat && etat.rapport !== "aucun" && <span className="ml-auto size-1.5 rounded-full bg-ok" aria-hidden="true" />}
                 </button>
               ))}
             </nav>
@@ -151,9 +171,10 @@ export default function App() {
               !erreur && <div className="flex items-center gap-2 text-sm text-texte-2"><Spinner /> {t("chargement")}</div>
             ) : (
               <>
-                {page === "relecture" && <PageRelecture config={config} etat={etat} setEtat={setEtat} allerRapport={() => aller("rapport")} />}
+                {page === "relecture" && <PageRelecture config={config} etat={etat} setEtat={setEtat} allerRapport={() => aller("rapport")} ouvrir={ouvrir} allerHistorique={() => aller("historique")} />}
                 {page === "suggestion" && <PageSuggestion config={config} />}
                 {page === "rapport" && <PageRapport config={config} etat={etat} rapport={rapport} setRapport={setRapport} setEtat={setEtat} allerRelecture={() => aller("relecture")} />}
+                {page === "historique" && <PageHistorique config={config} ouvert={etat?.id} ouvrir={ouvrir} oublier={oublier} />}
                 {page === "reglages" && <PageReglages config={config} recharger={() => chargerConfig(langue)} />}
               </>
             )}

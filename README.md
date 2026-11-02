@@ -87,6 +87,8 @@ Depuis la page « Rapport de synthèse », ou en ligne de commande, l'applicatio
 4. **Prochaines étapes** : quick wins, chantiers à moyen et long terme, démarche d'amélioration continue ;
 5. Annexes : méthode, échelles, liste des problèmes.
 
+Le bouton « Modifier le rapport » permet de corriger ou compléter chaque passage rédigé (et le niveau de maturité) directement dans la page : les modifications sont enregistrées et reprises dans les exports PDF, HTML et Word.
+
 Les chiffres (gravités, écrans, récurrence, maturité indicative) sont calculés sans IA ; l'IA rédige les analyses. Sans IA, le rapport contient tous les faits et les passages à rédiger sont surlignés.
 
 ```bash
@@ -95,6 +97,10 @@ python3 -m audit_ergo mon_audit_complete.xlsx --rapport   # rapport à partir d'
 ```
 
 Exemples fictifs : `exemples/audit_fictif.xlsx` (erreurs de forme volontaires) et `exemples/audit_a_completer.xlsx` (constats seuls à compléter), régénérables avec `python3 scripts/generer_audit_fictif.py`.
+
+### 🕘 Historique et comparaison
+
+Chaque audit déposé est enregistré sur le poste (`.donnees/audits/`, jamais envoyé ailleurs) avec sa relecture, les avis de l'IA, les décisions du designer et le rapport : il se rouvre après la fermeture de l'application. La page « Historique » liste les audits, permet d'en supprimer, et d'en **comparer deux** (deux versions d'un même produit, par exemple) : problèmes, gravités, écrans et catégories de critères, avec les écarts. `AUDIT_ERGO_HISTORIQUE=0` désactive l'enregistrement ; `AUDIT_ERGO_HISTORIQUE=<dossier>` change son emplacement.
 
 ## Interface : développement
 

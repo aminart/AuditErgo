@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, attendre } from "../api";
 import { useLangue, useT } from "../i18n";
-import type { Anomalie, Config, Constat, EtatAudit } from "../types";
+import type { Anomalie, Config, Constat, EtatAudit, ResumeAudit } from "../types";
 import { Alerte, Badge, Bouton, Icone, Lien, Metrique, Onglets, Progression, Section, Spinner, cx } from "../components/ui";
+import { ListeAudits } from "./Historique";
 import { BarresHorizontales, PastilleGravite, couleurGravite } from "../components/graphiques";
 
 const CHAMPS_VIDES = ["type", "categorie", "critere", "gravite", "recommandation"];
@@ -208,8 +209,9 @@ function CarteConstat({ c, config, decider, occupe }: { c: Constat; config: Conf
 type Onglet = "constats" | "anomalies" | "couverture" | "gravite";
 type Filtre = "tous" | "a_valider" | "avec_anomalie" | "a_revoir";
 
-export default function PageRelecture({ config, etat, setEtat, allerRapport }: {
+export default function PageRelecture({ config, etat, setEtat, allerRapport, ouvrir, allerHistorique }: {
   config: Config; etat: EtatAudit | null; setEtat: (e: EtatAudit | null) => void; allerRapport: () => void;
+  ouvrir: (id: string) => void; allerHistorique: () => void;
 }) {
   const t = useT();
   const lg = useLangue();
@@ -227,7 +229,6 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport }: {
   const deposer = async (f: File) => {
     setErreur(""); setDepot(true);
     try {
-      if (etat) api.fermer(etat.id).catch(() => undefined);
       setEtat(await api.deposer(f, lg));
       setOnglet("constats"); setFiltre("tous");
     } catch (e) { setErreur((e as Error).message); }
@@ -264,6 +265,9 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport }: {
     });
   }, [etat, filtre, recherche]);
 
+  const [recents, setRecents] = useState<ResumeAudit[]>([]);
+  useEffect(() => { if (!etat) api.lister().then((r) => setRecents(r.audits)).catch(() => undefined); }, [etat]);
+
   if (!etat) {
     return (
       <div className="space-y-6">
@@ -273,6 +277,15 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport }: {
         </header>
         {erreur && <Alerte ton="danger">{erreur}</Alerte>}
         <Depot deposer={deposer} enCours={depot} />
+        {recents.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">{t("h.recents")}</h2>
+              <button onClick={allerHistorique} className="btn-discret text-xs">{t("h.tout_voir")}<Icone nom="fleche" className="size-3.5" /></button>
+            </div>
+            <ListeAudits audits={recents.slice(0, 5)} ouvrir={ouvrir} />
+          </div>
+        )}
       </div>
     );
   }

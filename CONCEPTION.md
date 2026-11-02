@@ -44,7 +44,7 @@
 | Un collègue ouvre l'application via le réseau | Le serveur n'écoute que sur `127.0.0.1` (`serveur/__main__.py`). |
 | Une page web malveillante joint l'application (« DNS rebinding ») | Le serveur refuse toute requête adressée à un autre nom que `localhost` ou `127.0.0.1` (testé). |
 | Statistiques d'usage, ressources externes | Aucune télémétrie ; l'interface est compilée et servie par l'application, sans police, script ni service tiers : elle fonctionne hors ligne. |
-| Audits conservés | Les audits déposés restent en mémoire et dans un dossier temporaire, supprimé à l'arrêt de l'application. |
+| Audits conservés | Les audits déposés (fichier, relecture, avis de l'IA, décisions, rapport) sont enregistrés **sur ce poste uniquement**, dans `.donnees/audits/` (ignoré par Git) ; chacun se supprime depuis la page « Historique ». `AUDIT_ERGO_HISTORIQUE=0` désactive l'enregistrement (dossier temporaire effacé à l'arrêt). |
 | Clé d'API qui fuite | La clé (`API_KEY`), si le serveur en exige une, reste dans le fichier `.env`, ignoré par Git ; l'interface n'affiche jamais sa valeur. |
 | Données conservées ailleurs | Le cache des réponses est un fichier SQLite local, ignoré par Git ; il peut être vidé depuis l'interface. |
 
@@ -212,6 +212,7 @@ La langue par défaut se règle dans `.env` (`AUDIT_ERGO_LANGUE=fr` ou `en`).
 | `audit_ergo/cache.py` | Cache local des réponses |
 | `audit_ergo/i18n.py` | Textes bilingues, échelle de gravité, listes communes |
 | `serveur/api.py` | API de l'application (FastAPI) : dépôt et relecture d'un audit, analyse par l'IA en tâche de fond avec progression, décisions du designer sur les propositions, suggestion, rapport (JSON pour l'affichage HTML, Word) |
+| `serveur/historique.py` | Historique des audits sur le poste : enregistrement après chaque étape, réouverture après un redémarrage, suppression |
 | `serveur/serialisation.py` | Conversion des objets du moteur en JSON, libellés dans la langue choisie |
 | `web/` | Interface React + TypeScript + Tailwind : pages « Relire un audit », « Suggérer un critère », « Rapport de synthèse », « Réglages » ; thème clair et sombre ; compilée dans `web/dist/` |
 | `scripts/` | Génération du référentiel, des templates et des exemples ; vérification du modèle local |
@@ -267,6 +268,7 @@ Autres réglages :
 | Traduction française des définitions et checklists | à faire |
 | Rapport Word de synthèse (FR/EN) | ✓ fait — **à relire sur un vrai audit avec le modèle Mistral** |
 | Interface React + Tailwind, rapport HTML dans l'application, validation des propositions de l'IA | ✓ fait — `start.bat` à tester sur un poste Windows |
+| Rapport modifiable dans l'application (repris dans les exports), historique des audits et comparaison de deux audits | ✓ fait |
 | Score de qualité d'un audit | à faire |
 | Paquet d'installation hors ligne pour l'équipe informatique | à faire si les postes n'ont pas Internet |
 

@@ -127,7 +127,42 @@ export interface EtatAudit {
   ia: null | { analyses: number; erreurs: number; depuis_cache: number; criteres_a_revoir: number; recos_a_ameliorer: number };
   nb_completions: number;
   a_valider: number;
+  rapport: "aucun" | "a_jour" | "perime";
+  cree: string;
+  persistant: boolean;
+}
+
+export interface ResumeAudit {
+  id: string;
+  nom: string;
+  produit: string | null;
+  designer: string | null;
+  date: string | null;
+  plateforme: string | null;
+  nb_constats: number;
+  nb_problemes: number;
+  nb_points_forts: number;
+  gravites: Record<string, number>;
+  nb_bloquants: number;
+  maturite_indicative: number;
+  ia: boolean;
   rapport: boolean;
+  a_valider: number;
+  cree: string;
+  modifie: string;
+}
+
+export interface ProfilAudit extends ResumeAudit {
+  ecrans: string[];
+  graves: number;
+  par_categorie: Record<string, number>;
+  maturite: number | null;
+}
+
+export interface Comparaison {
+  a: ProfilAudit;
+  b: ProfilAudit;
+  categories: { code: string; libelle: string }[];
 }
 
 export interface Probleme {
@@ -160,6 +195,7 @@ export interface Rapport {
   ia: boolean;
   erreur: string;
   modele: string;
+  modifie: boolean;
   libelles: Record<string, string>;
   maturites: { niveau: number; libelle: string; definition: string }[];
   gravites: { niveau: number; libelle: string; definition: string }[];

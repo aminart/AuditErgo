@@ -134,8 +134,8 @@ def test_rapport(client, audit_xlsx):
     assert client.get(f"/api/audits/{e['id']}/rapport").json()["resume"] == r["resume"]
     word = client.get(f"/api/audits/{e['id']}/rapport.docx")
     assert word.status_code == 200 and word.content[:2] == b"PK"
-    # Une décision change l'audit : le rapport est à refaire
-    assert client.get(f"/api/audits/{e['id']}?langue=en").json()["rapport"] is False
+    # Changer la langue de l'interface ne rend pas le rapport obsolète
+    assert client.get(f"/api/audits/{e['id']}?langue=en").json()["rapport"] == "a_jour"
 
 
 def test_rapport_sans_ia(client, audit_xlsx):

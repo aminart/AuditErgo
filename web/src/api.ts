@@ -1,4 +1,4 @@
-import type { Config, EtatAudit, Langue, Rapport, Suggestion, Tache } from "./types";
+import type { Comparaison, Config, EtatAudit, Langue, Rapport, ResumeAudit, Suggestion, Tache } from "./types";
 
 export class ErreurApi extends Error {}
 
@@ -57,7 +57,9 @@ export const api = {
     return requete<EtatAudit>("/api/audits", { method: "POST", body: corps });
   },
   audit: (id: string, lg: Langue) => requete<EtatAudit>(`/api/audits/${id}?langue=${lg}`),
-  fermer: (id: string) => requete<{ ok: boolean }>(`/api/audits/${id}`, { method: "DELETE" }),
+  supprimer: (id: string) => requete<{ ok: boolean }>(`/api/audits/${id}`, { method: "DELETE" }),
+  lister: () => requete<{ audits: ResumeAudit[]; persistant: boolean }>("/api/audits"),
+  comparer: (a: string, b: string, lg: Langue) => requete<Comparaison>(`/api/comparaison?a=${a}&b=${b}&langue=${lg}`),
   analyserIA: (id: string, remplir: boolean, forcer: boolean, lg: Langue) =>
     requete<Tache<EtatAudit>>(`/api/audits/${id}/ia`, json({ remplir, forcer, langue: lg })),
   decider: (id: string, decisions: { ligne: number; champ: string; action: string; valeur?: string }[], lg: Langue) =>
@@ -67,5 +69,7 @@ export const api = {
   genererRapport: (id: string, ia: boolean, forcer: boolean, lg: Langue) =>
     requete<Tache<Rapport>>(`/api/audits/${id}/rapport`, json({ ia, forcer, langue: lg })),
   rapport: (id: string) => requete<Rapport>(`/api/audits/${id}/rapport`),
+  modifierRapport: (id: string, chemin: string, valeur: string | number | string[]) =>
+    requete<Rapport>(`/api/audits/${id}/rapport`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ chemin, valeur }) }),
   rapportWordUrl: (id: string) => `/api/audits/${id}/rapport.docx`,
 };
