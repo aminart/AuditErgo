@@ -22,7 +22,7 @@ LM Studio convient aussi : renseigner alors `API_BASE=http://localhost:1234/v1` 
 ```bash
 pip install -r requirements.txt
 cp .env.exemple .env      # à adapter si besoin
-streamlit run app.py
+python -m serveur        # ouvre http://localhost:8501
 ```
 
 ### 3. Configuration (`.env`)
@@ -65,6 +65,7 @@ Fichier accepté : template v2, template d'origine, ou simple tableau avec une c
 
 - **Contrôles de forme**, sans IA : bloquant (champ obligatoire vide, critère inconnu ou hors de sa catégorie, gravité hors échelle), avertissement (constat ou recommandation trop courts, recommandation qui recopie le constat, règle de départage incohérente, doublon…), info (formulations vagues).
 - **Complétion et correction par l'IA**, à la demande : les cellules vides sont remplies **en violet**, avec l'explication en commentaire ; les saisies du designer ne sont **jamais écrasées** : l'avis de l'IA est donné à côté, dans les colonnes « IA : … ».
+- **Relecture des propositions** dans l'application : chaque cellule remplie par l'IA se **valide**, se **corrige** ou se **refuse** (la cellule redevient vide). Une proposition validée ou corrigée n'est plus en violet dans le fichier exporté.
 - **Fichier annoté** : le fichier d'origine (formules et listes conservées), plus deux onglets de synthèse et d'anomalies.
 
 ```bash
@@ -76,15 +77,17 @@ python3 -m audit_ergo mon_audit.xlsx --langue en              # annotations et t
 
 Les réponses de l'IA sont **mémorisées** dans `.cache/suggestions.sqlite` (local, ignoré par Git) : un constat déjà analysé n'est pas recalculé. `--sans-cache` force une nouvelle analyse, `--vider-cache` efface tout (aussi possible depuis l'interface).
 
-### 📄 Rapport Word de synthèse
+### 📄 Rapport de synthèse (HTML et Word)
 
-Depuis la page « Relire un audit » (bouton « Générer le rapport »), ou en ligne de commande, l'application produit un rapport Word à remettre à l'équipe produit :
+Depuis la page « Rapport de synthèse », ou en ligne de commande, l'application produit un rapport à remettre à l'équipe produit. Il s'affiche **directement dans l'application**, en HTML (graphiques de gravité et de thématiques, échelle de maturité), s'imprime ou s'enregistre en PDF depuis le navigateur, se télécharge en page HTML autonome, ou en Word :
 
 1. **Synthèse générale** : l'essentiel, niveau de maturité UX, chiffres clés, points forts, faiblesses, problèmes récurrents, impact sur les utilisateurs ;
 2. **Problèmes UX principaux**, regroupés par thématique (problèmes observés, pourquoi l'expérience est dégradée, conséquences), tendances récurrentes et cas isolés ;
 3. **Recommandations UX et UI** : grands chantiers transverses, hiérarchisés par impact attendu (objectif, importance, bénéfices, problèmes résolus) ;
 4. **Prochaines étapes** : quick wins, chantiers à moyen et long terme, démarche d'amélioration continue ;
 5. Annexes : méthode, échelles, liste des problèmes.
+
+Le bouton « Modifier le rapport » permet de corriger ou compléter chaque passage rédigé (et le niveau de maturité) directement dans la page : les modifications sont enregistrées et reprises dans les exports PDF, HTML et Word.
 
 Les chiffres (gravités, écrans, récurrence, maturité indicative) sont calculés sans IA ; l'IA rédige les analyses. Sans IA, le rapport contient tous les faits et les passages à rédiger sont surlignés.
 
@@ -94,6 +97,20 @@ python3 -m audit_ergo mon_audit_complete.xlsx --rapport   # rapport à partir d'
 ```
 
 Exemples fictifs : `exemples/audit_fictif.xlsx` (erreurs de forme volontaires) et `exemples/audit_a_completer.xlsx` (constats seuls à compléter), régénérables avec `python3 scripts/generer_audit_fictif.py`.
+
+### 🕘 Historique et comparaison
+
+Chaque audit déposé est enregistré sur le poste (`.donnees/audits/`, jamais envoyé ailleurs) avec sa relecture, les avis de l'IA, les décisions du designer et le rapport : il se rouvre après la fermeture de l'application. La page « Historique » liste les audits, permet d'en supprimer, et d'en **comparer deux** (deux versions d'un même produit, par exemple) : problèmes, gravités, écrans et catégories de critères, avec les écarts. `AUDIT_ERGO_HISTORIQUE=0` désactive l'enregistrement ; `AUDIT_ERGO_HISTORIQUE=<dossier>` change son emplacement.
+
+## Interface : développement
+
+L'interface est livrée compilée (`web/dist/`) : les postes n'ont besoin que de Python. Pour la modifier, avec [Node.js](https://nodejs.org) 20 ou plus récent :
+
+```bash
+python -m serveur --sans-navigateur   # API sur http://localhost:8501
+cd web && npm install && npm run dev  # interface sur http://localhost:5173, rechargée à chaque modification
+npm run build                         # recompile web/dist/, à committer avec les sources
+```
 
 ## Tests
 
@@ -109,12 +126,12 @@ Les tests utilisent un faux serveur local : ils ne nécessitent ni modèle ni r�
 | Chemin | Rôle |
 |---|---|
 | `CONCEPTION.md` | Document de conception : confidentialité, modèle local, référentiel, template v2, feuille de route |
-| `app.py`, `interface/` | Interface web (Streamlit), français et anglais |
+| `serveur/` | Serveur de l'application (FastAPI) : API au-dessus du moteur, sert l'interface compilée, sur ce poste uniquement |
+| `web/` | Interface (React, TypeScript, Tailwind) ; `web/dist/` est la version compilée, livrée avec l'application |
 | `audit_ergo/` | Moteur : lecture, contrôles, IA, complétion, export, rapport Word, cache, textes bilingues |
 | `template/` | Templates v2 en français et en anglais (générés par `scripts/build_template.py`) |
 | `referentiel/source/` | Fichiers d'origine (CSV et template Excel), jamais modifiés |
 | `referentiel/corrections.json`, `regles_departage.json` | Corrections proposées et règles de départage (FR/EN) |
 | `referentiel/referentiel.json`, `CHANGEMENTS.md` | Référentiel final et liste des modifications à valider, **générés** par `scripts/build_referentiel.py` |
-| `.streamlit/config.toml` | Application servie sur ce poste uniquement, sans télémétrie |
 | `start.bat` | Installation et lancement en un double-clic sous Windows |
 | `tests/` | Tests automatiques |

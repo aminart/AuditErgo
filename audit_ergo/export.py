@@ -132,11 +132,15 @@ def _ajouter_colonnes_manquantes(ws, audit):
 
 
 def _ecrire_completions(ws, audit, langue):
-    from .completion import IA
+    from .completion import IA, VALIDE
 
     for ligne, ajouts in audit.completions.items():
         for champ, (valeur, origine, explication) in ajouts.items():
             cell = ws.cell(row=ligne, column=audit.colonnes[champ], value=valeur)
+            if origine == VALIDE:  # proposition validée (ou corrigée) par le designer : valeur ordinaire
+                cell.font = Font(name=FONT, size=10)
+                cell.alignment = WRAP
+                continue
             cell.fill = PatternFill("solid", fgColor=VIOLET)
             cell.font = Font(name=FONT, size=10, italic=True)
             cell.alignment = WRAP

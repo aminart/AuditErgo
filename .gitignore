@@ -5,3 +5,4 @@ livrables/
 .env
 .cache/
 .venv/
+.donnees/

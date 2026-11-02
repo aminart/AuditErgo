@@ -66,8 +66,14 @@ echo.
 echo L'application s'ouvre dans votre navigateur : http://localhost:8501
 echo Elle n'est accessible que depuis ce poste. Pour l'arrêter, fermez cette fenêtre.
 echo.
-start "" /b "%VPY%" -c "import time, webbrowser; time.sleep(5); webbrowser.open('http://localhost:8501')"
-"%VPY%" -m streamlit run app.py --server.address localhost --server.headless true --server.port 8501 --browser.gatherUsageStats false
+if not exist "web\dist\index.html" (
+    echo L'interface de l'application est introuvable ^(dossier web\dist^).
+    echo Récupérez à nouveau le dossier complet de l'application.
+    echo.
+    pause
+    exit /b 1
+)
+"%VPY%" -m serveur --port 8501
 echo.
 echo L'application s'est arrêtée.
 pause
