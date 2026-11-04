@@ -4,6 +4,8 @@ Aide les UX designers à produire des audits ergonomiques (heuristiques) du mêm
 
 L'IA est un modèle Mistral servi au format OpenAI (`/v1/chat/completions`) : installé sur le poste (Ollama, LM Studio), auquel cas aucune donnée ne quitte le poste, ou passerelle de l'organisation. La connexion se règle avec `API_BASE`, `API_KEY` et `CA_BUNDLE`. Voir `CONCEPTION.md` § 2.
 
+Le fonctionnement détaillé, écran par écran, est décrit dans [`FONCTIONNEMENT.md`](FONCTIONNEMENT.md).
+
 ## Installation
 
 ### 1. Le modèle local (une fois)
@@ -125,6 +127,7 @@ Les tests utilisent un faux serveur local : ils ne nécessitent ni modèle ni r�
 
 | Chemin | Rôle |
 |---|---|
+| `FONCTIONNEMENT.md` | Fonctionnement de l'application, écran par écran, du point de vue de l'utilisateur |
 | `CONCEPTION.md` | Document de conception : confidentialité, modèle local, référentiel, template v2, feuille de route |
 | `serveur/` | Serveur de l'application (FastAPI) : API au-dessus du moteur, sert l'interface compilée, sur ce poste uniquement |
 | `web/` | Interface (React, TypeScript, Tailwind) ; `web/dist/` est la version compilée, livrée avec l'application |

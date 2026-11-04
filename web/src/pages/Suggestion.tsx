@@ -51,7 +51,7 @@ export default function PageSuggestion({ config }: { config: Config }) {
       </header>
       {!iaDispo && <Alerte ton="alerte">{t("ia.indisponible")}</Alerte>}
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,26rem)_1fr]">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
         <form onSubmit={proposer} className="carte space-y-4 p-5 xl:sticky xl:top-6">
           <div>
             <label className="etiquette" htmlFor="constat">{t("s.constat")} <span className="text-danger">*</span></label>
@@ -127,7 +127,7 @@ export default function PageSuggestion({ config }: { config: Config }) {
                   <li key={i}>
                     <button onClick={() => setChoisi(i)} className={cx("flex w-full items-center gap-3 px-2 py-2 text-left text-sm hover:bg-surface-2", i === choisi && "font-medium")}>
                       <span className="w-16 shrink-0 font-mono text-xs text-texte-2">{h.s.code}</span>
-                      <span className="truncate">{h.ecran && `${h.ecran} · `}{h.constat}</span>
+                      <span className="min-w-0 truncate" title={h.constat}>{h.ecran && `${h.ecran} · `}{h.constat}</span>
                     </button>
                   </li>
                 ))}
