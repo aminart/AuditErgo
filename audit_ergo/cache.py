@@ -4,7 +4,8 @@ La clé est une empreinte de la requête complète (constat, écran, critère du
 format, consignes et référentiel). Toute modification du référentiel ou du prompt change donc la clé :
 les anciennes réponses ne sont plus utilisées, sans rien avoir à vider.
 
-Emplacement : .cache/suggestions.sqlite à la racine du dépôt, ou le chemin indiqué par AUDIT_ERGO_CACHE.
+Emplacement : .cache/suggestions.sqlite à la racine du dépôt (%APPDATA%\\AuditErgo\\cache depuis l'exe), ou le
+chemin indiqué par AUDIT_ERGO_CACHE.
 AUDIT_ERGO_CACHE=0 désactive le cache. Le cache est « au mieux » : une erreur de lecture ou d'écriture
 n'empêche jamais l'analyse.
 """
@@ -16,7 +17,9 @@ import threading
 from datetime import datetime
 from pathlib import Path
 
-CHEMIN_DEFAUT = Path(__file__).resolve().parent.parent / ".cache" / "suggestions.sqlite"
+from .chemins import cache_defaut
+
+CHEMIN_DEFAUT = cache_defaut()
 DESACTIVE = {"0", "non", "false", "off"}
 
 

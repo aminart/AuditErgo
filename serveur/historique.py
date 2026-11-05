@@ -1,6 +1,7 @@
 """Historique des audits : chaque audit déposé est enregistré sur ce poste et se rouvre après un redémarrage.
 
-Emplacement : `.donnees/audits/` à la racine de l'application (ignoré par Git), ou le dossier indiqué par
+Emplacement : `.donnees/audits/` à la racine du dépôt (ignoré par Git ; %APPDATA%\\AuditErgo\\audits depuis l'exe),
+ou le dossier indiqué par
 AUDIT_ERGO_HISTORIQUE. AUDIT_ERGO_HISTORIQUE=0 désactive l'enregistrement : les audits sont alors gardés dans
 un dossier temporaire, supprimé à l'arrêt de l'application.
 
@@ -17,7 +18,9 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-RACINE_DEFAUT = Path(__file__).resolve().parent.parent / ".donnees" / "audits"
+from audit_ergo.chemins import historique_defaut
+
+RACINE_DEFAUT = historique_defaut()
 DESACTIVE = {"0", "non", "false", "off"}
 VERSION = 1
 CHAMPS = ["nom", "langue", "audit", "anomalies", "synthese", "ia", "nom_sortie", "rapport", "rapport_perime", "cree"]

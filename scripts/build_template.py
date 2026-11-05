@@ -97,7 +97,7 @@ TXT = {
              "une recommandation pour un problème.", None),
             ("6. Vérifier la colonne « Contrôle » : elle doit afficher ✓ OK avant de rendre l'audit. L'onglet "
              "« Résultats » se met à jour tout seul.", None),
-            ("7. L'application « Audit ergonomique assisté » peut compléter les cellules vides (en violet, à valider) "
+            ("7. L'application « AuditErgo » peut compléter les cellules vides (en violet, à valider) "
              "et proposer des corrections : il suffit de lui donner ce fichier, même avec les seuls constats.", None),
             ("", None),
             ("Code couleur", "section"),

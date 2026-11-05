@@ -6,3 +6,6 @@ livrables/
 .cache/
 .venv/
 .donnees/
+# Fabrication de l exe (PyInstaller)
+/build/
+/dist/

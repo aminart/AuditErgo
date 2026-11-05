@@ -20,11 +20,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
-from . import parametres
+from . import chemins, parametres
 from .cache import CacheSuggestions
 from .i18n import GRAVITES, TYPES_RECO, langue_defaut, t
 
-FICHIER_ENV = Path(__file__).resolve().parent.parent / ".env"
+FICHIER_ENV = chemins.dossier_app() / ".env"  # à côté de AuditErgo.exe, ou à la racine du dépôt
 CONFIANCES = ["haute", "moyenne", "faible"]
 VERDICTS = ["confirme", "a_revoir", "incorrect", "non_fourni"]
 STATUTS_RECO = ["bonne", "a_ameliorer", "hors_sujet", "non_fournie"]

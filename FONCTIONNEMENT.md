@@ -1,4 +1,4 @@
-# Audit ergonomique assisté : fonctionnement
+# AuditErgo : fonctionnement
 
 Ce document décrit **ce que fait l'application et comment elle fonctionne, du point de vue de l'utilisateur**. L'installation est dans `README.md`, les choix techniques et la confidentialité dans `CONCEPTION.md`.
 

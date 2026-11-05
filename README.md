@@ -1,4 +1,4 @@
-# Audit ergonomique assisté
+# AuditErgo
 
 Aide les UX designers à produire des audits ergonomiques (heuristiques) du même standard : contrôle de forme, proposition du critère, de la recommandation et de la gravité de chaque constat, complétion des cellules vides et correction des saisies, en français ou en anglais.
 
@@ -18,7 +18,9 @@ LM Studio convient aussi : renseigner alors l'URL `http://localhost:1234/v1` dan
 
 ### 2. L'application
 
-**Windows** : double-cliquer sur `start.bat`. Prérequis : [Python 3.10+](https://www.python.org/downloads/), installé en cochant « Add python.exe to PATH ». Au premier lancement, `start.bat` installe les dépendances dans un environnement isolé (`.venv`), vérifie que le modèle local répond, puis ouvre l'application sur http://localhost:8501 (accessible depuis ce poste seulement).
+**Windows, exécutable (recommandé)** : `AuditErgo.exe`, sans Python ni rien à installer. Le télécharger depuis la dernière release GitHub du dépôt (fichier `AuditErgo-X.Y.Z.exe`), le copier dans un dossier, double-cliquer. Une fenêtre noire s'ouvre : la garder ouverte pendant l'utilisation (la fermer arrête l'application) ; le navigateur s'ouvre sur http://localhost:8501. Depuis l'exe, l'historique des audits et le cache des réponses sont enregistrés dans `%APPDATA%\AuditErgo`, et un fichier `.env` facultatif se place **à côté de l'exe**. Windows SmartScreen peut afficher « Windows a protégé votre ordinateur » au premier lancement (exécutable non signé) : « Informations complémentaires » puis « Exécuter quand même ».
+
+**Windows, depuis les sources** : double-cliquer sur `start.bat`. Prérequis : [Python 3.10+](https://www.python.org/downloads/), installé en cochant « Add python.exe to PATH ». Au premier lancement, `start.bat` installe les dépendances dans un environnement isolé (`.venv`), vérifie que le modèle local répond, puis ouvre l'application sur http://localhost:8501 (accessible depuis ce poste seulement).
 
 **Autres systèmes** :
 ```bash
@@ -117,6 +119,22 @@ Exemples fictifs : `exemples/audit_fictif.xlsx` (erreurs de forme volontaires) e
 
 Chaque audit déposé est enregistré sur le poste (`.donnees/audits/`, jamais envoyé ailleurs) avec sa relecture, les avis de l'IA, les décisions du designer et le rapport : il se rouvre après la fermeture de l'application. La page « Historique » liste les audits, permet d'en supprimer, et d'en **comparer deux** (deux versions d'un même produit, par exemple) : problèmes, gravités, écrans et catégories de critères, avec les écarts. `AUDIT_ERGO_HISTORIQUE=0` désactive l'enregistrement ; `AUDIT_ERGO_HISTORIQUE=<dossier>` change son emplacement.
 
+## Versions
+
+Le numéro de version vit à **un seul endroit** : le fichier `VERSION`, à la racine. L'application (`/health`, `--version`) et l'exe (Propriétés › Détails sous Windows) le lisent là. Les changements sont notés au fil de l'eau dans `CHANGELOG.md`, section « Non publié ».
+
+Numérotation `MAJEUR.MINEUR.CORRECTIF` ([versionnage sémantique](https://semver.org/lang/fr/)) : correction → `patch` (1.0.0 → 1.0.1), nouvelle fonction → `minor` (1.0.1 → 1.1.0), changement qui casse l'existant (audits ou réglages enregistrés illisibles par l'ancienne version) → `major` (1.1.0 → 2.0.0).
+
+Publier une version :
+
+1. Vérifier que `CHANGELOG.md` décrit bien ce qui a changé, sous « Non publié ».
+2. `python scripts/bump_version.py minor` (ou `patch`, `major`, ou un numéro `1.2.0`) : met à jour `VERSION`, la version de l'interface et date la section du journal.
+3. Committer, fusionner sur `main`.
+4. Sur GitHub : *Releases › Draft a new release*, tag **`vX.Y.Z`** (le même numéro que `VERSION`), coller la section du journal en description, *Publish release*.
+5. Le workflow « Build Windows exe » fabrique l'exe, vérifie qu'il démarre et le joint à la release sous le nom `AuditErgo-X.Y.Z.exe` (quelques minutes). Si le tag ne correspond pas à `VERSION`, il s'arrête avec un message.
+
+À chaque push, le même workflow dépose l'exe en artefact `AuditErgo-windows` (onglet *Actions*), pour essayer une branche avant de publier. Fabrication à la main, sur un PC Windows : `pip install -r requirements.txt pyinstaller` puis `pyinstaller --noconfirm AuditErgo.spec` (résultat dans `dist\`).
+
 ## Lancement par le portail
 
 L'application respecte le contrat commun aux applications de la suite :
@@ -125,9 +143,9 @@ L'application respecte le contrat commun aux applications de la suite :
 |---|---|
 | Port par défaut | **8501** |
 | Options | `--port N` (port imposé : échec explicite, code 2, s'il est pris par une autre application), `--no-browser` (ancien nom `--sans-navigateur`, toujours accepté), `--version` |
-| État | `GET /health` → `{"status": "ok", "app": "audit-ergo", "name": "Audit ergonomique", "version": "…"}` |
+| État | `GET /health` → `{"status": "ok", "app": "audit-ergo", "name": "AuditErgo", "version": "…"}` |
 
-Exemple : `python -m serveur --port 8501 --no-browser`. La version se règle dans `serveur/__init__.py`.
+Exemple : `AuditErgo.exe --port 8501 --no-browser`, ou depuis les sources `python -m serveur --port 8501 --no-browser`. La version vient du fichier `VERSION` (voir « Versions »).
 
 ## Interface : développement
 

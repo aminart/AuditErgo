@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from audit_ergo import ErreurLecture, Referentiel, parametres, relire
 from audit_ergo.cache import CacheSuggestions
+from audit_ergo.chemins import ressources
 from audit_ergo.completion import decider
 from audit_ergo.controles import controler
 from audit_ergo.export import exporter
@@ -32,7 +33,7 @@ from . import serialisation as ser
 from .historique import Historique, maintenant
 from .taches import Taches
 
-RACINE = Path(__file__).resolve().parent.parent
+RACINE = ressources()  # interface et templates : dans le dépôt, ou dans AuditErgo.exe
 WEB = RACINE / "web" / "dist"
 TEMPLATES = {"fr": RACINE / "template" / "Audit_ergonomique_FR.xlsx", "en": RACINE / "template" / "Ergonomic_audit_EN.xlsx"}
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -170,7 +171,7 @@ def creer_app(ref=None, historique=None):
     historique = historique or Historique.defaut()
     sessions: dict[str, Session] = {}
     taches = Taches()
-    app = FastAPI(title="Audit ergonomique assisté", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="AuditErgo", docs_url=None, redoc_url=None, openapi_url=None)
     # Refuse les requêtes adressées à un autre nom que ce poste (protection contre le « DNS rebinding » :
     # une page web malveillante ne peut pas atteindre l'application par un nom de domaine qui pointe ici)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
