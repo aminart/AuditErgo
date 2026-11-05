@@ -6,7 +6,9 @@ from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 
-CHEMIN_DEFAUT = Path(__file__).resolve().parent.parent / "referentiel" / "referentiel.json"
+from .chemins import ressources
+
+CHEMIN_DEFAUT = ressources() / "referentiel" / "referentiel.json"
 CODE_CRITERE = re.compile(r"\b([A-Z]{3}-\d{2})\b")
 CODE_CATEGORIE = re.compile(r"^\s*([A-Z]{3})\b")
 
