@@ -3,12 +3,12 @@
 L'IA est un serveur qui expose une API compatible OpenAI (/v1/chat/completions) : modèle installé sur le
 poste (Ollama, LM Studio…) ou passerelle de l'organisation.
 
-Connexion au modèle : trois paramètres, dans l'environnement ou le fichier .env à la racine du dépôt
-(voir .env.exemple) :
-- API_BASE  : adresse du serveur du modèle (défaut : http://localhost:11434/v1, celle d'Ollama) ;
-- API_KEY   : clé d'API exigée par le serveur (laisser vide s'il n'en demande pas) ;
-- CA_BUNDLE : fichier de certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur.
-Plus le nom du modèle : AUDIT_ERGO_MODELE (défaut : mistral-small).
+Connexion au modèle : écran Réglages de l'application (comme SpecGen), ou variables de l'environnement /
+du fichier .env, prioritaires champ par champ (voir parametres.py et .env.exemple) :
+- adresse du serveur (API_BASE ; défaut : http://localhost:11434/v1, celle d'Ollama) ;
+- clé d'API (API_KEY ; facultative, Ollama n'en demande pas) ;
+- certificat de l'autorité qui a signé le certificat HTTPS du serveur (CA_BUNDLE, ou .crt importé) ;
+- nom du modèle (AUDIT_ERGO_MODELE ; défaut : mistral-small) et délai (AUDIT_ERGO_DELAI).
 """
 import ipaddress
 import json
@@ -20,6 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
+from . import parametres
 from .cache import CacheSuggestions
 from .i18n import GRAVITES, TYPES_RECO, langue_defaut, t
 
@@ -27,7 +28,7 @@ FICHIER_ENV = Path(__file__).resolve().parent.parent / ".env"
 CONFIANCES = ["haute", "moyenne", "faible"]
 VERDICTS = ["confirme", "a_revoir", "incorrect", "non_fourni"]
 STATUTS_RECO = ["bonne", "a_ameliorer", "hors_sujet", "non_fournie"]
-ADRESSE_DEFAUT = "http://localhost:11434/v1"
+ADRESSE_DEFAUT = parametres.ADRESSE_DEFAUT
 NOMS_LANGUE = {"fr": "français", "en": "anglais"}
 
 
@@ -62,22 +63,26 @@ def charger_env(chemin=FICHIER_ENV):
 
 
 charger_env()  # avant de lire la configuration ci-dessous, pour qu'elle puisse venir du .env
-MODELE = os.environ.get("AUDIT_ERGO_MODELE", "mistral-small")
 MAX_TOKENS = int(os.environ.get("AUDIT_ERGO_MAX_TOKENS", "4000"))
 # Basse : un même constat doit donner la même réponse d'un designer à l'autre
 TEMPERATURE = float(os.environ.get("AUDIT_ERGO_TEMPERATURE", "0.2"))
 # Un modèle local traite en général une requête à la fois : en lancer plusieurs ne fait que les ralentir
 PARALLELE = max(1, int(os.environ.get("AUDIT_ERGO_PARALLELE", "1")))
-DELAI = float(os.environ.get("AUDIT_ERGO_DELAI", "600"))  # secondes : un modèle local sur CPU peut être lent
 
 
-def _env(*noms):
-    return next((os.environ[n].strip() for n in noms if os.environ.get(n, "").strip()), None)
+def connexion():
+    """Paramètres de connexion en vigueur : .env / environnement d'abord, puis l'écran Réglages."""
+    charger_env()
+    return parametres.effectifs()
 
 
 def adresse_api():
-    charger_env()
-    return _env("API_BASE") or ADRESSE_DEFAUT
+    return connexion().api_base
+
+
+def modele():
+    """Nom du modèle utilisé (réglable sans redémarrer, depuis l'écran Réglages ou le .env)."""
+    return connexion().model
 
 
 def ia_configuree():
@@ -100,12 +105,12 @@ def est_locale(adresse):
 def verifier_adresse(adresse):
     """Refuse une adresse mal formée."""
     if urlparse(adresse).scheme not in ("http", "https") or not urlparse(adresse).hostname:
-        raise ErreurSuggestion(f"API_BASE invalide : « {adresse} » (attendu par ex. : http://localhost:11434/v1).")
+        raise ErreurSuggestion(f"Adresse du serveur invalide (Réglages ou API_BASE) : « {adresse} » "
+                               "(attendu par ex. : http://localhost:11434/v1).")
 
 
-def _contexte_ssl():
-    """Contexte SSL construit à partir de CA_BUNDLE, ou None si la variable est vide."""
-    ca = _env("CA_BUNDLE")
+def _contexte_ssl(ca):
+    """Contexte SSL construit à partir du fichier de certificats (CA_BUNDLE ou .crt importé), ou None."""
     if not ca:
         return None
     chemin = Path(ca).expanduser()
@@ -131,23 +136,25 @@ def _base_url(adresse):
     return adresse
 
 
-def client_ou_none(api_key=None):
-    """Client du modèle (API_BASE, API_KEY, CA_BUNDLE), ou None si l'IA est désactivée (AUDIT_ERGO_IA=0).
+def client_ou_none(api_key=None, params=None):
+    """Client du modèle (adresse, clé, certificat), ou None si l'IA est désactivée (AUDIT_ERGO_IA=0).
 
-    Lève ErreurSuggestion si API_BASE est mal formée ou si CA_BUNDLE est invalide.
+    `params` : paramètres à utiliser à la place de ceux en vigueur (test depuis l'écran Réglages avant
+    d'enregistrer). Lève ErreurSuggestion si l'adresse est mal formée ou si le certificat est invalide.
     """
     if not ia_configuree():
         return None
-    adresse = adresse_api()
+    p = params or connexion()
+    adresse = p.api_base
     verifier_adresse(adresse)
     import openai
 
     # Serveur sur le poste : connexion directe, sans passer par le proxy éventuel du poste.
     # Serveur distant : réglages réseau du poste (proxy, NO_PROXY), comme le navigateur.
-    options = {"trust_env": not est_locale(adresse), "timeout": DELAI}
-    if contexte_ssl := _contexte_ssl():
+    options = {"trust_env": not est_locale(adresse), "timeout": p.timeout}
+    if contexte_ssl := _contexte_ssl(p.ca_bundle):
         options["verify"] = contexte_ssl
-    return openai.OpenAI(api_key=api_key or _env("API_KEY") or "local", base_url=_base_url(adresse),
+    return openai.OpenAI(api_key=api_key or p.api_key or "local", base_url=_base_url(adresse),
                          max_retries=1, http_client=openai.DefaultHttpxClient(**options))
 
 
@@ -321,7 +328,7 @@ def construire_requete(ref, constat, ecran=None, critere_designer=None, contexte
                        f"en {NOMS_LANGUE.get(langue, 'français')}. Les codes et les valeurs imposées par le "
                        f"schéma restent tels quels.")
     return {
-        "model": MODELE,
+        "model": modele(),
         "max_tokens": MAX_TOKENS,
         "temperature": TEMPERATURE,
         "messages": [
@@ -455,22 +462,23 @@ def _erreur_api(e):
     if isinstance(e, openai.APIConnectionError):
         cause = repr(e.__cause__ or e)
         if "CERTIFICATE_VERIFY_FAILED" in cause or "SSL" in cause:
-            return ErreurSuggestion(f"Certificat HTTPS de {adresse} refusé : renseignez CA_BUNDLE avec le fichier de "
-                                    "certificats (PEM) de l'autorité qui l'a signé.")
+            return ErreurSuggestion(f"Certificat HTTPS de {adresse} refusé : importez dans Réglages le certificat (.crt) "
+                                    "de l'autorité qui l'a signé (ou renseignez CA_BUNDLE dans .env).")
         return ErreurSuggestion(
             f"Le modèle local ne répond pas à {adresse}. Vérifiez qu'il est lancé (Ollama : application "
-            "ouverte, ou « ollama serve ») et que API_BASE est correct.")
+            "ouverte, ou « ollama serve ») et que l'adresse est correcte (Réglages ou API_BASE).")
     if isinstance(e, openai.NotFoundError):
+        m = modele()
         return ErreurSuggestion(
-            f"Modèle « {MODELE} » introuvable sur {adresse}. Vérifiez AUDIT_ERGO_MODELE (Ollama : « ollama list » "
-            f"affiche les modèles installés ; « ollama pull {MODELE} » l'installe).")
+            f"Modèle « {m} » introuvable sur {adresse}. Vérifiez le modèle (Réglages ou AUDIT_ERGO_MODELE ; Ollama : "
+            f"« ollama list » affiche les modèles installés ; « ollama pull {m} » l'installe).")
     if isinstance(e, (openai.AuthenticationError, openai.PermissionDeniedError)):
-        return ErreurSuggestion("Le serveur du modèle refuse la clé : vérifiez API_KEY.")
+        return ErreurSuggestion("Le serveur du modèle refuse la clé : vérifiez la clé d'API (Réglages ou API_KEY).")
     if isinstance(e, openai.BadRequestError):
         return ErreurSuggestion(f"Requête refusée par le serveur local : {e.message}")
     if isinstance(e, openai.APITimeoutError):
-        return ErreurSuggestion(f"Le modèle local n'a pas répondu en {DELAI:.0f} s : augmentez AUDIT_ERGO_DELAI ou "
-                                "utilisez un modèle plus léger.")
+        return ErreurSuggestion(f"Le modèle n'a pas répondu en {connexion().timeout:.0f} s : augmentez le délai (Réglages, "
+                                "options avancées, ou AUDIT_ERGO_DELAI) ou utilisez un modèle plus léger.")
     if isinstance(e, openai.APIStatusError):
         return ErreurSuggestion(f"Erreur du serveur local ({e.status_code}) : {e.message}")
     raise e

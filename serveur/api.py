@@ -3,10 +3,10 @@
 Les audits déposés sont enregistrés sur ce poste (voir `historique.py`) et se rouvrent après un redémarrage.
 """
 import io
-import os
 import threading
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -14,17 +14,17 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from audit_ergo import ErreurLecture, Referentiel, relire
+from audit_ergo import ErreurLecture, Referentiel, parametres, relire
 from audit_ergo.cache import CacheSuggestions
 from audit_ergo.completion import decider
 from audit_ergo.controles import controler
 from audit_ergo.export import exporter
 from audit_ergo.i18n import LANGUES, langue_defaut
 from audit_ergo.rapport import ecrire_docx, faits, maturite_indicative, rediger
-from audit_ergo.suggestion import (MODELE, ErreurSuggestion, adresse_api, client_ou_none, est_locale, ia_configuree,
-                                   suggerer)
+from audit_ergo.suggestion import (FICHIER_ENV, ErreurSuggestion, client_ou_none, connexion, est_locale,
+                                   ia_configuree, suggerer)
 from audit_ergo.synthese import synthetiser
 
 from . import APP_ID, APP_NOM, VERSION
@@ -40,18 +40,42 @@ DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 TAILLE_MAX = 30 * 1024 * 1024  # un audit Excel, même avec des captures, reste bien en dessous
 
 MESSAGES = {
-    "ok": ("Modèle disponible.", "Model available."),
-    "cle": ("Clé refusée par le serveur : vérifiez API_KEY dans .env.", "Key refused by the server: check API_KEY in .env."),
-    "absent": ("Le serveur répond, mais le modèle « {m} » n'y est pas installé. Modèles disponibles : {liste}. "
-               "Corrigez AUDIT_ERGO_MODELE dans .env, ou installez-le (« ollama pull {m} »).",
-               "The server answers, but model “{m}” is not installed. Available models: {liste}. Fix "
-               "AUDIT_ERGO_MODELE in .env, or install it (“ollama pull {m}”)."),
-    "injoignable": ("Le modèle ne répond pas à {a}. Vérifiez API_BASE, API_KEY et CA_BUNDLE dans .env, ou lancez "
-                    "Ollama (ou LM Studio) s'il est sur ce poste.",
-                    "The model does not answer at {a}. Check API_BASE, API_KEY and CA_BUNDLE in .env, or start "
-                    "Ollama (or LM Studio) if it runs on this computer."),
+    # Test de connexion de l'écran Réglages : (titre, explication) en français puis en anglais
+    "ok": ("Connexion opérationnelle", "Connection working"),
+    "ok_detail": ("modèle {m}", "model {m}"),
+    "configuration": ("Échec de la connexion : paramètres invalides", "Connection failed: invalid settings"),
+    "certificat": ("Échec de la connexion : certificat non reconnu", "Connection failed: certificate not recognised"),
+    "certificat_detail": ("Le serveur a été joint, mais la connexion sécurisée a été refusée. Importez le certificat (.crt) "
+                          "de l'autorité qui a signé celui du serveur, fourni par votre service informatique.",
+                          "The server was reached, but the secure connection was refused. Import the certificate (.crt) "
+                          "of the authority that signed the server's certificate, provided by your IT department."),
+    "delai": ("Échec de la connexion : délai dépassé", "Connection failed: timeout"),
+    "delai_detail": ("Le service n'a pas répondu à temps. Vérifiez l'adresse et votre accès au réseau.",
+                     "The service did not answer in time. Check the address and your network access."),
+    "injoignable": ("Échec de la connexion : serveur injoignable", "Connection failed: server unreachable"),
+    "injoignable_detail": ("Aucune réponse de {a}. Vérifiez l'adresse, votre accès au réseau (VPN), ou lancez Ollama "
+                           "(ou LM Studio) s'il est sur ce poste.",
+                           "No answer from {a}. Check the address, your network access (VPN), or start Ollama "
+                           "(or LM Studio) if it runs on this computer."),
+    "cle": ("Échec de la connexion : clé API refusée", "Connection failed: API key refused"),
+    "cle_detail": ("Le service a refusé la clé API. Vérifiez qu'elle a été copiée en entier et qu'elle est toujours valide.",
+                   "The service refused the API key. Check that it was copied in full and is still valid."),
+    "introuvable_adresse": ("Échec de la connexion : adresse ou modèle introuvable", "Connection failed: address or model not found"),
+    "introuvable_adresse_detail": ("Le service répond, mais l'adresse ou le modèle demandé n'existe pas. Vérifiez l'adresse "
+                                   "(elle se termine souvent par /v1) et le modèle.",
+                                   "The service answers, but the address or the requested model does not exist. Check the "
+                                   "address (it often ends with /v1) and the model."),
+    "absent": ("Modèle « {m} » introuvable", "Model “{m}” not found"),
+    "absent_detail": ("Le serveur répond, mais ce modèle n'y est pas installé. Modèles disponibles : {liste}. Corrigez le "
+                      "modèle (options avancées), ou installez-le (« ollama pull {m} »).",
+                      "The server answers, but this model is not installed. Available models: {liste}. Fix the model "
+                      "(advanced options), or install it (“ollama pull {m}”)."),
+    "erreur_statut": ("Échec de la connexion : erreur {code}", "Connection failed: error {code}"),
+    "echec": ("Échec de la connexion", "Connection failed"),
     "desactivee": ("IA désactivée (AUDIT_ERGO_IA=0) : seuls les contrôles de forme sont disponibles.",
                    "AI disabled (AUDIT_ERGO_IA=0): only form checks are available."),
+    "certificat_invalide": ("Ce fichier n'est pas un certificat valide (.crt au format PEM ou DER attendu).",
+                            "This file is not a valid certificate (.crt in PEM or DER format expected)."),
     "illisible": ("Impossible de lire ce fichier : {e}", "Cannot read this file: {e}"),
     "corrompu": ("Le fichier n'a pas pu être ouvert ({e}). Vérifiez qu'il s'agit d'un .xlsx valide.",
                  "The file could not be opened ({e}). Check that it is a valid .xlsx file."),
@@ -129,6 +153,16 @@ def modifier_rapport(r, chemin, valeur):
     else:
         raise ValueError(f"Modification refusée : {chemin}")
     r.modifie = True
+
+
+DELAI_TEST = 30.0  # secondes : le test de l'écran Réglages ne doit pas faire attendre 10 minutes
+
+
+class DemandeParametres(BaseModel):
+    api_base: str = ""
+    api_key: str | None = None  # None : garder la clé enregistrée
+    model: str = parametres.MODELE_DEFAUT
+    timeout: float = Field(default=parametres.DELAI_DEFAUT, ge=10, le=3600)
 
 
 def creer_app(ref=None, historique=None):
@@ -219,41 +253,120 @@ def creer_app(ref=None, historique=None):
     def config(langue: str = ""):
         lg = _langue(langue)
         cache = CacheSuggestions.defaut()
-        adresse = adresse_api()
-        cle, ca = os.environ.get("API_KEY", "").strip(), os.environ.get("CA_BUNDLE", "").strip()
+        p = connexion()
         return {
             "langue_defaut": langue_defaut(), "langues": LANGUES,
             "referentiel": ser.referentiel(ref, lg),
-            "ia": {"active": ia_configuree(), "modele": MODELE, "adresse": adresse, "cle": bool(cle),
-                   "ca_bundle": Path(ca).name if ca else "", "locale": est_locale(adresse),
-                   "hote": urlparse(adresse).hostname or ""},
+            "ia": {"active": ia_configuree(), "modele": p.model, "adresse": p.api_base, "cle": bool(p.api_key),
+                   "ca_bundle": Path(p.ca_bundle).name if p.ca_bundle else "", "locale": est_locale(p.api_base),
+                   "hote": urlparse(p.api_base).hostname or ""},
             "cache": None if cache is None else cache.taille(),
         }
 
-    @app.post("/api/connexion")
-    def tester_connexion(langue: str = ""):
-        lg = _langue(langue)
-        if not ia_configuree():
-            return {"statut": "desactivee", "message": message("desactivee", lg)}
+    # --- Paramètres de connexion au modèle (écran Réglages, comme SpecGen) -----------------------------
+
+    def parametres_publics():
+        connexion()  # recharge le .env : une valeur modifiée à la main est prise en compte sans redémarrer
+        return {**parametres.publics(FICHIER_ENV), "active": ia_configuree()}
+
+    @app.get("/api/settings")
+    def lire_parametres():
+        return parametres_publics()
+
+    @app.put("/api/settings")
+    def enregistrer_parametres(demande: DemandeParametres):
+        parametres.enregistrer(demande.api_base, demande.api_key, demande.model, demande.timeout)
+        return parametres_publics()
+
+    @app.delete("/api/settings")
+    def effacer_parametres():
+        parametres.effacer()
+        return parametres_publics()
+
+    @app.post("/api/settings/certificate")
+    def importer_certificat(file: UploadFile = File(...), langue: str = ""):
         try:
-            cl = client_ou_none()
+            parametres.importer_certificat(file.filename or "certificat.crt", file.file.read())
+        except ValueError as e:
+            raise HTTPException(422, message("certificat_invalide", _langue(langue))) from e
+        return parametres_publics()
+
+    @app.post("/api/settings/test")
+    def tester_parametres(demande: DemandeParametres, langue: str = ""):
+        """Teste les valeurs saisies (pas encore enregistrées) avec le certificat enregistré."""
+        lg = _langue(langue)
+        en_vigueur = connexion()
+        env = en_vigueur.depuis_env
+        candidat = replace(
+            en_vigueur,
+            api_base=en_vigueur.api_base if "api_base" in env else (demande.api_base.strip() or parametres.ADRESSE_DEFAUT),
+            api_key=en_vigueur.api_key if demande.api_key is None or "api_key" in env else demande.api_key.strip(),
+            model=en_vigueur.model if "model" in env else (demande.model.strip() or parametres.MODELE_DEFAUT),
+            timeout=min(en_vigueur.timeout if "timeout" in env else demande.timeout, DELAI_TEST),
+        )
+        resultat = _tester(candidat, lg)
+        resultat.update({"at": datetime.now(timezone.utc).isoformat(), "model": candidat.model})
+        if resultat.get("field") != "disabled":
+            parametres.enregistrer_test(resultat)
+        return resultat
+
+    def _tester(p, lg):
+        if not ia_configuree():
+            return _echec("disabled", message("desactivee", lg), "", lg)
+        try:
+            cl = client_ou_none(params=p)
         except ErreurSuggestion as e:
-            return {"statut": "configuration", "message": str(e)}
+            return _echec("api_base", message("configuration", lg), str(e), lg)
         import openai
 
         try:
             modeles = [m.id for m in cl.models.list()]
-        except openai.NotFoundError:  # passerelle sans /v1/models : elle répond, mais ne liste pas ses modèles
-            return {"statut": "ok", "message": message("ok", lg)}
-        except openai.AuthenticationError:
-            return {"statut": "cle", "message": message("cle", lg)}
-        except Exception as e:  # noqa: BLE001 : serveur injoignable, certificat refusé…
-            return {"statut": "injoignable", "message": message("injoignable", lg, a=adresse_api()),
-                    "detail": f"{type(e).__name__} : {e}"}
+        except (openai.AuthenticationError, openai.PermissionDeniedError) as e:
+            return _diagnostic(e, p, lg)
+        except openai.APIStatusError:
+            # Passerelle sans /v1/models (404, 405, 501…) : elle répond, mais ne liste pas ses modèles.
+            # Un petit appel au modèle vérifie l'adresse, la clé et le nom du modèle.
+            try:
+                cl.chat.completions.create(model=p.model, max_tokens=1, messages=[{"role": "user", "content": "ping"}])
+            except Exception as e:  # noqa: BLE001 : diagnostiqué ci-dessous
+                return _diagnostic(e, p, lg)
+            return _reussite(p, lg)
+        except Exception as e:  # noqa: BLE001 : serveur injoignable, certificat refusé, clé refusée…
+            return _diagnostic(e, p, lg)
         # Ollama nomme les modèles « nom:étiquette » ; « mistral-small » désigne « mistral-small:latest »
-        if any(m == MODELE or m.split(":")[0] == MODELE for m in modeles):
-            return {"statut": "ok", "message": message("ok", lg)}
-        return {"statut": "absent", "message": message("absent", lg, m=MODELE, liste=", ".join(modeles) or "—")}
+        if any(m == p.model or m.split(":")[0] == p.model for m in modeles):
+            return _reussite(p, lg)
+        return _echec("model", message("absent", lg, m=p.model),
+                      message("absent_detail", lg, m=p.model, liste=", ".join(modeles) or "—"), lg)
+
+    def _reussite(p, lg):
+        return {"ok": True, "field": None, "title": message("ok", lg), "message": message("ok_detail", lg, m=p.model)}
+
+    def _echec(champ, titre, explication, lg):
+        return {"ok": False, "field": champ, "title": titre, "message": explication}
+
+    def _diagnostic(e, p, lg):
+        import ssl
+
+        import openai
+
+        cause, chaine = e, []
+        while cause is not None and len(chaine) < 10:
+            chaine.append(cause)
+            cause = cause.__cause__ or cause.__context__
+        if any(isinstance(c, ssl.SSLError) or "CERTIFICATE_VERIFY_FAILED" in str(c) for c in chaine):
+            return _echec("certificate", message("certificat", lg), message("certificat_detail", lg), lg)
+        if isinstance(e, openai.APITimeoutError):
+            return _echec("api_base", message("delai", lg), message("delai_detail", lg), lg)
+        if isinstance(e, openai.APIConnectionError):
+            return _echec("api_base", message("injoignable", lg), message("injoignable_detail", lg, a=p.api_base), lg)
+        if isinstance(e, (openai.AuthenticationError, openai.PermissionDeniedError)):
+            return _echec("api_key", message("cle", lg), message("cle_detail", lg), lg)
+        if isinstance(e, openai.NotFoundError):
+            return _echec("api_base", message("introuvable_adresse", lg), message("introuvable_adresse_detail", lg), lg)
+        if isinstance(e, openai.APIStatusError):
+            return _echec(None, message("erreur_statut", lg, code=e.status_code), str(e.message), lg)
+        return _echec(None, message("echec", lg), f"{type(e).__name__} : {e}", lg)
 
     @app.delete("/api/cache")
     def vider_cache():

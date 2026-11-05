@@ -2,7 +2,7 @@
 
 Aide les UX designers à produire des audits ergonomiques (heuristiques) du même standard : contrôle de forme, proposition du critère, de la recommandation et de la gravité de chaque constat, complétion des cellules vides et correction des saisies, en français ou en anglais.
 
-L'IA est un modèle Mistral servi au format OpenAI (`/v1/chat/completions`) : installé sur le poste (Ollama, LM Studio), auquel cas aucune donnée ne quitte le poste, ou passerelle de l'organisation. La connexion se règle avec `API_BASE`, `API_KEY` et `CA_BUNDLE`. Voir `CONCEPTION.md` § 2.
+L'IA est un modèle Mistral servi au format OpenAI (`/v1/chat/completions`) : installé sur le poste (Ollama, LM Studio), auquel cas aucune donnée ne quitte le poste, ou passerelle de l'organisation. La connexion se règle dans l'application, écran **Réglages**, comme dans SpecGen (voir « 3. Connexion au modèle »).
 
 Le fonctionnement détaillé, écran par écran, est décrit dans [`FONCTIONNEMENT.md`](FONCTIONNEMENT.md).
 
@@ -14,32 +14,45 @@ Le fonctionnement détaillé, écran par écran, est décrit dans [`FONCTIONNEME
 2. Installer le modèle : `ollama pull mistral-small` (ou `mistral-nemo` sur un poste moins puissant).
 3. **Agrandir la fenêtre de contexte** : définir la variable d'environnement `OLLAMA_CONTEXT_LENGTH=16384`, puis redémarrer Ollama. Sans cela, Ollama tronque le référentiel envoyé au modèle (l'application le détecte et l'indique).
 
-LM Studio convient aussi : renseigner alors `API_BASE=http://localhost:1234/v1` dans `.env` et régler la « Context Length » du modèle à 16384.
+LM Studio convient aussi : renseigner alors l'URL `http://localhost:1234/v1` dans l'écran Réglages et régler la « Context Length » du modèle à 16384.
 
 ### 2. L'application
 
-**Windows** : double-cliquer sur `start.bat`. Prérequis : [Python 3.10+](https://www.python.org/downloads/), installé en cochant « Add python.exe to PATH ». Au premier lancement, `start.bat` crée le fichier `.env` (à vérifier dans le Bloc-notes), installe les dépendances dans un environnement isolé (`.venv`), vérifie que le modèle local répond, puis ouvre l'application sur http://localhost:8501 (accessible depuis ce poste seulement).
+**Windows** : double-cliquer sur `start.bat`. Prérequis : [Python 3.10+](https://www.python.org/downloads/), installé en cochant « Add python.exe to PATH ». Au premier lancement, `start.bat` installe les dépendances dans un environnement isolé (`.venv`), vérifie que le modèle local répond, puis ouvre l'application sur http://localhost:8501 (accessible depuis ce poste seulement).
 
 **Autres systèmes** :
 ```bash
 pip install -r requirements.txt
-cp .env.exemple .env      # à adapter si besoin
 python -m serveur        # ouvre http://localhost:8501
 ```
 
-### 3. Configuration (`.env`)
+### 3. Connexion au modèle : écran Réglages
 
-La connexion au modèle se règle avec **trois paramètres** :
+Même fenêtre et même fonctionnement que dans SpecGen. Sans aucun réglage, l'application utilise Ollama sur ce poste (`http://localhost:11434/v1`, modèle `mistral-small`).
 
-| Variable | Défaut | Rôle |
-|---|---|---|
-| `API_BASE` | `http://localhost:11434/v1` | Adresse du serveur du modèle : Ollama ou LM Studio sur le poste, ou passerelle compatible OpenAI. |
-| `API_KEY` | — | Clé d'API exigée par le serveur ; laisser vide s'il n'en demande pas (Ollama). |
-| `CA_BUNDLE` | — | Fichier de certificats (PEM) de l'autorité qui a signé le certificat HTTPS du serveur (inutile en `http://`). Sert aussi à installer les dépendances derrière un proxy d'entreprise. |
+| Champ | Rôle |
+|---|---|
+| URL du service | Ollama ou LM Studio sur le poste, ou passerelle compatible OpenAI de l'organisation. Un repère indique si les constats restent sur le poste. |
+| Clé API *(facultative)* | Exigée par une passerelle. **Chiffrée avec le compte Windows** (DPAPI), jamais réaffichée en clair. |
+| Certificat de l'entreprise *(facultatif)* | Fichier `.crt` (PEM ou DER) de l'autorité qui a signé le certificat HTTPS du serveur, **copié dans l'application** ; sa date d'expiration est affichée. |
+| Options avancées | Nom du modèle et délai maximal d'une réponse. |
 
-S'y ajoutent `AUDIT_ERGO_MODELE` (nom du modèle sur ce serveur, défaut `mistral-small`) et `AUDIT_ERGO_LANGUE` (`fr` ou `en`). La barre latérale de l'application affiche la configuration utilisée et propose un bouton « Tester la connexion ».
+**Tester la connexion** vérifie les valeurs saisies avant de les enregistrer et indique la cause d'un échec : serveur injoignable, délai dépassé, certificat non reconnu, clé refusée, adresse introuvable, ou modèle absent du serveur (avec la liste des modèles disponibles et la commande `ollama pull`).
 
-Autres réglages (température, délai, cache, désactivation de l'IA…) : voir `.env.exemple`.
+Les paramètres sont enregistrés pour l'utilisateur, dans `%APPDATA%\AuditErgo` (`~/.config/audit-ergo` hors Windows ; `AUDIT_ERGO_CONFIG` pour un autre dossier).
+
+**Déploiement sur plusieurs postes** : un fichier `.env` à la racine de l'application (modèle : `.env.exemple`) est **prioritaire, champ par champ**. Un champ ainsi imposé apparaît grisé dans l'écran.
+
+| Variable | Champ de l'écran |
+|---|---|
+| `API_BASE` | URL du service |
+| `API_KEY` | Clé API |
+| `CA_BUNDLE` | Certificat (chemin d'un fichier PEM). Sert aussi à `start.bat` pour installer les dépendances derrière un proxy d'entreprise. |
+| `AUDIT_ERGO_MODELE`, `AUDIT_ERGO_DELAI` | Modèle, délai |
+
+> **Mise à jour depuis une version précédente** : l'ancien `.env` reste valable, mais ses lignes `API_BASE`, `API_KEY`, `CA_BUNDLE` et `AUDIT_ERGO_MODELE` bloquent les champs correspondants de l'écran. Pour régler la connexion depuis l'écran, mettez un `#` devant ces lignes.
+
+Autres réglages, uniquement par le `.env` : langue (`AUDIT_ERGO_LANGUE`), température, cache, désactivation de l'IA (`AUDIT_ERGO_IA=0`)… voir `.env.exemple`.
 
 ## Templates
 

@@ -21,7 +21,7 @@ from datetime import date, datetime
 
 from .cache import CacheSuggestions
 from .i18n import GRAVITES, TYPES_RECO, libelle_gravite, lire_gravite, lire_type, lire_type_reco
-from .suggestion import DEFAUT, MAX_TOKENS, MODELE, NOMS_LANGUE, TEMPERATURE, ErreurSuggestion, _appeler
+from .suggestion import DEFAUT, MAX_TOKENS, NOMS_LANGUE, TEMPERATURE, ErreurSuggestion, _appeler, modele
 
 POIDS = {1: 1, 2: 2, 3: 4, 4: 8}  # poids d'un problème selon sa gravité (non renseignée : 1)
 IMPACTS = ["fort", "moyen", "modere"]
@@ -422,7 +422,7 @@ def _requete(nom, consignes, schema, donnees, langue):
     consigne_json = ("Réponds uniquement avec un objet JSON valide, sans texte autour ni bloc de code, conforme à "
                      "ce schéma JSON :\n" + json.dumps(schema, ensure_ascii=False))
     return {
-        "model": MODELE, "max_tokens": MAX_TOKENS_RAPPORT, "temperature": TEMPERATURE,
+        "model": modele(), "max_tokens": MAX_TOKENS_RAPPORT, "temperature": TEMPERATURE,
         "messages": [{"role": "system", "content": f"{consignes}\n\n{consigne_json}"},
                      {"role": "user", "content": f"{donnees}\n\n{_consigne_langue(langue)}"}],
         "response_format": {"type": "json_schema", "json_schema": {"name": nom, "strict": True, "schema": schema}},
@@ -852,7 +852,7 @@ def ecrire_docx(r, sortie, ref=None):
     for nom, valeur in infos:
         d.paragraphe(valeur, gras=f"{nom} : ")
     d.doc.add_paragraph()
-    note = d.l("redaction_ia", m=MODELE) if r.ia else d.l("redaction_sans_ia")
+    note = d.l("redaction_ia", m=modele()) if r.ia else d.l("redaction_sans_ia")
     d.paragraphe(note, italique=True, couleur=GRIS, taille=9)
     if r.erreur:
         d.paragraphe(d.l("erreur_ia", e=r.erreur), italique=True, couleur="C00000", taille=9)

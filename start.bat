@@ -20,14 +20,9 @@ if not defined PYTHON goto :pas_de_python
 if errorlevel 1 goto :python_trop_ancien
 
 rem --- 2. Fichier de configuration .env ---------------------------------------------------------
-if not exist ".env" (
-    copy ".env.exemple" ".env" >nul
-    echo Premier lancement : le fichier de configuration .env vient d'être créé.
-    echo Renseignez la connexion au modèle : API_BASE, API_KEY et CA_BUNDLE,
-    echo ainsi que le nom du modèle AUDIT_ERGO_MODELE, enregistrez, puis fermez le Bloc-notes.
-    echo.
-    start /wait notepad ".env"
-)
+rem La connexion au modèle se règle dans l'application, écran Réglages ; le .env reste facultatif
+rem et prioritaire champ par champ, pour un déploiement sur plusieurs postes.
+if not exist ".env" copy ".env.exemple" ".env" >nul
 
 rem --- 3. Certificats de l'organisation, aussi pour l'installation des dépendances ---------------
 set "CA_BUNDLE="
@@ -104,7 +99,7 @@ exit /b 1
 
 :echec_pip
 echo L'installation des dépendances a échoué. Causes fréquentes :
-echo  - pas d'accès à Internet, ou proxy d'entreprise : vérifiez CA_BUNDLE dans .env ;
+echo  - pas d'accès à Internet, ou proxy d'entreprise : renseignez CA_BUNDLE dans .env ;
 echo  - antivirus qui bloque l'installation.
 echo Relancez start.bat une fois le problème corrigé.
 echo.

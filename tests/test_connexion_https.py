@@ -104,3 +104,38 @@ def test_mauvaise_cle_refusee(env, serveur_https, certificats, ref):
     env.setenv("CA_BUNDLE", str(certificats / "ca.pem"))
     with pytest.raises(ErreurSuggestion, match="API_KEY"):
         suggerer(client_ou_none(), ref, "Aucun indicateur après le clic sur Payer.", cache=None)
+
+
+# --- Même connexion configurée depuis l'écran Réglages (certificat importé, clé chiffrée) ------------------
+
+@pytest.fixture
+def ecran(env, ref):
+    from fastapi.testclient import TestClient
+
+    from serveur import api
+
+    return TestClient(api.creer_app(ref))
+
+
+def test_ecran_reglages_certificat_importe(ecran, serveur_https, certificats, ref):
+    adresse, recus = serveur_https
+    ecran.post("/api/settings/certificate", files={"file": ("autorite.crt", (certificats / "ca.pem").read_bytes())})
+    r = ecran.post("/api/settings/test", json={"api_base": adresse, "api_key": CLE, "model": "mistral-small"}).json()
+    # Serveur sans liste de modèles (GET refusé) : le test passe par un petit appel au modèle
+    assert r["ok"] is True, r
+    ecran.put("/api/settings", json={"api_base": adresse, "api_key": CLE, "model": "mistral-small"})
+    s = suggerer(client_ou_none(), ref, "Aucun indicateur après le clic sur Payer.", cache=None)
+    assert s.code == "GUI-03" and recus[-1] == f"Bearer {CLE}"
+
+
+def test_ecran_reglages_sans_certificat(ecran, serveur_https):
+    adresse, _ = serveur_https
+    r = ecran.post("/api/settings/test", json={"api_base": adresse, "api_key": CLE}).json()
+    assert r["ok"] is False and r["field"] == "certificate"
+
+
+def test_ecran_reglages_mauvaise_cle(ecran, serveur_https, certificats):
+    adresse, _ = serveur_https
+    ecran.post("/api/settings/certificate", files={"file": ("autorite.crt", (certificats / "ca.pem").read_bytes())})
+    r = ecran.post("/api/settings/test", json={"api_base": adresse, "api_key": "mauvaise-cle"}).json()
+    assert r["ok"] is False and r["field"] == "api_key"
