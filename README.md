@@ -104,12 +104,24 @@ Exemples fictifs : `exemples/audit_fictif.xlsx` (erreurs de forme volontaires) e
 
 Chaque audit déposé est enregistré sur le poste (`.donnees/audits/`, jamais envoyé ailleurs) avec sa relecture, les avis de l'IA, les décisions du designer et le rapport : il se rouvre après la fermeture de l'application. La page « Historique » liste les audits, permet d'en supprimer, et d'en **comparer deux** (deux versions d'un même produit, par exemple) : problèmes, gravités, écrans et catégories de critères, avec les écarts. `AUDIT_ERGO_HISTORIQUE=0` désactive l'enregistrement ; `AUDIT_ERGO_HISTORIQUE=<dossier>` change son emplacement.
 
+## Lancement par le portail
+
+L'application respecte le contrat commun aux applications de la suite :
+
+| | |
+|---|---|
+| Port par défaut | **8501** |
+| Options | `--port N` (port imposé : échec explicite, code 2, s'il est pris par une autre application), `--no-browser` (ancien nom `--sans-navigateur`, toujours accepté), `--version` |
+| État | `GET /health` → `{"status": "ok", "app": "audit-ergo", "name": "Audit ergonomique", "version": "…"}` |
+
+Exemple : `python -m serveur --port 8501 --no-browser`. La version se règle dans `serveur/__init__.py`.
+
 ## Interface : développement
 
 L'interface est livrée compilée (`web/dist/`) : les postes n'ont besoin que de Python. Pour la modifier, avec [Node.js](https://nodejs.org) 20 ou plus récent :
 
 ```bash
-python -m serveur --sans-navigateur   # API sur http://localhost:8501
+python -m serveur --no-browser       # API sur http://localhost:8501
 cd web && npm install && npm run dev  # interface sur http://localhost:5173, rechargée à chaque modification
 npm run build                         # recompile web/dist/, à committer avec les sources
 ```

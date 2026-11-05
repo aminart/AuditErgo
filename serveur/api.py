@@ -27,6 +27,7 @@ from audit_ergo.suggestion import (MODELE, ErreurSuggestion, adresse_api, client
                                    suggerer)
 from audit_ergo.synthese import synthetiser
 
+from . import APP_ID, APP_NOM, VERSION
 from . import serialisation as ser
 from .historique import Historique, maintenant
 from .taches import Taches
@@ -204,6 +205,13 @@ def creer_app(ref=None, historique=None):
         s.fichier = Path(sortie).read_bytes()
         s.nom_sortie = f"{s.stem}_complete.xlsx" if audit.completions else f"{s.stem}_relu.xlsx"
         s.rapport_perime = s.rapport is not None
+
+    # --- Contrat du portail ---------------------------------------------------------------------------
+
+    @app.get("/health")
+    def sante():
+        """Répond dès que le serveur tourne, que l'IA soit configurée ou non."""
+        return {"status": "ok", "app": APP_ID, "name": APP_NOM, "version": VERSION}
 
     # --- Configuration ---------------------------------------------------------------------------------
 
