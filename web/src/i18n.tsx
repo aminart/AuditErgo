@@ -3,7 +3,7 @@ import type { Langue } from "./types";
 
 /** Textes de l'interface : [français, anglais]. `{nom}` est remplacé par la valeur fournie. */
 const TEXTES = {
-  app: ["Audit ergonomique assisté", "Assisted ergonomic audit"],
+  app: ["AuditErgo", "AuditErgo"],
   "app.sous_titre": ["Relecture, complétion et rapport d'audits heuristiques", "Review, completion and reports for heuristic audits"],
   "nav.relecture": ["Relire un audit", "Review an audit"],
   "nav.suggestion": ["Suggérer un critère", "Suggest a criterion"],

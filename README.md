@@ -1,4 +1,4 @@
-# Audit ergonomique assisté
+# AuditErgo
 
 Aide les UX designers à produire des audits ergonomiques (heuristiques) du même standard : contrôle de forme, proposition du critère, de la recommandation et de la gravité de chaque constat, complétion des cellules vides et correction des saisies, en français ou en anglais.
 
@@ -143,7 +143,7 @@ L'application respecte le contrat commun aux applications de la suite :
 |---|---|
 | Port par défaut | **8501** |
 | Options | `--port N` (port imposé : échec explicite, code 2, s'il est pris par une autre application), `--no-browser` (ancien nom `--sans-navigateur`, toujours accepté), `--version` |
-| État | `GET /health` → `{"status": "ok", "app": "audit-ergo", "name": "Audit ergonomique", "version": "…"}` |
+| État | `GET /health` → `{"status": "ok", "app": "audit-ergo", "name": "AuditErgo", "version": "…"}` |
 
 Exemple : `AuditErgo.exe --port 8501 --no-browser`, ou depuis les sources `python -m serveur --port 8501 --no-browser`. La version vient du fichier `VERSION` (voir « Versions »).
 

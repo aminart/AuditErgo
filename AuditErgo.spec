@@ -19,8 +19,8 @@ else:
         ffi=FixedFileInfo(filevers=_nombres[:4], prodvers=_nombres[:4]),
         kids=[
             StringFileInfo([StringTable("040C04B0", [
-                StringStruct("ProductName", "Audit ergonomique"),
-                StringStruct("FileDescription", "Audit ergonomique assisté"),
+                StringStruct("ProductName", "AuditErgo"),
+                StringStruct("FileDescription", "AuditErgo, audits ergonomiques assistés"),
                 StringStruct("ProductVersion", VERSION),
                 StringStruct("FileVersion", VERSION),
                 StringStruct("OriginalFilename", "AuditErgo.exe"),

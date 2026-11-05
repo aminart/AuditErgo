@@ -1,9 +1,15 @@
-# Historique des versions d'Audit ergonomique
+# Historique des versions d'AuditErgo
 
 Format : chaque version liste ses changements par type (Ajouté, Modifié, Corrigé). Les numéros suivent
 le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Versions ».
 
 ## [Non publié]
+
+## [1.1.0] — 2026-11-05
+
+### Modifié
+
+- Nouveau nom : **AuditErgo** (titre de l'interface, fenêtre, `/health`, propriétés de l'exe).
 
 ### Ajouté
 

@@ -1,4 +1,4 @@
-# Audit ergonomique assisté : document de conception
+# AuditErgo : document de conception
 
 > **Objectif** : aider les UX designers à produire des audits ergonomiques **du même standard**, quel que soit l'auteur. L'application relit l'audit (même partiellement rempli), vérifie sa forme, propose le critère, la recommandation et la gravité de chaque constat, corrige ce que le designer a saisi sans jamais l'écraser, et complète les cellules vides.
 >

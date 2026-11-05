@@ -12,7 +12,7 @@ def test_health_repond_sans_ia(ref, monkeypatch):
     monkeypatch.setenv("AUDIT_ERGO_HISTORIQUE", "0")
     r = TestClient(api.creer_app(ref)).get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok", "app": APP_ID, "name": "Audit ergonomique", "version": VERSION}
+    assert r.json() == {"status": "ok", "app": APP_ID, "name": "AuditErgo", "version": VERSION}
 
 
 def test_port_reserve():

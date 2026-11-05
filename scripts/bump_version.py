@@ -1,4 +1,4 @@
-"""Prépare une nouvelle version d'Audit ergonomique.
+"""Prépare une nouvelle version d'AuditErgo.
 
     python scripts/bump_version.py 1.1.0        # numéro explicite
     python scripts/bump_version.py patch|minor|major
@@ -72,7 +72,7 @@ def main(argv: list[str]) -> None:
     update_changelog(version, dt.date.today())
     VERSION_FILE.write_text(version + "\n", encoding="utf-8")
     update_package_files(version)
-    print(f"Audit ergonomique {current} → {version}")
+    print(f"AuditErgo {current} → {version}")
     print("Ensuite : relire CHANGELOG.md, committer, fusionner sur main, puis créer la release "
           f"v{version} sur GitHub (AuditErgo-X.Y.Z.exe y est joint automatiquement).")
 

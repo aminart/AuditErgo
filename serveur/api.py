@@ -171,7 +171,7 @@ def creer_app(ref=None, historique=None):
     historique = historique or Historique.defaut()
     sessions: dict[str, Session] = {}
     taches = Taches()
-    app = FastAPI(title="Audit ergonomique assisté", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="AuditErgo", docs_url=None, redoc_url=None, openapi_url=None)
     # Refuse les requêtes adressées à un autre nom que ce poste (protection contre le « DNS rebinding » :
     # une page web malveillante ne peut pas atteindre l'application par un nom de domaine qui pointe ici)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])

@@ -1,13 +1,13 @@
 @echo off
-rem Lance l'application « Audit ergonomique assisté » sous Windows.
+rem Lance l'application « AuditErgo » sous Windows.
 rem Double-cliquer sur ce fichier : il installe ce qui manque la première fois, puis ouvre l'application.
 setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 cd /d "%~dp0"
-title Audit ergonomique assisté
+title AuditErgo
 
 echo ==========================================
-echo    Audit ergonomique assisté
+echo    AuditErgo
 echo ==========================================
 echo.
 
