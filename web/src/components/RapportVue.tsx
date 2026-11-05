@@ -9,7 +9,7 @@ export type Modifier = (chemin: string, valeur: string | number | string[]) => v
 /* --- Passages modifiables : texte lu à l'écran, zone de saisie en mode édition ------------------------ */
 
 const Edition = createContext<{ actif: boolean; modifier: Modifier; aRediger: string }>({ actif: false, modifier: () => undefined, aRediger: "" });
-const CHAMP_EDITION = "w-full resize-none rounded-lg border border-dashed border-accent bg-info-doux/40 px-3 py-2 text-[15px] leading-relaxed text-texte focus:border-solid focus:outline-none focus:ring-2 focus:ring-accent/25";
+const CHAMP_EDITION = "w-full resize-none rounded-md border border-dashed border-accent bg-info-doux/40 px-3 py-2 text-[15px] leading-relaxed text-texte focus:border-solid focus:outline-none focus:ring-2 focus:ring-accent/25";
 
 function ajuster(el: HTMLTextAreaElement | null) {
   if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight + 2}px`; }
@@ -68,9 +68,9 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
   const nbConstats = f.problemes.length + f.points_forts.length;
 
   const Tableau = ({ entetes, lignes, classes }: { entetes: string[]; lignes: React.ReactNode[][]; classes?: string[] }) => (
-    <div className="overflow-x-auto rounded-lg border border-bord">
+    <div className="overflow-x-auto rounded-md border border-bord">
       <table className="w-full text-sm">
-        <thead className="bg-marque text-left text-xs text-white dark:text-[#0f1a2e]">
+        <thead className="bg-primary text-left text-xs text-on-primary">
           <tr>{entetes.map((h, i) => <th key={i} className={cx("px-3 py-2 font-semibold", classes?.[i]?.split(" ").filter((c) => c === "text-right" || c === "text-center").join(" "))}>{h}</th>)}</tr>
         </thead>
         <tbody className="divide-y divide-bord">
@@ -114,7 +114,7 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
       {/* 1. Synthèse générale */}
       <section id="r-s1" className="space-y-8">
         <h2>1. {L("s1")}</h2>
-        <div className="bloc rounded-xl border-l-4 border-marque bg-marque-doux px-5 py-4">
+        <div className="bloc rounded-lg border-l-4 border-marque bg-marque-doux px-5 py-4">
           <h3 className="mb-1">{L("en_bref")}</h3>
           <Texte chemin="resume" texte={r.resume} />
         </div>
@@ -135,7 +135,7 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
           <h3>{L("chiffres")}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[[L("nb_constats"), nbConstats], [L("nb_problemes"), f.problemes.length], [L("nb_points_forts"), f.points_forts.length], [L("nb_ecrans"), f.ecrans.length]].map(([k, v]) => (
-              <div key={k} className="rounded-xl border border-bord px-4 py-3">
+              <div key={k} className="rounded-lg border border-bord px-4 py-3">
                 <div className="text-3xl font-semibold tabular-nums">{v}</div>
                 <div className="text-xs text-texte-2">{k}</div>
               </div>

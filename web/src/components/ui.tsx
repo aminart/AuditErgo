@@ -68,7 +68,7 @@ export function Badge({ ton = "neutre", children, icone, titre }: { ton?: Ton; c
 export function Alerte({ ton = "info", titre, children, action }: { ton?: Ton; titre?: ReactNode; children?: ReactNode; action?: ReactNode }) {
   const icone = ton === "ok" ? "ok" : ton === "danger" || ton === "alerte" ? "alerte" : ton === "ia" ? "ia" : "info";
   return (
-    <div role={ton === "danger" ? "alert" : "status"} className={cx("flex items-start gap-3 rounded-xl px-4 py-3 text-sm", TONS[ton])}>
+    <div role={ton === "danger" ? "alert" : "status"} className={cx("flex items-start gap-3 rounded-lg px-4 py-3 text-sm", TONS[ton])}>
       <Icone nom={icone} className="mt-0.5 size-5" />
       <div className="min-w-0 flex-1">
         {titre && <div className="font-semibold">{titre}</div>}
@@ -116,7 +116,7 @@ export function Onglets<T extends string>({ onglets, actif, choisir }: { onglets
           className={cx("-mb-px flex items-center gap-2 border-b-2 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
             o.id === actif ? "border-marque text-marque" : "border-transparent text-texte-2 hover:text-texte")}>
           {o.libelle}
-          {o.compte !== undefined && <span className="rounded-full bg-surface-2 px-1.5 text-xs tabular-nums text-texte-2">{o.compte}</span>}
+          {o.compte !== undefined && <span className="rounded-full bg-surface-3 px-1.5 text-xs tabular-nums text-texte-2">{o.compte}</span>}
         </button>
       ))}
     </div>

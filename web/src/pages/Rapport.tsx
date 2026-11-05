@@ -128,7 +128,7 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
       </div>
 
       {actuel && <RapportVue r={actuel} edition={edition} modifier={modifier} />}
-      <div aria-live="polite" className={cx("no-print fixed right-6 bottom-6 flex items-center gap-2 rounded-lg bg-ok px-3.5 py-2 text-sm font-medium text-white shadow-lg transition-all dark:text-[#0f1a12]",
+      <div aria-live="polite" className={cx("no-print fixed right-6 bottom-6 flex items-center gap-2 rounded-md bg-ok px-3.5 py-2 text-sm font-medium text-white shadow-lg transition-all dark:text-[#0f1a12]",
         enregistre ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0")}>
         <Icone nom="check" className="size-4" />{t("r.enregistre")}
       </div>

@@ -32,7 +32,7 @@ export function BarreRepartition({ segments, unite }: { segments: Segment[]; uni
         {survol && (() => {
           const s = segments.find((x) => x.cle === survol)!;
           return (
-            <div className="pointer-events-none absolute -top-11 left-1/2 z-10 -translate-x-1/2 rounded-lg border border-bord bg-surface px-2.5 py-1.5 text-xs whitespace-nowrap shadow-lg">
+            <div className="pointer-events-none absolute -top-11 left-1/2 z-10 -translate-x-1/2 rounded-md border border-bord bg-surface px-2.5 py-1.5 text-xs whitespace-nowrap shadow-lg">
               <span className="font-semibold">{s.libelle}</span> · {s.valeur} {unite} ({Math.round((s.valeur / total) * 100)} %)
             </div>
           );
@@ -68,7 +68,7 @@ export function BarresHorizontales({ barres, max, largeurLibelle = "14rem", unit
             {!!b.secondaire && <div className="h-full rounded-r opacity-35" style={{ width: `${(b.secondaire / plafond) * 100}%`, background: b.couleur ?? "var(--serie)" }} />}
             <span className="ml-1.5 text-xs font-semibold tabular-nums text-texte">{b.valeur}{unite}{b.secondaire ? ` + ${b.secondaire}` : ""}</span>
             {survol === b.cle && b.detail && (
-              <div className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 max-w-sm rounded-lg border border-bord bg-surface px-2.5 py-1.5 text-xs shadow-lg">{b.detail}</div>
+              <div className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 max-w-sm rounded-md border border-bord bg-surface px-2.5 py-1.5 text-xs shadow-lg">{b.detail}</div>
             )}
           </div>
         </li>
@@ -87,7 +87,7 @@ export function EchelleMaturite({ niveaux, actuel, indicatif, libelleIndicatif }
         const atteint = n.niveau === actuel;
         return (
           <li key={n.niveau} title={n.definition}
-            className={cx("bloc rounded-lg border px-2 py-2.5 text-center", atteint ? "border-marque bg-marque text-white dark:text-[#0f1a2e]" : "border-bord bg-surface-2 text-texte-2")}>
+            className={cx("bloc rounded-md border px-2 py-2.5 text-center", atteint ? "border-primary bg-primary text-on-primary" : "border-bord bg-surface-2 text-texte-2")}>
             <div className="text-lg font-semibold tabular-nums">{n.niveau}</div>
             <div className="text-xs font-medium">{n.libelle}</div>
             {indicatif === n.niveau && !atteint && <div className="mt-1 text-[10px] uppercase tracking-wide opacity-75">{libelleIndicatif}</div>}
