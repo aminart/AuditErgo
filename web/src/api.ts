@@ -1,4 +1,4 @@
-import type { Comparaison, Config, EtatAudit, Langue, Rapport, ResumeAudit, Suggestion, Tache } from "./types";
+import type { Comparaison, Config, EtatAudit, FormulaireParametres, Langue, ParametresConnexion, Rapport, ResumeAudit, Suggestion, Tache, TestConnexion } from "./types";
 
 export class ErreurApi extends Error {}
 
@@ -42,8 +42,16 @@ export async function attendre<T>(tache: Tache<T>, progression?: (fait: number, 
 
 export const api = {
   config: (lg: Langue) => requete<Config>(`/api/config?langue=${lg}`),
-  testerConnexion: (lg: Langue) =>
-    requete<{ statut: string; message: string; detail?: string }>(`/api/connexion?langue=${lg}`, { method: "POST" }),
+  parametres: () => requete<ParametresConnexion>("/api/settings"),
+  enregistrerParametres: (f: FormulaireParametres) =>
+    requete<ParametresConnexion>("/api/settings", { ...json(f), method: "PUT" }),
+  effacerParametres: () => requete<ParametresConnexion>("/api/settings", { method: "DELETE" }),
+  importerCertificat: (fichier: File, lg: Langue) => {
+    const corps = new FormData();
+    corps.append("file", fichier);
+    return requete<ParametresConnexion>(`/api/settings/certificate?langue=${lg}`, { method: "POST", body: corps });
+  },
+  testerParametres: (f: FormulaireParametres, lg: Langue) => requete<TestConnexion>(`/api/settings/test?langue=${lg}`, json(f)),
   viderCache: () => requete<{ cache: number | null }>("/api/cache", { method: "DELETE" }),
   templateUrl: (lg: Langue) => `/api/template?langue=${lg}`,
 

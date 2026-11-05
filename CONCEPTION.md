@@ -2,7 +2,7 @@
 
 > **Objectif** : aider les UX designers à produire des audits ergonomiques **du même standard**, quel que soit l'auteur. L'application relit l'audit (même partiellement rempli), vérifie sa forme, propose le critère, la recommandation et la gravité de chaque constat, corrige ce que le designer a saisi sans jamais l'écraser, et complète les cellules vides.
 >
-> **Confidentialité** : l'IA est un modèle **Mistral** joint par `API_BASE`, `API_KEY` et `CA_BUNDLE`. Installé sur le poste, aucune donnée ne quitte le poste du designer ; sur une passerelle, les constats ne vont qu'à ce serveur, choisi par l'organisation.
+> **Confidentialité** : l'IA est un modèle **Mistral** joint par l'adresse, la clé et le certificat réglés dans l'écran Réglages (ou `API_BASE`, `API_KEY` et `CA_BUNDLE` dans `.env`). Installé sur le poste, aucune donnée ne quitte le poste du designer ; sur une passerelle, les constats ne vont qu'à ce serveur, choisi par l'organisation.
 
 *Version 2 du document. Elle remplace la première version, qui prévoyait une IA en ligne.*
 
@@ -39,13 +39,13 @@
 
 | Risque | Garde-fou (dans le code) |
 |---|---|
-| Les constats partent vers un serveur | Les constats ne vont qu'à l'adresse `API_BASE` choisie dans `.env`. Si elle est sur le poste (`localhost`, `127.0.0.1`, `::1`), rien ne sort du poste ; sinon (passerelle de l'organisation), l'interface indique le serveur qui reçoit les constats. Le choix et la validation de ce serveur relèvent de l'organisation. |
+| Les constats partent vers un serveur | Les constats ne vont qu'à l'adresse choisie dans l'écran Réglages (ou `API_BASE` dans `.env`), qui indique si elle est sur le poste. Si elle est sur le poste (`localhost`, `127.0.0.1`, `::1`), rien ne sort du poste ; sinon (passerelle de l'organisation), l'interface indique le serveur qui reçoit les constats. Le choix et la validation de ce serveur relèvent de l'organisation. |
 | Un proxy d'entreprise intercepte les requêtes | Vers un modèle sur le poste, les appels **ignorent les variables de proxy** : la connexion reste directe (testé). Vers une passerelle, les réglages réseau du poste s'appliquent (proxy, `NO_PROXY`). |
 | Un collègue ouvre l'application via le réseau | Le serveur n'écoute que sur `127.0.0.1` (`serveur/__main__.py`). |
 | Une page web malveillante joint l'application (« DNS rebinding ») | Le serveur refuse toute requête adressée à un autre nom que `localhost` ou `127.0.0.1` (testé). |
 | Statistiques d'usage, ressources externes | Aucune télémétrie ; l'interface est compilée et servie par l'application, sans police, script ni service tiers : elle fonctionne hors ligne. |
 | Audits conservés | Les audits déposés (fichier, relecture, avis de l'IA, décisions, rapport) sont enregistrés **sur ce poste uniquement**, dans `.donnees/audits/` (ignoré par Git) ; chacun se supprime depuis la page « Historique ». `AUDIT_ERGO_HISTORIQUE=0` désactive l'enregistrement (dossier temporaire effacé à l'arrêt). |
-| Clé d'API qui fuite | La clé (`API_KEY`), si le serveur en exige une, reste dans le fichier `.env`, ignoré par Git ; l'interface n'affiche jamais sa valeur. |
+| Clé d'API qui fuite | La clé, si le serveur en exige une, est chiffrée avec le compte Windows (DPAPI) dans le dossier de l'utilisateur, ou reste dans le fichier `.env`, ignoré par Git ; l'interface n'affiche jamais sa valeur. |
 | Données conservées ailleurs | Le cache des réponses est un fichier SQLite local, ignoré par Git ; il peut être vidé depuis l'interface. |
 
 ### 2.3 Ce qui demande Internet, une seule fois
@@ -70,7 +70,7 @@ L'application dialogue avec tout serveur local **compatible OpenAI** (`/v1/chat/
 | Outil | Adresse par défaut | Remarque |
 |---|---|---|
 | **Ollama** (recommandé) | `http://localhost:11434/v1` | Valeur par défaut de l'application. Installation du modèle : `ollama pull mistral-small`. |
-| LM Studio | `http://localhost:1234/v1` | Interface graphique ; renseigner `API_BASE` dans `.env`. |
+| LM Studio | `http://localhost:1234/v1` | Interface graphique ; renseigner l'URL dans l'écran Réglages. |
 
 ### 3.2 Choix du modèle
 
@@ -220,9 +220,9 @@ La langue par défaut se règle dans `.env` (`AUDIT_ERGO_LANGUE=fr` ou `en`).
 
 ---
 
-## 9. Configuration (`.env`)
+## 9. Configuration
 
-La connexion au modèle se règle avec trois paramètres :
+La connexion au modèle se règle dans l'écran Réglages (paramètres enregistrés dans `%APPDATA%\AuditErgo`, clé chiffrée, certificat `.crt` importé ; voir README § 3). Le fichier `.env` est prioritaire, champ par champ :
 
 | Variable | Défaut | Rôle |
 |---|---|---|

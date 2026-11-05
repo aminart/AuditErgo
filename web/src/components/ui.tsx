@@ -32,6 +32,11 @@ const CHEMINS: Record<string, ReactNode> = {
   historique: <><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l3 2" /></>,
   recherche: <><circle cx="11" cy="11" r="6" /><path d="m20 20-4.5-4.5" /></>,
   rafraichir: <><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4v7h-7" /></>,
+  plus: <path d="M12 5v14M5 12h14" />,
+  oeil: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
+  oeil_barre: <><path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-2.2 3.2M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.8 9.8 0 0 0 5.4-1.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /><path d="m2 2 20 20" /></>,
+  bouclier: <><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z" /><path d="m9 12 2 2 4-4" /></>,
+  bouclier_alerte: <><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6l-8-3Z" /><path d="M12 8v4M12 15.5v.5" /></>,
 };
 
 export function Icone({ nom, className = "size-5" }: { nom: keyof typeof CHEMINS | string; className?: string }) {

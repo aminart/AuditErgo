@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from audit_ergo.suggestion import MODELE, ErreurSuggestion, adresse_api, client_ou_none  # noqa: E402
+from audit_ergo.suggestion import ErreurSuggestion, adresse_api, client_ou_none, modele  # noqa: E402
 
 
 def main():
@@ -24,20 +24,20 @@ def main():
     try:
         modeles = [m.id for m in client.models.list()]
     except openai.NotFoundError:  # passerelle sans /v1/models : elle répond, on ne peut pas lister
-        print(f"IA : le serveur {adresse_api()} répond (modèle « {MODELE} »).")
+        print(f"IA : le serveur {adresse_api()} répond (modèle « {modele()} »).")
         return
     except openai.AuthenticationError:
-        print(f"IA : clé refusée par {adresse_api()} : vérifiez API_KEY dans .env.")
+        print(f"IA : clé refusée par {adresse_api()} : vérifiez la clé d'API dans Réglages (ou API_KEY dans .env).")
         return
     except Exception as e:
         print(f"IA : le modèle ne répond pas à {adresse_api()} ({type(e).__name__} : {e}).")
-        print("     Vérifiez API_BASE, API_KEY et CA_BUNDLE dans .env ; l'application démarre quand même.")
+        print("     Vérifiez la connexion dans Réglages (ou le .env) ; l'application démarre quand même.")
         return
-    if any(m == MODELE or m.split(":")[0] == MODELE for m in modeles):
-        print(f"IA : modèle « {MODELE} » prêt ({adresse_api()}).")
+    if any(m == modele() or m.split(":")[0] == modele() for m in modeles):
+        print(f"IA : modèle « {modele()} » prêt ({adresse_api()}).")
     else:
-        print(f"IA : le modèle « {MODELE} » n'est pas proposé. Disponibles : {', '.join(modeles) or 'aucun'}.")
-        print("     Corrigez AUDIT_ERGO_MODELE dans .env.")
+        print(f"IA : le modèle « {modele()} » n'est pas proposé. Disponibles : {', '.join(modeles) or 'aucun'}.")
+        print("     Corrigez le modèle dans Réglages (options avancées) ou AUDIT_ERGO_MODELE dans .env.")
 
 
 if __name__ == "__main__":

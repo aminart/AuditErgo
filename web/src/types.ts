@@ -28,6 +28,43 @@ export interface Config {
   cache: number | null;
 }
 
+/** Paramètres de connexion au modèle (écran Réglages, même fonctionnement que SpecGen). */
+export type ChampParametre = "api_base" | "api_key" | "ca_bundle" | "model" | "timeout";
+
+export interface TestConnexion {
+  ok: boolean;
+  /** Champ en cause : api_base, api_key, certificate, model ; disabled si l'IA est désactivée. */
+  field: string | null;
+  title: string;
+  message: string;
+  at: string;
+  model?: string;
+}
+
+export interface ParametresConnexion {
+  saved: boolean;
+  active: boolean;
+  env_fields: ChampParametre[];
+  env_file: string | null;
+  storage_dir: string;
+  api_base: string;
+  default_api_base: string;
+  has_api_key: boolean;
+  api_key_hint: string;
+  certificate: { name: string; imported_at?: string; expires_at?: string } | null;
+  model: string;
+  timeout: number;
+  last_test: TestConnexion | null;
+}
+
+export interface FormulaireParametres {
+  api_base: string;
+  /** null : garder la clé enregistrée. */
+  api_key: string | null;
+  model: string;
+  timeout: number;
+}
+
 export interface Suggestion {
   erreur?: string;
   code: string;

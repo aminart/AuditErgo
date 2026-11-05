@@ -65,3 +65,11 @@ def historique_isole(tmp_path, monkeypatch):
     chemin = tmp_path / "historique"
     monkeypatch.setenv("AUDIT_ERGO_HISTORIQUE", str(chemin))
     return chemin
+
+
+@pytest.fixture(autouse=True)
+def parametres_isoles(tmp_path, monkeypatch):
+    """Paramètres de connexion de l'écran Réglages dans un dossier temporaire : jamais ceux du poste."""
+    monkeypatch.setenv("AUDIT_ERGO_CONFIG", str(tmp_path / "config"))
+    for nom in ("AUDIT_ERGO_MODELE", "AUDIT_ERGO_DELAI"):
+        monkeypatch.delenv(nom, raising=False)

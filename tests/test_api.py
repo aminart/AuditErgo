@@ -157,7 +157,7 @@ def test_suggestion(client):
 def test_ia_desactivee(ref, monkeypatch, audit_xlsx):
     monkeypatch.setenv("AUDIT_ERGO_IA", "0")
     c = TestClient(api.creer_app(ref))
-    assert c.post("/api/connexion").json()["statut"] == "desactivee"
+    assert c.post("/api/settings/test", json={}).json()["field"] == "disabled"
     e = deposer(c, audit_xlsx([CONSTAT_VALIDE])).json()
     assert c.post(f"/api/audits/{e['id']}/ia", json={}).status_code == 400
     assert c.post("/api/suggestion", json={"constat": "Un constat"}).status_code == 400

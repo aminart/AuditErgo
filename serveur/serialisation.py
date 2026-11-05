@@ -4,7 +4,8 @@ from datetime import date, datetime
 
 from audit_ergo.i18n import GRAVITES, TYPES_RECO, libelle_gravite, lire_gravite, t
 from audit_ergo.lecture import LIBELLES, libelle_champ
-from audit_ergo.rapport import EFFORTS, HORIZONS, IMPACTS, L, MATURITES, MODELE
+from audit_ergo.rapport import EFFORTS, HORIZONS, IMPACTS, L, MATURITES
+from audit_ergo.suggestion import modele
 from audit_ergo.suggestion import ErreurSuggestion, libelle_reco, libelle_verdict
 
 
@@ -139,7 +140,7 @@ def rapport(r, ref):
     if f.gravites.get(None):
         gravites["aucune"] = f.gravites[None]
     return {
-        "langue": lg, "ia": r.ia, "erreur": r.erreur, "modele": MODELE, "modifie": getattr(r, "modifie", False),
+        "langue": lg, "ia": r.ia, "erreur": r.erreur, "modele": modele(), "modifie": getattr(r, "modifie", False),
         "libelles": {cle: (en if lg == "en" else fr) for cle, (fr, en) in L.items()},
         "maturites": [{"niveau": n, "libelle": m[lg], "definition": m[f"def_{lg}"]} for n, m in MATURITES.items()],
         "gravites": [{"niveau": g, "libelle": v[lg], "definition": v[f"def_{lg}"]} for g, v in GRAVITES.items()],
