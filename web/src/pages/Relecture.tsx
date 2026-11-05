@@ -26,13 +26,13 @@ function Depot({ deposer, enCours }: { deposer: (f: File) => void; enCours: bool
       onDragOver={(e) => { e.preventDefault(); setSurvol(true); }}
       onDragLeave={() => setSurvol(false)}
       onDrop={(e) => { e.preventDefault(); setSurvol(false); const f = e.dataTransfer.files[0]; if (f) deposer(f); }}
-      className={cx("grid min-h-72 place-items-center rounded-2xl border-2 border-dashed p-8 text-center transition-colors",
+      className={cx("grid min-h-72 place-items-center rounded-lg border-2 border-dashed p-8 text-center transition-colors",
         survol ? "border-accent bg-info-doux" : "border-bord bg-surface")}>
       {enCours ? (
         <div className="flex items-center gap-3 text-texte-2"><Spinner className="size-5" /> {t("rel.lecture")}</div>
       ) : (
         <div>
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-marque-doux text-marque"><Icone nom="importer" className="size-7" /></div>
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-lg bg-marque-doux text-marque"><Icone nom="importer" className="size-7" /></div>
           <p className="text-lg font-semibold">{t("rel.deposer")}</p>
           <p className="my-2 text-sm text-texte-3">{t("rel.ou")}</p>
           <Bouton variante="primaire" onClick={() => entree.current?.click()}>{t("rel.parcourir")}</Bouton>
@@ -58,7 +58,7 @@ function CelluleCompletee({ champ, libelle, c, decider, occupe }: {
   const valide = comp.origine === "valide";
   const action = "grid size-7 place-items-center rounded-md text-texte-2 hover:bg-surface disabled:opacity-40";
   return (
-    <div className={cx("rounded-lg border px-3 py-2", LONGS.includes(champ) && "sm:col-span-2",
+    <div className={cx("rounded-md border px-3 py-2", LONGS.includes(champ) && "sm:col-span-2",
       valide ? "border-bord bg-surface" : "border-ia/25 bg-ia-doux")}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
@@ -382,7 +382,7 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
                   <Icone nom="recherche" className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-texte-3" />
                   <input className="champ pl-9" placeholder={t("f.rechercher")} value={recherche} onChange={(e) => setRecherche(e.target.value)} aria-label={t("f.rechercher")} />
                 </div>
-                <div className="flex flex-wrap gap-1 rounded-lg border border-bord bg-surface p-0.5">
+                <div className="flex flex-wrap gap-1 rounded-md border border-bord bg-surface p-0.5">
                   {(["tous", "a_valider", "avec_anomalie", ...(etat.ia ? ["a_revoir"] : [])] as Filtre[]).map((f) => (
                     <button key={f} onClick={() => setFiltre(f)} aria-pressed={filtre === f}
                       className={cx("rounded-md px-2.5 py-1 text-xs font-medium", filtre === f ? "bg-marque-doux text-marque" : "text-texte-2 hover:text-texte")}>
@@ -461,7 +461,7 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
 
       <details className="text-xs text-texte-3">
         <summary className="cursor-pointer">{t("technique")}</summary>
-        <pre className="mt-2 overflow-x-auto rounded-lg bg-surface-2 p-3">{JSON.stringify(etat.audit, null, 2)}</pre>
+        <pre className="mt-2 overflow-x-auto rounded-md bg-surface-2 p-3">{JSON.stringify(etat.audit, null, 2)}</pre>
       </details>
     </div>
   );

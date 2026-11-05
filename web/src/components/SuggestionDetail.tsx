@@ -19,7 +19,7 @@ function Bloc({ titre, children }: { titre: string; children: React.ReactNode })
 function ACopier({ libelle, texte }: { libelle: string; texte: string }) {
   const t = useT();
   return (
-    <div className="rounded-lg border border-bord bg-surface-2">
+    <div className="rounded-md border border-bord bg-surface-2">
       <div className="flex items-center justify-between border-b border-bord px-3 py-1">
         <span className="text-xs font-medium text-texte-2">{libelle}</span>
         <Copier texte={texte} libelle={t("copier")} copie={t("copie")} />
@@ -112,7 +112,7 @@ export default function SuggestionDetail({ s }: { s: Suggestion }) {
         </div>
       </Bloc>
 
-      <details className="rounded-lg border border-bord px-3 py-2 text-sm">
+      <details className="rounded-md border border-bord px-3 py-2 text-sm">
         <summary className="cursor-pointer font-medium">{t("s.definition", { c: s.code })}</summary>
         <p className="mt-2 text-texte-2">{s.critere.definition}</p>
         <ul className="mt-2 list-disc space-y-0.5 pl-5 text-texte-2">{s.critere.checklist.map((q) => <li key={q}>{q}</li>)}</ul>

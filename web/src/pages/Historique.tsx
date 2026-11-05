@@ -29,7 +29,7 @@ export function ListeAudits({ audits, ouvert, ouvrir, supprimer, selection, basc
   const t = useT();
   const lg = useLangue();
   return (
-    <ul className="divide-y divide-bord overflow-hidden rounded-xl border border-bord bg-surface">
+    <ul className="divide-y divide-bord overflow-hidden rounded-lg border border-bord bg-surface">
       {audits.map((a) => {
         const choisi = selection?.includes(a.id);
         return (

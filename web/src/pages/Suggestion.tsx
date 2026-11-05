@@ -85,7 +85,7 @@ export default function PageSuggestion({ config }: { config: Config }) {
             <label className="etiquette" htmlFor="reco">{t("s.reco")}{option("facultatif")}</label>
             <textarea id="reco" className="champ min-h-16" value={f.recommandation} onChange={maj("recommandation")} />
           </div>
-          <details className="rounded-lg border border-bord px-3 py-2">
+          <details className="rounded-md border border-bord px-3 py-2">
             <summary className="cursor-pointer text-sm font-medium">{t("s.contexte")}<span className="font-normal text-texte-3"> · {t("s.contexte_aide")}</span></summary>
             <div className="mt-3 space-y-3">
               {(["produit", "cible", "plateforme"] as const).map((k) => (
@@ -109,7 +109,7 @@ export default function PageSuggestion({ config }: { config: Config }) {
         <div className="space-y-4">
           {actuel ? (
             <article className="carte p-6">
-              <p className="mb-4 rounded-lg bg-surface-2 px-3 py-2 text-sm text-texte-2">
+              <p className="mb-4 rounded-md bg-surface-2 px-3 py-2 text-sm text-texte-2">
                 {actuel.ecran && <span className="font-medium text-texte">{actuel.ecran} · </span>}{actuel.constat}
               </p>
               {actuel.s.erreur ? <Alerte ton="danger">{actuel.s.erreur}</Alerte> : <SuggestionDetail s={actuel.s} />}

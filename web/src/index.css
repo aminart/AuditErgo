@@ -1,33 +1,37 @@
 @import "tailwindcss";
 
-/* Thème sombre : suit le système, sauf si l'utilisateur force un thème (data-theme sur <html>) */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@import "night-navy/night-navy.css";
+@import "night-navy/tailwind-v4.css";
 
-/* Jetons de couleur : clair par défaut, sombre redéfini plus bas. Aucune police externe : l'application
-   fonctionne hors ligne et ne contacte aucun serveur tiers. */
+/* Design system commun Night Navy (github:aminart/Design-system-) : jetons --nn-*, police, arrondis,
+   variante dark: (suit le système, sauf thème forcé par data-theme sur <html>) et classes bg-surface,
+   text-ink, bg-primary… Les noms historiques de l'app (fond, texte, bord, marque…) restent valables et
+   pointent vers les jetons communs. Seules les couleurs métier (échelle de gravité, série des
+   graphiques) restent propres à l'app. Aucune police externe : l'application fonctionne hors ligne. */
 :root {
-  color-scheme: light;
-  --fond: #f6f6f3;
-  --surface: #ffffff;
-  --surface-2: #f1f0ec;
-  --bord: #e2e0da;
-  --texte: #16171a;
-  --texte-2: #55565c;
-  --texte-3: #85868c;
-  --marque: #1f3864;
-  --marque-2: #2a4f8f;
-  --marque-doux: #e6ecf6;
-  --accent: #2a78d6;
-  --ia: #6b4fa3;
-  --ia-doux: #efeaf8;
-  --ok: #1d7a46;
-  --ok-doux: #e3f3e9;
-  --alerte: #a15c00;
-  --alerte-doux: #fdf1dc;
-  --danger: #b42318;
-  --danger-doux: #fdeceb;
-  --info: #1c5cab;
-  --info-doux: #e7f0fb;
+  --fond: var(--nn-bg);
+  --surface: var(--nn-surface);
+  --surface-2: var(--nn-surface-2);
+  --bord: var(--nn-line);
+  --texte: var(--nn-ink);
+  --texte-2: var(--nn-ink-muted);
+  --texte-3: var(--nn-ink-subtle);
+  --marque: var(--nn-accent);          /* texte et traits de marque ; fond de bouton : bg-primary */
+  --marque-2: var(--nn-primary-hover);
+  --marque-doux: var(--nn-accent-soft);
+  --accent: var(--nn-focus);
+  --ia: var(--nn-ia);
+  --ia-doux: var(--nn-ia-soft);
+  --ok: var(--nn-success-text);
+  --ok-doux: var(--nn-success-soft);
+  --alerte: var(--nn-warning-text);
+  --alerte-doux: var(--nn-warning-soft);
+  --danger: var(--nn-danger-text);
+  --danger-doux: var(--nn-danger-soft);
+  --info: var(--nn-accent);
+  --info-doux: var(--nn-accent-soft);
+
+  /* Couleurs métier : échelle de gravité et série des graphiques */
   --g1: #f09a6a;
   --g2: #e2703c;
   --g3: #c4501d;
@@ -36,37 +40,14 @@
   --serie: #2a78d6;
 }
 
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --fond: #121212;
-  --surface: #1a1a19;
-  --surface-2: #242423;
-  --bord: #34342f;
-  --texte: #f0efec;
-  --texte-2: #c3c2b7;
-  --texte-3: #8f8e86;
-  --marque: #8fb3ef;
-  --marque-2: #a9c5f4;
-  --marque-doux: #1d2a40;
-  --accent: #3987e5;
-  --ia: #b9a2e8;
-  --ia-doux: #2a2338;
-  --ok: #5cc98a;
-  --ok-doux: #15291d;
-  --alerte: #f0b452;
-  --alerte-doux: #2e2410;
-  --danger: #f2837a;
-  --danger-doux: #331715;
-  --info: #86b6ef;
-  --info-doux: #142235;
-  --g0: #6b6a64;
-  --serie: #3987e5;
+/* Sombre : mêmes deux blocs que night-navy.css (préférence système, puis choix forcé) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --g0: #6b6a64; --serie: #3987e5; }
 }
+:root[data-theme="dark"] { --g0: #6b6a64; --serie: #3987e5; }
 
 @theme inline {
   --color-fond: var(--fond);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
   --color-bord: var(--bord);
   --color-texte: var(--texte);
   --color-texte-2: var(--texte-2);
@@ -75,7 +56,6 @@
   --color-marque-2: var(--marque-2);
   --color-marque-doux: var(--marque-doux);
   --color-accent: var(--accent);
-  --color-ia: var(--ia);
   --color-ia-doux: var(--ia-doux);
   --color-ok: var(--ok);
   --color-ok-doux: var(--ok-doux);
@@ -85,19 +65,15 @@
   --color-danger-doux: var(--danger-doux);
   --color-info: var(--info);
   --color-info-doux: var(--info-doux);
-  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 }
 
-html, body { background: var(--fond); color: var(--texte); }
-body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
-
-@utility carte {  @apply rounded-xl border border-bord bg-surface;  }
-@utility btn {  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;  }
-@utility btn-primaire {  @apply btn bg-marque text-white hover:bg-marque-2 dark:text-[#0f1a2e];  }
-@utility btn-secondaire {  @apply btn border border-bord bg-surface text-texte hover:bg-surface-2;  }
+@utility carte {  @apply rounded-lg border border-bord bg-surface;  }
+@utility btn {  @apply inline-flex items-center justify-center gap-2 rounded px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;  }
+@utility btn-primaire {  @apply btn bg-primary text-on-primary hover:bg-primary-hover;  }
+@utility btn-secondaire {  @apply btn border border-line-strong bg-surface text-texte hover:bg-surface-3;  }
 @utility btn-ia {  @apply btn bg-ia text-white hover:opacity-90 dark:text-[#1b1428];  }
-@utility btn-discret {  @apply btn px-2 py-1 text-texte-2 hover:bg-surface-2 hover:text-texte;  }
-@utility champ {  @apply w-full rounded-lg border border-bord bg-surface px-3 py-2 text-sm text-texte placeholder:text-texte-3 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25;  }
+@utility btn-discret {  @apply btn px-2 py-1 text-texte-2 hover:bg-surface-3 hover:text-texte;  }
+@utility champ {  @apply w-full rounded border border-line-strong bg-surface px-3 py-2 text-sm text-texte placeholder:text-texte-3 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent-soft;  }
 @utility etiquette {  @apply mb-1.5 block text-sm font-medium text-texte;  }
 
 /* Rapport : mise en page de lecture et d'impression */

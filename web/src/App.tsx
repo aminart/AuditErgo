@@ -105,7 +105,7 @@ export default function App() {
         <aside className="no-print border-b border-bord bg-surface lg:sticky lg:top-0 lg:h-screen lg:border-r lg:border-b-0">
           <div className="flex h-full flex-col gap-4 p-4">
             <div className="flex items-center gap-3 px-1">
-              <div className="grid size-9 place-items-center rounded-lg bg-marque text-white dark:text-[#0f1a2e]">
+              <div className="grid size-9 place-items-center rounded bg-primary text-on-primary">
                 <Icone nom="recherche" className="size-5" />
               </div>
               <div className="min-w-0">
@@ -116,7 +116,7 @@ export default function App() {
             <nav className="flex gap-1 overflow-x-auto lg:flex-col">
               {PAGES.map((p) => (
                 <button key={p.id} onClick={() => aller(p.id)} aria-current={page === p.id ? "page" : undefined}
-                  className={cx("flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+                  className={cx("flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
                     page === p.id ? "bg-marque-doux text-marque" : "text-texte-2 hover:bg-surface-2 hover:text-texte")}>
                   <Icone nom={p.icone} className="size-[18px]" />
                   {t(p.cle)}
@@ -127,7 +127,7 @@ export default function App() {
             </nav>
             <div className="mt-auto hidden space-y-3 lg:block">
               {config && (
-                <button onClick={() => aller("reglages")} className="w-full rounded-lg border border-bord px-3 py-2.5 text-left text-xs hover:bg-surface-2">
+                <button onClick={() => aller("reglages")} className="w-full rounded-md border border-bord px-3 py-2.5 text-left text-xs hover:bg-surface-2">
                   <div className="flex items-center gap-1.5 font-medium text-texte">
                     <span className={cx("size-2 rounded-full", config.ia.active ? "bg-ok" : "bg-texte-3")} aria-hidden="true" />
                     {config.ia.active ? config.ia.modele : t("ia.titre")}
@@ -139,7 +139,7 @@ export default function App() {
                 </button>
               )}
               <div className="flex items-center gap-2">
-                <div className="flex flex-1 rounded-lg border border-bord p-0.5" role="group" aria-label={t("langue")}>
+                <div className="flex flex-1 rounded-md border border-bord p-0.5" role="group" aria-label={t("langue")}>
                   {(["fr", "en"] as Langue[]).map((lg) => (
                     <button key={lg} onClick={() => changerLangue(lg)} aria-pressed={langue === lg}
                       className={cx("flex-1 rounded-md py-1 text-xs font-semibold uppercase", langue === lg ? "bg-surface-2 text-texte" : "text-texte-3 hover:text-texte")}>
@@ -147,7 +147,7 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                <button onClick={changerTheme} className="btn-discret rounded-lg border border-bord p-1.5" aria-label={t("theme")}
+                <button onClick={changerTheme} className="btn-discret rounded-md border border-bord p-1.5" aria-label={t("theme")}
                   title={theme === "sombre" ? t("theme.clair") : t("theme.sombre")}>
                   <Icone nom={theme === "sombre" ? "soleil" : "lune"} className="size-4" />
                 </button>

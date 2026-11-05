@@ -126,6 +126,8 @@ cd web && npm install && npm run dev  # interface sur http://localhost:5173, rec
 npm run build                         # recompile web/dist/, à committer avec les sources
 ```
 
+Couleurs, police et arrondis viennent du design system commun **Night Navy** (paquet `night-navy`, dépôt [aminart/Design-system-](https://github.com/aminart/Design-system-)), partagé avec SpecGen et Analyse documentaire. Il est branché en tête de `web/src/index.css` et figé sur une version dans `web/package.json` : mettre à jour ce numéro pour suivre une nouvelle version. Utiliser les classes du design system (`bg-surface`, `text-ink-muted`, `bg-primary`, `border-line`…) ou les noms de l'app (`fond`, `texte`, `bord`, `marque`…), qui pointent vers les mêmes jetons, jamais une couleur écrite en dur. Seules les couleurs métier (échelle de gravité, graphiques) restent dans l'app. Une couleur manque ? L'ajouter dans le design system, pas ici.
+
 ## Tests
 
 ```bash
