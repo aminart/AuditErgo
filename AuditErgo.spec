@@ -1,5 +1,6 @@
 # Recette PyInstaller de AuditErgo.exe (workflow « Build Windows exe », ou : pyinstaller --noconfirm AuditErgo.spec).
 # L'interface est livrée compilée (web/dist) : pas besoin de Node.js pour fabriquer l'exe.
+import os
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all, collect_submodules
@@ -61,6 +62,7 @@ exe = EXE(
     a.datas,
     [],
     name="AuditErgo",
+    icon=os.path.join(SPECPATH, "icone", "auditergo.ico"),
     version=version_info,
     console=True,
     upx=False,

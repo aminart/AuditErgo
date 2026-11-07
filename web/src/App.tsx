@@ -8,6 +8,7 @@ import PageSuggestion from "./pages/Suggestion";
 import PageRapport from "./pages/Rapport";
 import PageReglages from "./pages/Reglages";
 import PageHistorique from "./pages/Historique";
+import logoApp from "./assets/auditergo.svg";
 
 type Page = "relecture" | "suggestion" | "rapport" | "historique" | "reglages";
 const PAGES: { id: Page; cle: Cle; icone: string }[] = [
@@ -105,9 +106,7 @@ export default function App() {
         <aside className="no-print border-b border-bord bg-surface lg:sticky lg:top-0 lg:h-screen lg:border-r lg:border-b-0">
           <div className="flex h-full flex-col gap-4 p-4">
             <div className="flex items-center gap-3 px-1">
-              <div className="grid size-9 place-items-center rounded bg-primary text-on-primary">
-                <Icone nom="recherche" className="size-5" />
-              </div>
+              <img src={logoApp} alt="" width={36} height={36} className="block shrink-0" />
               <div className="min-w-0">
                 <div className="text-sm leading-tight font-semibold">{t("app")}</div>
                 <div className="truncate text-xs text-texte-3">{config ? `v${config.referentiel.version}` : ""}</div>
