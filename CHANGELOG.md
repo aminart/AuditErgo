@@ -5,6 +5,11 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
+### Ajouté
+
+- `scripts/release.sh` : publier une release depuis un PC Windows (tests, exe, tag, release GitHub avec l'exe et le
+  zip), sans consommer de minutes GitHub Actions. Voir README, « Release locale ».
+
 ## [1.2.0] — 2026-11-08
 
 ### Ajouté
