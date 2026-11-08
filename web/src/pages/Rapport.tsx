@@ -43,7 +43,7 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("r.titre")}</h1>
+          <h1 className="nn-page-title">{t("r.titre")}</h1>
           <p className="mt-1 max-w-3xl text-sm text-texte-2">{t("r.intro")}</p>
         </header>
         <div className="carte grid min-h-64 place-items-center border-dashed p-8 text-center">
@@ -86,7 +86,7 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
       <div className="no-print space-y-4">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{t("r.titre")}</h1>
+            <h1 className="nn-page-title">{t("r.titre")}</h1>
             <p className="mt-1 max-w-3xl text-sm text-texte-2">{t("r.intro")}</p>
           </div>
           {actuel && (

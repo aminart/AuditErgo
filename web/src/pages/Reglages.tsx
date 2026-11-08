@@ -12,7 +12,7 @@ export default function PageReglages({ config, recharger }: { config: Config; re
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("nav.reglages")}</h1>
+        <h1 className="nn-page-title">{t("nav.reglages")}</h1>
         <p className="mt-1 text-sm text-texte-2">{t("referentiel", { v: ref.version, n: ref.criteres.length, r: ref.nb_regles })}</p>
       </header>
 

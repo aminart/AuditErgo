@@ -26,6 +26,7 @@ const TEXTES = {
 
   // IA
   "ia.titre": ["Modèle IA", "AI model"],
+  "ia.connecte": ["LLM connecté", "LLM connected"],
   "ia.local": ["Modèle sur ce poste : aucune donnée n'en sort.", "Model on this computer: no data leaves it."],
   "ia.distant": ["Les constats sont envoyés au serveur {h}.", "Findings are sent to server {h}."],
   "ia.desactivee": ["IA désactivée (AUDIT_ERGO_IA=0) : seuls les contrôles de forme sont disponibles.", "AI disabled (AUDIT_ERGO_IA=0): only form checks are available."],

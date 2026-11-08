@@ -8,6 +8,7 @@ import PageSuggestion from "./pages/Suggestion";
 import PageRapport from "./pages/Rapport";
 import PageReglages from "./pages/Reglages";
 import PageHistorique from "./pages/Historique";
+import logoApp from "./assets/auditergo.svg";
 
 type Page = "relecture" | "suggestion" | "rapport" | "historique" | "reglages";
 const PAGES: { id: Page; cle: Cle; icone: string }[] = [
@@ -100,72 +101,53 @@ export default function App() {
 
   return (
     <LangueContext.Provider value={langue}>
-      <div className="min-h-screen lg:grid lg:grid-cols-[16rem_1fr]">
-        {/* Barre latérale */}
-        <aside className="no-print border-b border-bord bg-surface lg:sticky lg:top-0 lg:h-screen lg:border-r lg:border-b-0">
-          <div className="flex h-full flex-col gap-4 p-4">
-            <div className="flex items-center gap-3 px-1">
-              <div className="grid size-9 place-items-center rounded bg-primary text-on-primary">
-                <Icone nom="recherche" className="size-5" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm leading-tight font-semibold">{t("app")}</div>
-                <div className="truncate text-xs text-texte-3">{config ? `v${config.referentiel.version}` : ""}</div>
-              </div>
-            </div>
-            <nav className="flex gap-1 overflow-x-auto lg:flex-col">
-              {PAGES.map((p) => (
-                <button key={p.id} onClick={() => aller(p.id)} aria-current={page === p.id ? "page" : undefined}
-                  className={cx("flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
-                    page === p.id ? "bg-marque-doux text-marque" : "text-texte-2 hover:bg-surface-2 hover:text-texte")}>
-                  <Icone nom={p.icone} className="size-[18px]" />
-                  {t(p.cle)}
-                  {p.id === "relecture" && etat && <span className="ml-auto size-1.5 rounded-full bg-ok" aria-hidden="true" />}
-                  {p.id === "rapport" && etat && etat.rapport !== "aucun" && <span className="ml-auto size-1.5 rounded-full bg-ok" aria-hidden="true" />}
-                </button>
+      <div className="min-h-screen">
+        {/* En-tête commun de la suite (Night Navy 1.1.0) */}
+        <header className="nn-appbar no-print sticky top-0 z-30">
+          <a href="#relecture" className="nn-appbar-brand" onClick={(e) => { e.preventDefault(); aller("relecture"); }}>
+            <img className="nn-appbar-icon" src={logoApp} alt="" />
+            {t("app")}
+          </a>
+          <nav className="nn-appbar-nav" aria-label={t("app")}>
+            {PAGES.filter((p) => p.id !== "reglages").map((p) => (
+              <button key={p.id} type="button" onClick={() => aller(p.id)} aria-current={page === p.id ? "page" : undefined}
+                className={cx("nn-appbar-tab gap-2", page === p.id && "is-active")}>
+                {t(p.cle)}
+                {p.id === "relecture" && etat && <span className="size-1.5 rounded-full bg-ok" aria-hidden="true" />}
+                {p.id === "rapport" && etat && etat.rapport !== "aucun" && <span className="size-1.5 rounded-full bg-ok" aria-hidden="true" />}
+              </button>
+            ))}
+          </nav>
+          <div className="nn-appbar-tools">
+            {config && (
+              <button type="button" onClick={() => aller("reglages")}
+                title={config.ia.active ? (config.ia.locale ? config.ia.modele : `${config.ia.modele} · ${config.ia.hote}`) : t("ia.titre")}
+                className={cx("flex min-h-8 items-center gap-2 rounded-full px-3 text-[13px] font-medium",
+                  config.ia.active ? "bg-success-soft text-success-text" : "bg-surface-3 text-texte-2")}>
+                <span className={cx("size-2 rounded-full", config.ia.active ? "bg-ok" : "bg-texte-3")} aria-hidden="true" />
+                <span className="hidden sm:inline">{config.ia.active ? t("ia.connecte") : t("ia.titre")}</span>
+              </button>
+            )}
+            <div className="nn-segmented" role="group" aria-label={t("langue")}>
+              {(["fr", "en"] as Langue[]).map((lg) => (
+                <button key={lg} type="button" onClick={() => changerLangue(lg)} aria-pressed={langue === lg}>{lg.toUpperCase()}</button>
               ))}
-            </nav>
-            <div className="mt-auto hidden space-y-3 lg:block">
-              {config && (
-                <button onClick={() => aller("reglages")} className="w-full rounded-md border border-bord px-3 py-2.5 text-left text-xs hover:bg-surface-2">
-                  <div className="flex items-center gap-1.5 font-medium text-texte">
-                    <span className={cx("size-2 rounded-full", config.ia.active ? "bg-ok" : "bg-texte-3")} aria-hidden="true" />
-                    {config.ia.active ? config.ia.modele : t("ia.titre")}
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-1 text-texte-3">
-                    <Icone nom={config.ia.locale ? "cadenas" : "globe"} className="size-3" />
-                    {config.ia.active ? (config.ia.locale ? t("ia.local").split(":")[0] : config.ia.hote) : t("ia.desactivee").split(":")[0]}
-                  </div>
-                </button>
-              )}
-              <div className="flex items-center gap-2">
-                <div className="flex flex-1 rounded-md border border-bord p-0.5" role="group" aria-label={t("langue")}>
-                  {(["fr", "en"] as Langue[]).map((lg) => (
-                    <button key={lg} onClick={() => changerLangue(lg)} aria-pressed={langue === lg}
-                      className={cx("flex-1 rounded-md py-1 text-xs font-semibold uppercase", langue === lg ? "bg-surface-2 text-texte" : "text-texte-3 hover:text-texte")}>
-                      {lg}
-                    </button>
-                  ))}
-                </div>
-                <button onClick={changerTheme} className="btn-discret rounded-md border border-bord p-1.5" aria-label={t("theme")}
-                  title={theme === "sombre" ? t("theme.clair") : t("theme.sombre")}>
-                  <Icone nom={theme === "sombre" ? "soleil" : "lune"} className="size-4" />
-                </button>
-              </div>
             </div>
+            <button type="button" onClick={changerTheme} className="nn-icon-btn" aria-label={t("theme")}
+              title={theme === "sombre" ? t("theme.clair") : t("theme.sombre")}>
+              <Icone nom={theme === "sombre" ? "soleil" : "lune"} className="size-[18px]" />
+            </button>
+            <button type="button" onClick={() => aller("reglages")} aria-label={t("nav.reglages")} title={t("nav.reglages")}
+              aria-current={page === "reglages" ? "page" : undefined}
+              className={cx("nn-icon-btn", page === "reglages" && "bg-accent-soft text-accent-ink")}>
+              <Icone nom="reglages" className="size-[19px]" />
+            </button>
           </div>
-        </aside>
+        </header>
 
         {/* Contenu */}
         <main className="min-w-0">
-          <div className="no-print flex items-center justify-end gap-2 border-b border-bord bg-surface px-4 py-2 lg:hidden">
-            {(["fr", "en"] as Langue[]).map((lg) => (
-              <button key={lg} onClick={() => changerLangue(lg)} aria-pressed={langue === lg}
-                className={cx("rounded-md px-2 py-1 text-xs font-semibold uppercase", langue === lg ? "bg-surface-2" : "text-texte-3")}>{lg}</button>
-            ))}
-            <button onClick={changerTheme} className="btn-discret p-1.5" aria-label={t("theme")}><Icone nom={theme === "sombre" ? "soleil" : "lune"} className="size-4" /></button>
-          </div>
-          <div className="print-plein mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+          <div className="print-plein mx-auto max-w-[1240px] px-4 py-6 sm:px-8 lg:py-10">
             {erreur && <div className="no-print mb-4"><Alerte ton="danger">{erreur}</Alerte></div>}
             {!config ? (
               !erreur && <div className="flex items-center gap-2 text-sm text-texte-2"><Spinner /> {t("chargement")}</div>

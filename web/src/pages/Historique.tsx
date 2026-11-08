@@ -228,7 +228,7 @@ export default function PageHistorique({ config, ouvert, ouvrir, oublier }: {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("h.titre")}</h1>
+        <h1 className="nn-page-title">{t("h.titre")}</h1>
         <p className="mt-1 max-w-3xl text-sm text-texte-2">{t("h.intro")}</p>
       </header>
       {!persistant && <Alerte ton="alerte">{t("h.temporaire")}</Alerte>}

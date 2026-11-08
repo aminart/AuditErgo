@@ -272,7 +272,7 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
     return (
       <div className="space-y-6">
         <header>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("rel.titre")}</h1>
+          <h1 className="nn-page-title">{t("rel.titre")}</h1>
           <p className="mt-1 max-w-3xl text-sm text-texte-2">{t("rel.intro")}</p>
         </header>
         {erreur && <Alerte ton="danger">{erreur}</Alerte>}
@@ -304,7 +304,7 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
       {/* En-tête */}
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{etat.nom}</h1>
+          <h1 className="nn-page-title truncate">{etat.nom}</h1>
           <p className="mt-1 text-sm text-texte-2">
             {[ctx.produit, ctx.designer, ctx.plateforme, ctx.date].filter((x) => !estVide(x)).join(" · ") || t("rel.contexte_vide")}
           </p>
