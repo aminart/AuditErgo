@@ -5,21 +5,20 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
-### Ajouté
-
-- `scripts/release.sh` : publier une release depuis un PC Windows (tests, exe, tag, release GitHub avec l'exe et le
-  zip), sans consommer de minutes GitHub Actions. Voir README, « Release locale ».
-
 ## [1.2.0] — 2026-11-08
 
 ### Ajouté
 
 - Nouvelle icône AuditErgo, commune avec Studio Dock : icône de l'exe, logo de l'en-tête et icône de l'onglet (dossier `icone/`).
+- Chaque release contient aussi un zip `AuditErgo-X.Y.Z-windows.zip` (exe, journal, `.env.exemple`), qui passe les
+  filtres bloquant le téléchargement d'un `.exe`.
+- `scripts/release.sh` : publier une release depuis un PC Windows (tests, exe, tag, release GitHub avec l'exe et le
+  zip), sans consommer de minutes GitHub Actions. Voir README, « Release locale ».
 
 ### Modifié
 
 - En-tête commun à la suite (design system Night Navy 1.1.0) : la barre latérale devient une barre d'onglets en
-  haut ; badge « LLM connecté », langue, thème et réglages à droite. Le contenu prend toute la largeur.
+  haut ; badge « LLM connecté », langue, thème et réglages (roue crantée) à droite. Le contenu prend toute la largeur.
 - Titres de page au format commun (32 px, alignés à gauche).
 
 ## [1.1.0] — 2026-11-05
