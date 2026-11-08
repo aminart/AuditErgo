@@ -46,7 +46,7 @@ export default function PageSuggestion({ config }: { config: Config }) {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("s.titre")}</h1>
+        <h1 className="nn-page-title">{t("s.titre")}</h1>
         <p className="mt-1 max-w-3xl text-sm text-texte-2">{t("s.intro")}</p>
       </header>
       {!iaDispo && <Alerte ton="alerte">{t("ia.indisponible")}</Alerte>}

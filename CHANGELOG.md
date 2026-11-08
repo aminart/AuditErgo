@@ -5,9 +5,17 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
+## [1.2.0] — 2026-11-08
+
 ### Ajouté
 
 - Nouvelle icône AuditErgo, commune avec Studio Dock : icône de l'exe, logo de l'en-tête et icône de l'onglet (dossier `icone/`).
+
+### Modifié
+
+- En-tête commun à la suite (design system Night Navy 1.1.0) : la barre latérale devient une barre d'onglets en
+  haut ; badge « LLM connecté », langue, thème et réglages à droite. Le contenu prend toute la largeur.
+- Titres de page au format commun (32 px, alignés à gauche).
 
 ## [1.1.0] — 2026-11-05
 
