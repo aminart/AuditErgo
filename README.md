@@ -130,10 +130,38 @@ Publier une version :
 1. Vérifier que `CHANGELOG.md` décrit bien ce qui a changé, sous « Non publié ».
 2. `python scripts/bump_version.py minor` (ou `patch`, `major`, ou un numéro `1.2.0`) : met à jour `VERSION`, la version de l'interface et date la section du journal.
 3. Committer, fusionner sur `main`.
-4. Sur GitHub : *Releases › Draft a new release*, tag **`vX.Y.Z`** (le même numéro que `VERSION`), coller la section du journal en description, *Publish release*.
-5. Le workflow « Build Windows exe » fabrique l'exe, vérifie qu'il démarre et le joint à la release sous le nom `AuditErgo-X.Y.Z.exe` (quelques minutes). Si le tag ne correspond pas à `VERSION`, il s'arrête avec un message.
+4. Publier la release, au choix :
+   - **Depuis le poste, sans GitHub Actions (aucune minute consommée)** : voir ci-dessous, « Release locale ».
+   - **Par GitHub** : *Releases › Draft a new release*, tag **`vX.Y.Z`** (le même numéro que `VERSION`), coller la section du journal en description, *Publish release*. Le workflow « Build Windows exe » fabrique alors l'exe, vérifie qu'il démarre et le joint à la release sous le nom `AuditErgo-X.Y.Z.exe` (quelques minutes). Si le tag ne correspond pas à `VERSION`, il s'arrête avec un message.
 
-À chaque push, le même workflow dépose l'exe en artefact `AuditErgo-windows` (onglet *Actions*), pour essayer une branche avant de publier. Fabrication à la main, sur un PC Windows : `pip install -r requirements.txt pyinstaller` puis `pyinstaller --noconfirm AuditErgo.spec` (résultat dans `dist\`).
+À chaque push, le même workflow dépose l'exe en artefact `AuditErgo-windows` (onglet *Actions*), pour essayer une branche avant de publier.
+
+### Release locale (sans GitHub Actions)
+
+`scripts/release.sh` fait sur le poste le travail du workflow : tests, fabrication de l'exe, vérification qu'il démarre, tag `vX.Y.Z`, puis release GitHub avec `AuditErgo-X.Y.Z.exe`, le zip `AuditErgo-X.Y.Z-windows.zip`, et en description la section du journal suivie de la liste des PR générée par GitHub.
+
+Prérequis, une seule fois, sur un PC Windows :
+
+1. [Git pour Windows](https://git-scm.com/download/win), qui fournit **Git Bash**, et [Python 3.10+](https://www.python.org/downloads/).
+2. [GitHub CLI](https://cli.github.com), puis `gh auth login` (compte GitHub, protocole HTTPS, connexion par le navigateur).
+
+Puis, à chaque version, après les étapes 1 à 3 ci-dessus, dans Git Bash à la racine du dépôt :
+
+```bash
+git checkout main && git pull
+bash scripts/release.sh --essai   # facultatif : fabrique et vérifie l'exe sans rien publier
+bash scripts/release.sh           # publie la release vX.Y.Z
+```
+
+| Option | Effet |
+|---|---|
+| `--essai` | Tests, exe et fichiers de la release dans `dist\`, sans tag ni release. |
+| `--brouillon` | La release est créée en brouillon, à relire et publier depuis *Releases* sur GitHub. |
+| `--sans-tests` | Saute les tests (déconseillé). |
+
+Le script s'arrête avec un message clair si `main` n'est pas à jour, si des modifications ne sont pas committées, si le tag existe déjà ou si le journal n'a pas de section pour la version. Il installe ses outils dans `.venv-release` (ignoré par Git), sans toucher au `.venv` de `start.bat`. Si les Actions restent activées, la publication déclenche aussi le workflow « Build Windows exe » : sans minutes disponibles il échoue sans conséquence, la release étant déjà complète.
+
+Fabrication à la main, sans publier : `pip install -r requirements.txt pyinstaller` puis `pyinstaller --noconfirm AuditErgo.spec` (résultat dans `dist\`).
 
 ## Lancement par le portail
 
