@@ -7,7 +7,7 @@ name: Build Windows exe
 # L'interface est livrée compilée (web/dist) : Node.js n'est pas nécessaire.
 
 on:
-  push:
+  # Builds seulement pour une release (ou à la main, onglet Actions) : économise les minutes GitHub Actions.
   workflow_dispatch:
   release:
     types: [published]
