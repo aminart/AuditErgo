@@ -33,6 +33,12 @@ const TEXTES = {
 
   // Écran Réglages : connexion au modèle (même fenêtre que SpecGen)
   "param.titre": ["Paramètres de connexion", "Connection settings"],
+  "param.studiodock_intro": ["La connexion et le modèle sont réglés dans Studio Dock, pour toutes les apps de la suite.", "The connection and model are set in Studio Dock, for all the apps of the suite."],
+  "param.studiodock_aide": ["Pour changer de connexion ou de modèle, ouvrez Studio Dock, Réglages › Modèles d'IA. Pour revenir aux paramètres propres à AuditErgo, choisissez-y « Configuration propre à AuditErgo ».", "To change the connection or model, open Studio Dock, Settings › AI models. To go back to AuditErgo's own settings, choose “AuditErgo's own configuration” there."],
+  "param.studiodock_propre": ["Studio Dock laisse à AuditErgo sa configuration propre : la connexion ci-dessous est utilisée.", "Studio Dock leaves AuditErgo its own configuration: the connection below is used."],
+  "param.studiodock_modele": ["Choisi dans Studio Dock", "Chosen in Studio Dock"],
+  "param.aucune": ["aucune", "none"],
+  "param.aucun": ["aucun", "none"],
   "param.intro": ["Serveur du modèle d'IA : Ollama ou LM Studio sur ce poste, ou passerelle de votre organisation. Ces informations restent enregistrées sur ce poste.", "AI model server: Ollama or LM Studio on this computer, or your organisation's gateway. These settings stay on this computer."],
   "param.chargement": ["Chargement des paramètres…", "Loading settings…"],
   "param.defaut": ["Aucun réglage enregistré : l'application utilise Ollama sur ce poste ({a}). Si votre organisation fournit une passerelle, renseignez-la ci-dessous.", "No saved settings: the application uses Ollama on this computer ({a}). If your organisation provides a gateway, enter it below."],

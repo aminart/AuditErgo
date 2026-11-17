@@ -42,6 +42,11 @@ export interface TestConnexion {
 }
 
 export interface ParametresConnexion {
+  /** studiodock : connexion et modèle fournis par Studio Dock (Réglages › Modèles d'IA), communs à la suite. */
+  source: "app" | "studiodock";
+  studiodock: { name: string } | null;
+  /** Studio Dock laisse à AuditErgo sa configuration propre. */
+  studiodock_own: boolean;
   saved: boolean;
   active: boolean;
   env_fields: ChampParametre[];

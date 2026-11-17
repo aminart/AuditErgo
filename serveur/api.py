@@ -298,13 +298,17 @@ def creer_app(ref=None, historique=None):
         lg = _langue(langue)
         en_vigueur = connexion()
         env = en_vigueur.depuis_env
-        candidat = replace(
-            en_vigueur,
-            api_base=en_vigueur.api_base if "api_base" in env else (demande.api_base.strip() or parametres.ADRESSE_DEFAUT),
-            api_key=en_vigueur.api_key if demande.api_key is None or "api_key" in env else demande.api_key.strip(),
-            model=en_vigueur.model if "model" in env else (demande.model.strip() or parametres.MODELE_DEFAUT),
-            timeout=min(en_vigueur.timeout if "timeout" in env else demande.timeout, DELAI_TEST),
-        )
+        if en_vigueur.source == "studiodock":
+            # Connexion fournie par Studio Dock : testée telle quelle (l'écran ne fait que l'afficher)
+            candidat = replace(en_vigueur, timeout=min(en_vigueur.timeout, DELAI_TEST))
+        else:
+            candidat = replace(
+                en_vigueur,
+                api_base=en_vigueur.api_base if "api_base" in env else (demande.api_base.strip() or parametres.ADRESSE_DEFAUT),
+                api_key=en_vigueur.api_key if demande.api_key is None or "api_key" in env else demande.api_key.strip(),
+                model=en_vigueur.model if "model" in env else (demande.model.strip() or parametres.MODELE_DEFAUT),
+                timeout=min(en_vigueur.timeout if "timeout" in env else demande.timeout, DELAI_TEST),
+            )
         resultat = _tester(candidat, lg)
         resultat.update({"at": datetime.now(timezone.utc).isoformat(), "model": candidat.model})
         if resultat.get("field") != "disabled":

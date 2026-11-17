@@ -71,5 +71,7 @@ def historique_isole(tmp_path, monkeypatch):
 def parametres_isoles(tmp_path, monkeypatch):
     """Paramètres de connexion de l'écran Réglages dans un dossier temporaire : jamais ceux du poste."""
     monkeypatch.setenv("AUDIT_ERGO_CONFIG", str(tmp_path / "config"))
+    # Modèles d'IA de Studio Dock : dossier temporaire, jamais ceux du poste
+    monkeypatch.setenv("STUDIODOCK_IA", str(tmp_path / "studiodock-ia"))
     for nom in ("AUDIT_ERGO_MODELE", "AUDIT_ERGO_DELAI"):
         monkeypatch.delenv(nom, raising=False)
