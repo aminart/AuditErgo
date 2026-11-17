@@ -20,6 +20,8 @@ import base64
 import json
 import os
 import sys
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -206,11 +208,73 @@ def _env(champ: str) -> str:
     return os.environ.get(VARIABLES[champ], "").strip()
 
 
-def choix_studiodock() -> studiodock_ia.Choix | None:
-    """Connexion et modèle choisis pour AuditErgo dans Studio Dock, sauf si le .env fournit la connexion."""
-    if any(os.environ.get(v, "").strip() for v in VARIABLES_CONNEXION):
+# Modèle choisi au lancement d'une analyse (« <id de connexion>|<modèle> »), d'après l'en-tête X-StudioDock-Model
+_modele_demande: ContextVar[str | None] = ContextVar("modele_demande", default=None)
+
+
+@contextmanager
+def utiliser_modele(cle: str | None):
+    """Les appels à l'IA faits dans ce bloc (et dans les tâches qu'il lance) utilisent ce modèle de Studio Dock."""
+    jeton = _modele_demande.set(cle or None)
+    try:
+        yield
+    finally:
+        _modele_demande.reset(jeton)
+
+
+def cle_modele(choix: studiodock_ia.Choix) -> str:
+    return f"{choix.connexion.id}|{choix.model}"
+
+
+def modeles_studiodock() -> list[studiodock_ia.Choix]:
+    """Tous les modèles réglés dans Studio Dock, sauf si le .env fournit la connexion ou si Studio Dock laisse à
+    AuditErgo sa configuration propre."""
+    if any(os.environ.get(v, "").strip() for v in VARIABLES_CONNEXION) or studiodock_ia.garde_sa_configuration(APP_ID):
+        return []
+    return [studiodock_ia.Choix(c, m) for c in studiodock_ia.connexions() for m in c.models]
+
+
+def _trouver(modeles: list[studiodock_ia.Choix], cle: Any) -> studiodock_ia.Choix | None:
+    return next((m for m in modeles if cle_modele(m) == cle), None) if cle else None
+
+
+def modele_par_defaut(modeles: list[studiodock_ia.Choix] | None = None) -> studiodock_ia.Choix | None:
+    """Modèle par défaut : celui choisi dans les Réglages d'AuditErgo, sinon celui que Studio Dock lui attribue."""
+    modeles = modeles_studiodock() if modeles is None else modeles
+    if not modeles:
         return None
-    return studiodock_ia.pour_app(APP_ID)
+    return _trouver(modeles, enregistres().get("studiodock_model")) or studiodock_ia.pour_app(APP_ID) or modeles[0]
+
+
+def choix_studiodock() -> studiodock_ia.Choix | None:
+    """Modèle utilisé : celui choisi au lancement, sinon le modèle par défaut (None : pas de modèle Studio Dock)."""
+    modeles = modeles_studiodock()
+    return _trouver(modeles, _modele_demande.get()) or modele_par_defaut(modeles)
+
+
+def enregistrer_modele_par_defaut(cle: str | None) -> None:
+    """Modèle par défaut parmi ceux de Studio Dock (None : celui que Studio Dock attribue à AuditErgo)."""
+    if cle and not _trouver(modeles_studiodock(), cle):
+        raise ValueError("Ce modèle n'est plus proposé par Studio Dock.")
+    donnees = enregistres()
+    donnees["studiodock_model"] = cle or None
+    _ecrire(donnees)
+
+
+def choix_de_modeles() -> dict[str, Any]:
+    """Modèles proposés au lancement d'une analyse, avec le modèle par défaut."""
+    modeles = modeles_studiodock()
+    defaut = modele_par_defaut(modeles)
+    attribue = studiodock_ia.pour_app(APP_ID)
+    enregistre = enregistres().get("studiodock_model")
+    return {
+        "available": bool(modeles),
+        "default": cle_modele(defaut) if defaut else None,
+        "saved_default": enregistre if _trouver(modeles, enregistre) else None,
+        "studiodock_default": cle_modele(attribue) if attribue else None,
+        "options": [{"id": cle_modele(m), "model": m.model, "connection": m.connexion.name, "local": m.connexion.local}
+                    for m in modeles],
+    }
 
 
 def effectifs() -> Parametres:

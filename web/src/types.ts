@@ -287,3 +287,14 @@ export interface Tache<T> {
   erreur: string;
   resultat: T | null;
 }
+
+/** Modèles réglés dans Studio Dock, proposés au lancement d'une analyse. */
+export interface ChoixModeles {
+  available: boolean;
+  /** Modèle utilisé sans choix : celui des Réglages, sinon celui que Studio Dock attribue à AuditErgo. */
+  default: string | null;
+  /** Modèle par défaut choisi dans les Réglages d'AuditErgo (null : celui de Studio Dock). */
+  saved_default: string | null;
+  studiodock_default: string | null;
+  options: { id: string; model: string; connection: string; local: boolean }[];
+}

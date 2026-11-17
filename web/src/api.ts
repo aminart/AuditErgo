@@ -1,11 +1,16 @@
-import type { Comparaison, Config, EtatAudit, FormulaireParametres, Langue, ParametresConnexion, Rapport, ResumeAudit, Suggestion, Tache, TestConnexion } from "./types";
+import { pickedModel } from "./choixModele";
+import type { ChoixModeles, Comparaison, Config, EtatAudit, FormulaireParametres, Langue, ParametresConnexion, Rapport, ResumeAudit, Suggestion, Tache, TestConnexion } from "./types";
 
 export class ErreurApi extends Error {}
 
 async function requete<T>(url: string, options: RequestInit = {}): Promise<T> {
   let reponse: Response;
   try {
-    reponse = await fetch(url, options);
+    // Modèle choisi au lancement (modèles de Studio Dock) : envoyé avec chaque requête
+    const modele = pickedModel();
+    const entetes = new Headers(options.headers);
+    if (modele && !url.startsWith("/api/settings")) entetes.set("X-StudioDock-Model", modele); // Réglages : toujours le modèle par défaut
+    reponse = await fetch(url, { ...options, headers: entetes });
   } catch {
     throw new ErreurApi("Le serveur de l'application ne répond pas. Relancez start.bat. / The application server is not answering.");
   }
@@ -43,6 +48,8 @@ export async function attendre<T>(tache: Tache<T>, progression?: (fait: number, 
 export const api = {
   config: (lg: Langue) => requete<Config>(`/api/config?langue=${lg}`),
   parametres: () => requete<ParametresConnexion>("/api/settings"),
+  modeles: () => requete<ChoixModeles>("/api/settings/models"),
+  choisirModeleParDefaut: (model: string | null) => requete<ChoixModeles>("/api/settings/models", { ...json({ model }), method: "PUT" }),
   enregistrerParametres: (f: FormulaireParametres) =>
     requete<ParametresConnexion>("/api/settings", { ...json(f), method: "PUT" }),
   effacerParametres: () => requete<ParametresConnexion>("/api/settings", { method: "DELETE" }),

@@ -159,11 +159,31 @@ def modifier_rapport(r, chemin, valeur):
 DELAI_TEST = 30.0  # secondes : le test de l'écran Réglages ne doit pas faire attendre 10 minutes
 
 
+class ModeleParDefaut(BaseModel):
+    model: str | None = None  # « <id de connexion>|<modèle> » ; None : celui que Studio Dock attribue
+
+
 class DemandeParametres(BaseModel):
     api_base: str = ""
     api_key: str | None = None  # None : garder la clé enregistrée
     model: str = parametres.MODELE_DEFAUT
     timeout: float = Field(default=parametres.DELAI_DEFAUT, ge=10, le=3600)
+
+
+class ChoixDuModele:
+    """Modèle choisi au lancement (en-tête X-StudioDock-Model : « <id de connexion>|<modèle> » parmi les modèles de
+    Studio Dock) : les appels à l'IA faits pour la requête, et les tâches qu'elle lance, l'utilisent.
+    Middleware ASGI pur, pour que le choix atteigne la route."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        cle = dict(scope.get("headers") or []).get(b"x-studiodock-model", b"").decode("utf-8", "replace").strip()
+        with parametres.utiliser_modele(cle or None):
+            await self.app(scope, receive, send)
 
 
 def creer_app(ref=None, historique=None):
@@ -175,6 +195,7 @@ def creer_app(ref=None, historique=None):
     # Refuse les requêtes adressées à un autre nom que ce poste (protection contre le « DNS rebinding » :
     # une page web malveillante ne peut pas atteindre l'application par un nom de domaine qui pointe ici)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
+    app.add_middleware(ChoixDuModele)
 
     def client():
         """Client du modèle, ou None (IA désactivée). Lève HTTPException si la configuration est refusée."""
@@ -278,6 +299,18 @@ def creer_app(ref=None, historique=None):
     def enregistrer_parametres(demande: DemandeParametres):
         parametres.enregistrer(demande.api_base, demande.api_key, demande.model, demande.timeout)
         return parametres_publics()
+
+    @app.get("/api/settings/models")
+    def lire_modeles():
+        return parametres.choix_de_modeles()
+
+    @app.put("/api/settings/models")
+    def choisir_modele_par_defaut(demande: ModeleParDefaut):
+        try:
+            parametres.enregistrer_modele_par_defaut(demande.model)
+        except ValueError as e:
+            raise HTTPException(422, str(e)) from e
+        return parametres.choix_de_modeles()
 
     @app.delete("/api/settings")
     def effacer_parametres():

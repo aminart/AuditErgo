@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, attendre } from "../api";
 import { useLangue, useT } from "../i18n";
 import type { Config, EtatAudit, Rapport } from "../types";
+import ChoixModele from "../components/ChoixModele";
 import { Alerte, Bouton, Icone, Lien, Progression, cx } from "../components/ui";
 import RapportVue from "../components/RapportVue";
 
@@ -112,6 +113,7 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-3">
+            <ChoixModele compact />
             <Bouton variante={actuel && !perime ? "secondaire" : "primaire"} icone={actuel ? "rafraichir" : "ia"} disabled={!iaDispo} onClick={() => generer(true, !!actuel && !perime)}>
               {actuel ? t("r.regenerer") : t("r.generer")}
             </Bouton>

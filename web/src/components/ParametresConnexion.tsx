@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "../api";
 import { useLangue, useT } from "../i18n";
-import type { ChampParametre, FormulaireParametres, ParametresConnexion as Parametres, TestConnexion } from "../types";
+import type { ChampParametre, ChoixModeles, FormulaireParametres, ParametresConnexion as Parametres, TestConnexion } from "../types";
+import { GroupesDeModeles } from "./ChoixModele";
 import { Alerte, Icone, Spinner, cx } from "./ui";
 
 /** Connexion au modèle : même fenêtre que l'écran Paramètres de SpecGen (champs, test, enregistrement). */
@@ -58,6 +59,7 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
   const lg = useLangue();
   const locale = lg === "en" ? "en-GB" : "fr-FR";
   const [enreg, setEnreg] = useState<Parametres | null>(null);
+  const [modeles, setModeles] = useState<ChoixModeles | null>(null);
   const [adresse, setAdresse] = useState("");
   const [cle, setCle] = useState<string | null>(null); // null : garder la clé enregistrée
   const [voirCle, setVoirCle] = useState(false);
@@ -78,6 +80,10 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
   };
 
   useEffect(() => {
+    api.modeles().then(setModeles).catch(() => setModeles(null));
+  }, []);
+
+  useEffect(() => {
     api.parametres().then(appliquer).catch((e: Error) => setMessage({ ton: "danger", texte: e.message }));
   }, []);
 
@@ -86,6 +92,7 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
   }
 
   const depuisDock = enreg.source === "studiodock";
+  const modeleStudioDock = modeles?.options.find((o) => o.id === modeles.studiodock_default)?.model;
   const depuisEnv = (champ: ChampParametre) => enreg.env_fields.includes(champ);
   const formulaire: FormulaireParametres = { api_base: adresse, api_key: cle, model: modele, timeout: Number(delai) || 600 };
   const complet = Boolean(adresse.trim()) && Boolean(modele.trim());
@@ -122,6 +129,14 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
     lancer("certificat", async () => {
       setEnreg(await api.importerCertificat(fichier, lg));
       setTest(null);
+    });
+
+  const choisirParDefaut = (modele: string | null) =>
+    lancer("enregistrer", async () => {
+      setModeles(await api.choisirModeleParDefaut(modele));
+      appliquer(await api.parametres());
+      setMessage({ ton: "ok", texte: t("param.modele_enregistre") });
+      enregistre();
     });
 
   const tester = () => lancer("test", async () => setTest(await api.testerParametres(formulaire, lg)));
@@ -180,8 +195,6 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
               <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 text-[13px] sm:grid-cols-[150px_1fr]">
                 <dt className="text-ink-muted">{t("param.url")}</dt>
                 <dd className="break-all text-ink-body">{enreg.api_base}</dd>
-                <dt className="text-ink-muted">{t("param.modele")}</dt>
-                <dd className="text-ink-body">{enreg.model}</dd>
                 <dt className="text-ink-muted">{t("param.cle")}</dt>
                 <dd className="text-ink-body">{enreg.has_api_key ? `•••• ${enreg.api_key_hint}` : t("param.aucune")}</dd>
                 <dt className="text-ink-muted">{t("param.certificat")}</dt>
@@ -192,6 +205,17 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
                   <Icone nom={local ? "cadenas" : "globe"} className="size-3.5" />
                   {local ? t("ia.local") : t("ia.distant", { h: new URL(adresse).hostname })}
                 </p>
+              )}
+              {modeles && modeles.options.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="modele-defaut" className="text-[13px] font-medium text-ink">{t("param.modele_defaut")}</label>
+                  <select id="modele-defaut" className="champ" value={modeles.saved_default ?? ""} disabled={occupe !== null}
+                    onChange={(e) => choisirParDefaut(e.target.value || null)}>
+                    <option value="">{t("param.modele_studiodock", { m: modeleStudioDock ? ` (${modeleStudioDock})` : "" })}</option>
+                    <GroupesDeModeles choix={modeles} />
+                  </select>
+                  <p className="text-[13px] text-ink-muted">{t("param.modele_defaut_aide")}</p>
+                </div>
               )}
               <p className="text-[13px] leading-normal text-ink-muted">{t("param.studiodock_aide")}</p>
             </div>

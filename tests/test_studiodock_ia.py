@@ -73,3 +73,42 @@ def test_test_de_connexion(ref, monkeypatch):
     assert r["model"] == "mistral-small"
     lu = client.get("/api/settings").json()
     assert lu["source"] == "studiodock" and lu["model"] == "mistral-small"
+
+
+def test_modele_choisi_au_lancement_et_par_defaut(ref, monkeypatch):
+    from serveur import api
+
+    ecrire({"connection": "sd1", "model": "mistral-small"})
+    client = TestClient(api.creer_app(ref))
+    choix = client.get("/api/settings/models").json()
+    assert choix["available"] and choix["default"] == "sd1|mistral-small"
+    assert [o["id"] for o in choix["options"]] == ["sd1|mistral-large", "sd1|mistral-small", "sd2|qwen3:8b"]
+
+    assert client.put("/api/settings/models", json={"model": "sd2|qwen3:8b"}).json()["saved_default"] == "sd2|qwen3:8b"
+    assert parametres.effectifs().model == "qwen3:8b"
+    assert client.put("/api/settings/models", json={"model": "sd9|absent"}).status_code == 422
+
+    # Au lancement : l'en-tête vaut pour la requête et pour la tâche qu'elle lance (fil séparé)
+    from serveur.taches import Taches
+
+    with parametres.utiliser_modele("sd1|mistral-large"):
+        assert parametres.effectifs().model == "mistral-large"
+        tache = Taches().lancer("essai", lambda t: parametres.effectifs().model)
+    import time
+
+    for _ in range(50):
+        if tache.etat != "en_cours":
+            break
+        time.sleep(0.02)
+    assert tache.resultat == "mistral-large"
+    assert parametres.effectifs().model == "qwen3:8b"
+    lu = client.get("/api/settings", headers={"X-StudioDock-Model": "sd1|mistral-large"}).json()
+    assert lu["model"] == "mistral-large"
+    client.put("/api/settings/models", json={"model": None})
+    assert parametres.effectifs().model == "mistral-small"
+
+
+def test_sans_studio_dock_pas_de_choix(ref):
+    from serveur import api
+
+    assert TestClient(api.creer_app(ref)).get("/api/settings/models").json()["available"] is False

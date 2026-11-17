@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, attendre } from "../api";
 import { useLangue, useT } from "../i18n";
 import type { Anomalie, Config, Constat, EtatAudit, ResumeAudit } from "../types";
+import ChoixModele from "../components/ChoixModele";
 import { Alerte, Badge, Bouton, Icone, Lien, Metrique, Onglets, Progression, Section, Spinner, cx } from "../components/ui";
 import { ListeAudits } from "./Historique";
 import { BarresHorizontales, PastilleGravite, couleurGravite } from "../components/graphiques";
@@ -349,11 +350,12 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
               {etat.ia.erreurs > 0 && <> · <span className="text-danger">{t("ia.erreurs", { n: etat.ia.erreurs })}</span></>}
               {etat.ia.depuis_cache > 0 && <> · {t("ia.depuis_cache", { n: etat.ia.depuis_cache })}</>}
             </p>
-            {etat.ia.depuis_cache > 0 && <Bouton variante="discret" icone="rafraichir" onClick={() => lancerIA(true)}>{t("ia.refaire")}</Bouton>}
+            {etat.ia.depuis_cache > 0 && <><ChoixModele compact /><Bouton variante="discret" icone="rafraichir" onClick={() => lancerIA(true)}>{t("ia.refaire")}</Bouton></>}
           </div>
         ) : (
           <div className="space-y-3">
             {champsVides.length > 0 && <p className="text-sm">{t("ia.vides", { liste: champsVides.map((c) => (ref.champs[c] ?? c).toLowerCase()).join(", ") })}</p>}
+            <ChoixModele compact />
             <div className="flex flex-wrap items-center gap-4">
               <Bouton variante="ia" icone="ia" disabled={!config.ia.active} onClick={() => lancerIA()}>{t("ia.lancer", { n: nbAnalysables })}</Bouton>
               <label className="flex items-center gap-2 text-sm text-texte-2" title={t("ia.remplir_aide")}>
