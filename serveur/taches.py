@@ -3,6 +3,7 @@
 Le modèle local traite un constat à la fois : une relecture peut durer plusieurs minutes. L'interface lance la
 tâche, puis interroge régulièrement son état (`GET /api/taches/{id}`) pour afficher la progression.
 """
+import contextvars
 import threading
 import traceback
 import uuid
@@ -48,7 +49,9 @@ class Taches:
                 tache.detail = traceback.format_exc()
                 tache.etat = "erreur"
 
-        threading.Thread(target=executer, daemon=True, name=f"tache-{nom}").start()
+        # Le contexte suit la tâche : le modèle choisi au lancement (parametres.utiliser_modele) reste en vigueur
+        contexte = contextvars.copy_context()
+        threading.Thread(target=contexte.run, args=(executer,), daemon=True, name=f"tache-{nom}").start()
         return tache
 
     def lire(self, id_):

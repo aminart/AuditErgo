@@ -10,6 +10,9 @@ Même fonctionnement que SpecGen :
 Contrairement à SpecGen, la clé et le certificat sont facultatifs (Ollama ou LM Studio sur le poste n'en
 demandent pas) et l'adresse d'Ollama sert par défaut : l'IA fonctionne sans aucune configuration.
 Ce module ne lit pas lui-même le fichier .env : suggestion.charger_env() le charge dans l'environnement.
+
+Studio Dock (Réglages › Modèles d'IA) peut fournir la connexion et le modèle, communs à toutes les apps de la
+suite : lus avec studiodock_ia.py. Ordre : .env > Studio Dock > écran Réglages > Ollama par défaut.
 """
 from __future__ import annotations
 
@@ -17,15 +20,23 @@ import base64
 import json
 import os
 import sys
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from . import studiodock_ia
+
 ADRESSE_DEFAUT = "http://localhost:11434/v1"
 MODELE_DEFAUT = "mistral-small"
 DELAI_DEFAUT = 600.0  # secondes : un modèle local sur CPU peut être lent
 NOM_CERTIFICAT = "ca.crt"
+
+APP_ID = "audit-ergo"  # identifiant d'AuditErgo dans le catalogue de Studio Dock
+# Variables qui, renseignées, font du .env la source de la connexion (Studio Dock est alors ignoré)
+VARIABLES_CONNEXION = ("API_BASE", "API_KEY", "AUDIT_ERGO_MODELE")
 
 # Champ -> variable d'environnement (ou du .env) qui le remplace
 VARIABLES = {
@@ -62,6 +73,8 @@ class Parametres:
     model: str
     timeout: float
     depuis_env: list[str] = field(default_factory=list)
+    source: str = "app"  # « app » (écran Réglages et .env) ou « studiodock »
+    studiodock_nom: str = ""  # Studio Dock : nom de la connexion
 
 
 # --- Chiffrement de la clé ---------------------------------------------------------------------------
@@ -130,17 +143,31 @@ def cle_enregistree() -> str:
 
 
 def enregistrer(api_base: str, api_key: str | None, model: str, timeout: float) -> None:
-    """`api_key` None garde la clé enregistrée ; une chaîne vide l'efface."""
+    """`api_key` None garde la clé enregistrée ; une chaîne vide l'efface.
+    Connexion fournie par Studio Dock : seul le délai est enregistré, la connexion propre reste intacte."""
     donnees = enregistres()
+    if choix_studiodock() is not None:
+        donnees["timeout"] = timeout
+        _ecrire(donnees)
+        return
     donnees.update({"api_base": api_base.strip(), "model": model.strip() or MODELE_DEFAUT, "timeout": timeout})
     if api_key is not None:
         donnees["api_key"] = _chiffrer(api_key.strip()) if api_key.strip() else None
     _ecrire(donnees)
 
 
+def _cle_studiodock(p: Parametres) -> str:
+    return f"{p.api_base}|{p.model}"
+
+
 def enregistrer_test(resultat: dict[str, Any]) -> None:
     donnees = enregistres()
-    donnees["last_test"] = resultat
+    p = effectifs()
+    if p.source == "studiodock":
+        # À part : le test de la connexion propre à AuditErgo reste valable pour plus tard
+        donnees["studiodock_test"] = {"key": _cle_studiodock(p), "result": resultat}
+    else:
+        donnees["last_test"] = resultat
     _ecrire(donnees)
 
 
@@ -181,6 +208,75 @@ def _env(champ: str) -> str:
     return os.environ.get(VARIABLES[champ], "").strip()
 
 
+# Modèle choisi au lancement d'une analyse (« <id de connexion>|<modèle> »), d'après l'en-tête X-StudioDock-Model
+_modele_demande: ContextVar[str | None] = ContextVar("modele_demande", default=None)
+
+
+@contextmanager
+def utiliser_modele(cle: str | None):
+    """Les appels à l'IA faits dans ce bloc (et dans les tâches qu'il lance) utilisent ce modèle de Studio Dock."""
+    jeton = _modele_demande.set(cle or None)
+    try:
+        yield
+    finally:
+        _modele_demande.reset(jeton)
+
+
+def cle_modele(choix: studiodock_ia.Choix) -> str:
+    return f"{choix.connexion.id}|{choix.model}"
+
+
+def modeles_studiodock() -> list[studiodock_ia.Choix]:
+    """Tous les modèles réglés dans Studio Dock, sauf si le .env fournit la connexion ou si Studio Dock laisse à
+    AuditErgo sa configuration propre."""
+    if any(os.environ.get(v, "").strip() for v in VARIABLES_CONNEXION) or studiodock_ia.garde_sa_configuration(APP_ID):
+        return []
+    return [studiodock_ia.Choix(c, m) for c in studiodock_ia.connexions() for m in c.models]
+
+
+def _trouver(modeles: list[studiodock_ia.Choix], cle: Any) -> studiodock_ia.Choix | None:
+    return next((m for m in modeles if cle_modele(m) == cle), None) if cle else None
+
+
+def modele_par_defaut(modeles: list[studiodock_ia.Choix] | None = None) -> studiodock_ia.Choix | None:
+    """Modèle par défaut : celui choisi dans les Réglages d'AuditErgo, sinon celui que Studio Dock lui attribue."""
+    modeles = modeles_studiodock() if modeles is None else modeles
+    if not modeles:
+        return None
+    return _trouver(modeles, enregistres().get("studiodock_model")) or studiodock_ia.pour_app(APP_ID) or modeles[0]
+
+
+def choix_studiodock() -> studiodock_ia.Choix | None:
+    """Modèle utilisé : celui choisi au lancement, sinon le modèle par défaut (None : pas de modèle Studio Dock)."""
+    modeles = modeles_studiodock()
+    return _trouver(modeles, _modele_demande.get()) or modele_par_defaut(modeles)
+
+
+def enregistrer_modele_par_defaut(cle: str | None) -> None:
+    """Modèle par défaut parmi ceux de Studio Dock (None : celui que Studio Dock attribue à AuditErgo)."""
+    if cle and not _trouver(modeles_studiodock(), cle):
+        raise ValueError("Ce modèle n'est plus proposé par Studio Dock.")
+    donnees = enregistres()
+    donnees["studiodock_model"] = cle or None
+    _ecrire(donnees)
+
+
+def choix_de_modeles() -> dict[str, Any]:
+    """Modèles proposés au lancement d'une analyse, avec le modèle par défaut."""
+    modeles = modeles_studiodock()
+    defaut = modele_par_defaut(modeles)
+    attribue = studiodock_ia.pour_app(APP_ID)
+    enregistre = enregistres().get("studiodock_model")
+    return {
+        "available": bool(modeles),
+        "default": cle_modele(defaut) if defaut else None,
+        "saved_default": enregistre if _trouver(modeles, enregistre) else None,
+        "studiodock_default": cle_modele(attribue) if attribue else None,
+        "options": [{"id": cle_modele(m), "model": m.model, "connection": m.connexion.name, "local": m.connexion.local}
+                    for m in modeles],
+    }
+
+
 def effectifs() -> Parametres:
     donnees = enregistres()
     depuis_env = [champ for champ in VARIABLES if _env(champ)]
@@ -190,6 +286,10 @@ def effectifs() -> Parametres:
         delai = float(delai) if delai else DELAI_DEFAUT
     except ValueError:
         delai = DELAI_DEFAUT
+    if (choix := choix_studiodock()) is not None:
+        c = choix.connexion
+        return Parametres(api_base=c.api_base, api_key=c.api_key, ca_bundle=c.ca_bundle, model=choix.model, timeout=delai,
+                          depuis_env=["timeout"] if _env("timeout") else [], source="studiodock", studiodock_nom=c.name)
     return Parametres(
         api_base=_env("api_base") or donnees.get("api_base") or ADRESSE_DEFAUT,
         api_key=_env("api_key") or cle_enregistree(),
@@ -204,13 +304,19 @@ def publics(chemin_env: Path | None = None) -> dict[str, Any]:
     """Ce que l'écran Réglages peut afficher : jamais la clé elle-même."""
     donnees = enregistres()
     p = effectifs()
-    if "ca_bundle" in p.depuis_env:
-        certificat = {"name": Path(p.ca_bundle).name}
+    studiodock = p.source == "studiodock"
+    if "ca_bundle" in p.depuis_env or studiodock:
+        certificat = {"name": Path(p.ca_bundle).name} if p.ca_bundle else None
     else:
         certificat = donnees.get("certificate") if p.ca_bundle else None
+    test = donnees.get("studiodock_test") if studiodock else None
     return {
+        # Connexion fournie par Studio Dock : affichée en lecture seule, celle de l'écran est gardée pour plus tard
+        "source": p.source,
+        "studiodock": {"name": p.studiodock_nom} if studiodock else None,
+        "studiodock_own": studiodock_ia.garde_sa_configuration(APP_ID),
         # Rien d'enregistré ni de fourni par le .env : l'IA tourne sur les valeurs par défaut (Ollama local)
-        "saved": bool(donnees.get("api_base")) or bool(p.depuis_env),
+        "saved": bool(donnees.get("api_base")) or bool(p.depuis_env) or studiodock,
         "env_fields": p.depuis_env,
         "env_file": str(chemin_env) if chemin_env and chemin_env.is_file() else None,
         "storage_dir": str(dossier_config()),
@@ -221,5 +327,6 @@ def publics(chemin_env: Path | None = None) -> dict[str, Any]:
         "certificate": certificat,
         "model": p.model,
         "timeout": p.timeout,
-        "last_test": donnees.get("last_test"),
+        "last_test": (test.get("result") if isinstance(test, dict) and test.get("key") == _cle_studiodock(p) else None)
+        if studiodock else donnees.get("last_test"),
     }

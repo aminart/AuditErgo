@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { api } from "../api";
 import { useLangue, useT } from "../i18n";
-import type { ChampParametre, FormulaireParametres, ParametresConnexion as Parametres, TestConnexion } from "../types";
+import type { ChampParametre, ChoixModeles, FormulaireParametres, ParametresConnexion as Parametres, TestConnexion } from "../types";
+import { GroupesDeModeles } from "./ChoixModele";
 import { Alerte, Icone, Spinner, cx } from "./ui";
 
 /** Connexion au modèle : même fenêtre que l'écran Paramètres de SpecGen (champs, test, enregistrement). */
@@ -58,6 +59,7 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
   const lg = useLangue();
   const locale = lg === "en" ? "en-GB" : "fr-FR";
   const [enreg, setEnreg] = useState<Parametres | null>(null);
+  const [modeles, setModeles] = useState<ChoixModeles | null>(null);
   const [adresse, setAdresse] = useState("");
   const [cle, setCle] = useState<string | null>(null); // null : garder la clé enregistrée
   const [voirCle, setVoirCle] = useState(false);
@@ -78,6 +80,10 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
   };
 
   useEffect(() => {
+    api.modeles().then(setModeles).catch(() => setModeles(null));
+  }, []);
+
+  useEffect(() => {
     api.parametres().then(appliquer).catch((e: Error) => setMessage({ ton: "danger", texte: e.message }));
   }, []);
 
@@ -85,6 +91,8 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
     return message ? <Alerte ton="danger">{message.texte}</Alerte> : <p className="flex items-center gap-2 text-sm text-ink-muted"><Spinner /> {t("param.chargement")}</p>;
   }
 
+  const depuisDock = enreg.source === "studiodock";
+  const modeleStudioDock = modeles?.options.find((o) => o.id === modeles.studiodock_default)?.model;
   const depuisEnv = (champ: ChampParametre) => enreg.env_fields.includes(champ);
   const formulaire: FormulaireParametres = { api_base: adresse, api_key: cle, model: modele, timeout: Number(delai) || 600 };
   const complet = Boolean(adresse.trim()) && Boolean(modele.trim());
@@ -123,6 +131,14 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
       setTest(null);
     });
 
+  const choisirParDefaut = (modele: string | null) =>
+    lancer("enregistrer", async () => {
+      setModeles(await api.choisirModeleParDefaut(modele));
+      appliquer(await api.parametres());
+      setMessage({ ton: "ok", texte: t("param.modele_enregistre") });
+      enregistre();
+    });
+
   const tester = () => lancer("test", async () => setTest(await api.testerParametres(formulaire, lg)));
 
   const enregistrer = () =>
@@ -145,6 +161,7 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
   return (
     <div className="flex flex-col gap-4">
       {!enreg.active && <Alerte ton="info">{t("ia.desactivee")}</Alerte>}
+      {enreg.studiodock_own && <Alerte ton="neutre">{t("param.studiodock_propre")}</Alerte>}
       {enreg.active && !enreg.saved && <Alerte ton="info">{t("param.defaut", { a: enreg.default_api_base })}</Alerte>}
       {enreg.env_fields.length > 0 && (
         <Alerte ton="neutre">{t("param.env", { f: enreg.env_file ? ` (${enreg.env_file})` : "" })}</Alerte>
@@ -153,7 +170,7 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
       <section className="rounded-xl border border-line bg-surface">
         <div className="px-6 pb-2 pt-7 sm:px-8">
           <h2 className="text-2xl font-bold leading-tight text-accent">{t("param.titre")}</h2>
-          <p className="mt-2 text-sm leading-normal text-ink-muted">{t("param.intro")}</p>
+          <p className="mt-2 text-sm leading-normal text-ink-muted">{t(depuisDock ? "param.studiodock_intro" : "param.intro")}</p>
         </div>
 
         <div className="flex flex-col gap-6 px-6 pb-7 pt-5 sm:px-8">
@@ -169,93 +186,131 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
             </div>
           )}
 
-          <Champ libelle={t("param.url")} pour="api-base" aide={depuisEnv("api_base") ? aideEnv : t("param.url_aide")}>
-            <Saisie id="api-base" type="url" valeur={adresse} changer={setAdresse} indication={enreg.default_api_base}
-              desactive={depuisEnv("api_base")} invalide={champEnEchec === "api_base"} />
-            {local !== null && (
-              <p className={cx("flex items-center gap-1.5 text-[13px]", local ? "text-success-text" : "text-warning-text")}>
-                <Icone nom={local ? "cadenas" : "globe"} className="size-3.5" />
-                {local ? t("ia.local") : t("ia.distant", { h: new URL(adresse).hostname })}
-              </p>
-            )}
-          </Champ>
-
-          {cle === null ? (
-            <Champ libelle={t("param.cle")} aide={depuisEnv("api_key") ? aideEnv : t("param.cle_chiffree")}>
-              <div className={cx("flex min-h-[48px] items-center gap-3 rounded-lg border bg-surface-2 pl-3.5 pr-2",
-                champEnEchec === "api_key" ? "border-[1.5px] border-danger" : "border-line-strong")}>
-                <Icone nom="cadenas" className="size-[18px] text-ink-muted" />
-                <span className="flex-1 text-[15px] tracking-[0.08em] text-ink-body">•••• •••• •••• {enreg.api_key_hint}</span>
-                {!depuisEnv("api_key") && (
-                  <button type="button" onClick={() => setCle("")}
-                    className="min-h-[36px] rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-3">
-                    {t("param.modifier")}
-                  </button>
-                )}
+          {depuisDock ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-line-strong bg-surface-2 px-5 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-ink">Studio Dock</span>
+                <span className="text-[15px] font-medium text-ink">{enreg.studiodock?.name}</span>
               </div>
-            </Champ>
-          ) : (
-            <Champ libelle={t("param.cle")} pour="api-key" facultatif={t("param.facultatif")} aide={t("param.cle_aide")}>
-              <div className="flex gap-2">
-                <Saisie id="api-key" type={voirCle ? "text" : "password"} valeur={cle} changer={setCle}
-                  indication={t("param.cle_saisie")} invalide={champEnEchec === "api_key"} />
-                <button type="button" onClick={() => setVoirCle((v) => !v)} aria-label={voirCle ? t("param.masquer_cle") : t("param.afficher_cle")}
-                  className="flex min-h-[44px] w-11 shrink-0 items-center justify-center rounded-lg border border-line-strong bg-surface text-ink-muted hover:bg-surface-3">
-                  <Icone nom={voirCle ? "oeil_barre" : "oeil"} className="size-[18px]" />
-                </button>
-              </div>
-              {enreg.has_api_key && (
-                <button type="button" className="self-start text-[13px] font-medium text-accent underline" onClick={() => setCle(null)}>
-                  {t("param.garder_cle")}
-                </button>
+              <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 text-[13px] sm:grid-cols-[150px_1fr]">
+                <dt className="text-ink-muted">{t("param.url")}</dt>
+                <dd className="break-all text-ink-body">{enreg.api_base}</dd>
+                <dt className="text-ink-muted">{t("param.cle")}</dt>
+                <dd className="text-ink-body">{enreg.has_api_key ? `•••• ${enreg.api_key_hint}` : t("param.aucune")}</dd>
+                <dt className="text-ink-muted">{t("param.certificat")}</dt>
+                <dd className="text-ink-body">{enreg.certificate?.name ?? t("param.aucun")}</dd>
+              </dl>
+              {local !== null && (
+                <p className={cx("flex items-center gap-1.5 text-[13px]", local ? "text-success-text" : "text-warning-text")}>
+                  <Icone nom={local ? "cadenas" : "globe"} className="size-3.5" />
+                  {local ? t("ia.local") : t("ia.distant", { h: new URL(adresse).hostname })}
+                </p>
               )}
-            </Champ>
-          )}
-
-          <Champ libelle={t("param.certificat")} facultatif={enreg.certificate ? undefined : t("param.facultatif")}
-            aide={depuisEnv("ca_bundle") ? aideEnv : enreg.certificate ? undefined : t("param.certificat_aide")}>
-            {enreg.certificate ? (
-              <div className={cx("flex items-center gap-3 rounded-lg bg-surface px-3.5 py-3",
-                champEnEchec === "certificate" ? "border-[1.5px] border-danger" : "border border-line-strong")}>
-                <Icone nom={certificatEnErreur ? "bouclier_alerte" : "bouclier"} className={cx("size-[22px]", certificatEnErreur ? "text-danger-text" : "text-accent")} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{enreg.certificate.name}</div>
-                  <div className={cx("text-xs", certificatEnErreur ? "text-danger-text" : expiration?.ton === "alerte" ? "text-warning-text" : "text-ink-muted")}>
-                    {champEnEchec === "certificate"
-                      ? t("param.certificat_refuse")
-                      : [enreg.certificate.imported_at && t("param.importe_le", { d: date(enreg.certificate.imported_at) }), expiration?.texte].filter(Boolean).join(" · ")}
-                  </div>
+              {modeles && modeles.options.length > 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="modele-defaut" className="text-[13px] font-medium text-ink">{t("param.modele_defaut")}</label>
+                  <select id="modele-defaut" className="champ" value={modeles.saved_default ?? ""} disabled={occupe !== null}
+                    onChange={(e) => choisirParDefaut(e.target.value || null)}>
+                    <option value="">{t("param.modele_studiodock", { m: modeleStudioDock ? ` (${modeleStudioDock})` : "" })}</option>
+                    <GroupesDeModeles choix={modeles} />
+                  </select>
+                  <p className="text-[13px] text-ink-muted">{t("param.modele_defaut_aide")}</p>
                 </div>
-                {!depuisEnv("ca_bundle") && (
+              )}
+              <p className="text-[13px] leading-normal text-ink-muted">{t("param.studiodock_aide")}</p>
+            </div>
+          ) : (
+            <>
+              <Champ libelle={t("param.url")} pour="api-base" aide={depuisEnv("api_base") ? aideEnv : t("param.url_aide")}>
+                <Saisie id="api-base" type="url" valeur={adresse} changer={setAdresse} indication={enreg.default_api_base}
+                  desactive={depuisEnv("api_base")} invalide={champEnEchec === "api_base"} />
+                {local !== null && (
+                  <p className={cx("flex items-center gap-1.5 text-[13px]", local ? "text-success-text" : "text-warning-text")}>
+                    <Icone nom={local ? "cadenas" : "globe"} className="size-3.5" />
+                    {local ? t("ia.local") : t("ia.distant", { h: new URL(adresse).hostname })}
+                  </p>
+                )}
+              </Champ>
+
+              {cle === null ? (
+                <Champ libelle={t("param.cle")} aide={depuisEnv("api_key") ? aideEnv : t("param.cle_chiffree")}>
+                  <div className={cx("flex min-h-[48px] items-center gap-3 rounded-lg border bg-surface-2 pl-3.5 pr-2",
+                    champEnEchec === "api_key" ? "border-[1.5px] border-danger" : "border-line-strong")}>
+                    <Icone nom="cadenas" className="size-[18px] text-ink-muted" />
+                    <span className="flex-1 text-[15px] tracking-[0.08em] text-ink-body">•••• •••• •••• {enreg.api_key_hint}</span>
+                    {!depuisEnv("api_key") && (
+                      <button type="button" onClick={() => setCle("")}
+                        className="min-h-[36px] rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-3">
+                        {t("param.modifier")}
+                      </button>
+                    )}
+                  </div>
+                </Champ>
+              ) : (
+                <Champ libelle={t("param.cle")} pour="api-key" facultatif={t("param.facultatif")} aide={t("param.cle_aide")}>
+                  <div className="flex gap-2">
+                    <Saisie id="api-key" type={voirCle ? "text" : "password"} valeur={cle} changer={setCle}
+                      indication={t("param.cle_saisie")} invalide={champEnEchec === "api_key"} />
+                    <button type="button" onClick={() => setVoirCle((v) => !v)} aria-label={voirCle ? t("param.masquer_cle") : t("param.afficher_cle")}
+                      className="flex min-h-[44px] w-11 shrink-0 items-center justify-center rounded-lg border border-line-strong bg-surface text-ink-muted hover:bg-surface-3">
+                      <Icone nom={voirCle ? "oeil_barre" : "oeil"} className="size-[18px]" />
+                    </button>
+                  </div>
+                  {enreg.has_api_key && (
+                    <button type="button" className="self-start text-[13px] font-medium text-accent underline" onClick={() => setCle(null)}>
+                      {t("param.garder_cle")}
+                    </button>
+                  )}
+                </Champ>
+              )}
+
+              <Champ libelle={t("param.certificat")} facultatif={enreg.certificate ? undefined : t("param.facultatif")}
+                aide={depuisEnv("ca_bundle") ? aideEnv : enreg.certificate ? undefined : t("param.certificat_aide")}>
+                {enreg.certificate ? (
+                  <div className={cx("flex items-center gap-3 rounded-lg bg-surface px-3.5 py-3",
+                    champEnEchec === "certificate" ? "border-[1.5px] border-danger" : "border border-line-strong")}>
+                    <Icone nom={certificatEnErreur ? "bouclier_alerte" : "bouclier"} className={cx("size-[22px]", certificatEnErreur ? "text-danger-text" : "text-accent")} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{enreg.certificate.name}</div>
+                      <div className={cx("text-xs", certificatEnErreur ? "text-danger-text" : expiration?.ton === "alerte" ? "text-warning-text" : "text-ink-muted")}>
+                        {champEnEchec === "certificate"
+                          ? t("param.certificat_refuse")
+                          : [enreg.certificate.imported_at && t("param.importe_le", { d: date(enreg.certificate.imported_at) }), expiration?.texte].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                    {!depuisEnv("ca_bundle") && (
+                      <button type="button" disabled={occupe === "certificat"} onClick={() => fichierCertificat.current?.click()}
+                        className="min-h-[36px] rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-3">
+                        {occupe === "certificat" ? t("param.certificat_import") : t("param.remplacer")}
+                      </button>
+                    )}
+                  </div>
+                ) : (
                   <button type="button" disabled={occupe === "certificat"} onClick={() => fichierCertificat.current?.click()}
-                    className="min-h-[36px] rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink hover:bg-surface-3">
-                    {occupe === "certificat" ? t("param.certificat_import") : t("param.remplacer")}
+                    className={cx("flex min-h-[52px] items-center justify-center gap-2 rounded-lg border-[1.5px] border-dashed text-sm font-medium text-accent hover:border-accent hover:bg-accent-softer",
+                      champEnEchec === "certificate" ? "border-danger" : "border-line-dashed")}>
+                    <Icone nom="plus" className="size-[18px]" />
+                    {occupe === "certificat" ? t("param.certificat_import") : t("param.certificat_choisir")}
                   </button>
                 )}
-              </div>
-            ) : (
-              <button type="button" disabled={occupe === "certificat"} onClick={() => fichierCertificat.current?.click()}
-                className={cx("flex min-h-[52px] items-center justify-center gap-2 rounded-lg border-[1.5px] border-dashed text-sm font-medium text-accent hover:border-accent hover:bg-accent-softer",
-                  champEnEchec === "certificate" ? "border-danger" : "border-line-dashed")}>
-                <Icone nom="plus" className="size-[18px]" />
-                {occupe === "certificat" ? t("param.certificat_import") : t("param.certificat_choisir")}
-              </button>
-            )}
-            <input ref={fichierCertificat} type="file" accept=".crt,.pem,.cer" className="hidden"
-              onChange={(e) => {
-                const fichier = e.target.files?.[0];
-                if (fichier) importerCertificat(fichier);
-                e.target.value = "";
-              }} />
-          </Champ>
+                <input ref={fichierCertificat} type="file" accept=".crt,.pem,.cer" className="hidden"
+                  onChange={(e) => {
+                    const fichier = e.target.files?.[0];
+                    if (fichier) importerCertificat(fichier);
+                    e.target.value = "";
+                  }} />
+              </Champ>
+
+            </>
+          )}
 
           <details className="border-t border-line pt-4" open={champEnEchec === "model" || undefined}>
             <summary className="cursor-pointer text-sm font-medium text-ink-muted hover:text-ink">
               {t("param.avance", { m: modele || "mistral-small", d: delai })}
             </summary>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Champ libelle={t("param.modele")} pour="model" aide={depuisEnv("model") ? aideEnv : t("param.modele_aide")}>
-                <Saisie id="model" valeur={modele} changer={setModele} desactive={depuisEnv("model")} invalide={champEnEchec === "model"} />
+              <Champ libelle={t("param.modele")} pour="model" aide={depuisDock ? t("param.studiodock_modele") : depuisEnv("model") ? aideEnv : t("param.modele_aide")}>
+                <Saisie id="model" valeur={modele} changer={setModele} desactive={depuisDock || depuisEnv("model")} invalide={champEnEchec === "model"} />
               </Champ>
               <Champ libelle={t("param.delai")} pour="timeout" aide={depuisEnv("timeout") ? aideEnv : undefined}>
                 <Saisie id="timeout" type="number" valeur={delai} changer={setDelai} desactive={depuisEnv("timeout")} />
@@ -277,7 +332,7 @@ export default function ParametresConnexion({ enregistre }: { enregistre: () => 
         </div>
 
         <div className="flex flex-wrap items-center gap-3 rounded-b-xl border-t border-line bg-surface-2 px-6 py-5 sm:px-8">
-          {enreg.saved && !modifie ? (
+          {enreg.saved && !modifie && !depuisDock ? (
             <>
               <button type="button" onClick={effacer} disabled={occupe !== null} className="min-h-[44px] px-1 text-sm font-medium text-danger-text underline">
                 {t("param.effacer")}

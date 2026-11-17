@@ -5,6 +5,17 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
+## [1.3.0] — 2026-11-17
+
+### Ajouté
+
+- Modèles d'IA de Studio Dock : quand Studio Dock fournit la connexion (Réglages › Modèles d'IA, commune à toutes
+  les apps de la suite, y compris un modèle local d'Ollama), AuditErgo l'utilise avec le modèle choisi pour lui.
+  L'écran Réglages l'affiche en lecture seule ; les paramètres propres à AuditErgo sont gardés et reprennent la
+  main si Studio Dock lui laisse sa configuration propre. Un fichier .env reste prioritaire.
+- Choix du modèle parmi ceux de Studio Dock : champ « Modèle d'IA » au lancement de la relecture par l'IA, de la
+  suggestion et du rapport de synthèse, valable pour la session ; modèle par défaut dans Réglages.
+
 ## [1.2.0] — 2026-11-08
 
 ### Ajouté
