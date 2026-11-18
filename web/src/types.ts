@@ -172,6 +172,8 @@ export interface EtatAudit {
   rapport: "aucun" | "a_jour" | "perime";
   cree: string;
   persistant: boolean;
+  /** Analyse par l'IA ou rédaction du rapport en cours sur cet audit */
+  tache: { id: string; nom: "ia" | "rapport" } | null;
 }
 
 export interface ResumeAudit {

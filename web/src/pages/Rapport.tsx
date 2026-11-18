@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { api, attendre } from "../api";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import { api } from "../api";
+import { useSuiviTache } from "../suiviTache";
 import { useLangue, useT } from "../i18n";
 import type { Config, EtatAudit, Rapport } from "../types";
 import ChoixModele from "../components/ChoixModele";
@@ -26,12 +27,19 @@ function exporterHtml(titre: string, nom: string) {
 
 export default function PageRapport({ config, etat, rapport, setRapport, setEtat, allerRelecture }: {
   config: Config; etat: EtatAudit | null; rapport: Rapport | null; setRapport: (r: Rapport | null) => void;
-  setEtat: (e: EtatAudit) => void; allerRelecture: () => void;
+  setEtat: Dispatch<SetStateAction<EtatAudit | null>>; allerRelecture: () => void;
 }) {
   const t = useT();
   const lg = useLangue();
-  const [progression, setProgression] = useState<{ fait: number; total: number } | null>(null);
   const [erreur, setErreur] = useState("");
+  // Rédaction du rapport : son suivi reprend au retour sur cet écran ou après un rechargement de la page
+  const { progression, setProgression, suivre } = useSuiviTache<Rapport>("rapport", etat?.tache, (r) => {
+    setRapport(r);
+    setEtat((p) => p && { ...p, rapport: "a_jour", tache: null });
+  }, (e) => {
+    setErreur(e.message);
+    setEtat((p) => p && { ...p, tache: null });
+  });
   const [edition, setEdition] = useState(false);
   const [enregistre, setEnregistre] = useState(false);
 
@@ -64,10 +72,9 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
     setErreur(""); setProgression({ fait: 0, total: avecIA ? 2 : 0 });
     try {
       const tache = await api.genererRapport(etat.id, avecIA, forcer, lg);
-      setRapport(await attendre(tache, (fait, total) => setProgression({ fait, total })));
-      setEtat({ ...etat, rapport: "a_jour" });
-    } catch (e) { setErreur((e as Error).message); }
-    setProgression(null);
+      setEtat((p) => p && { ...p, tache: { id: tache.id, nom: "rapport" } });
+      await suivre(tache);
+    } catch (e) { setErreur((e as Error).message); setProgression(null); }
   };
 
   const actuel = etat.rapport !== "aucun" ? rapport : null;
@@ -92,7 +99,7 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
           </div>
           {actuel && (
             <div className="flex flex-wrap gap-2">
-              <Bouton variante={edition ? "primaire" : "secondaire"} icone={edition ? "check" : "crayon"} onClick={() => setEdition(!edition)}>
+              <Bouton variante={edition ? "primaire" : "secondaire"} icone={edition ? "check" : "crayon"} disabled={!!etat.tache} onClick={() => setEdition(!edition)}>
                 {edition ? t("r.terminer") : t("r.modifier")}
               </Bouton>
               <Bouton icone="imprimer" onClick={() => window.print()}>{t("r.imprimer")}</Bouton>
@@ -103,7 +110,8 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
         </header>
 
         {erreur && <Alerte ton="danger">{erreur}</Alerte>}
-        {!etat.ia && !actuel && <Alerte ton="info">{t("r.conseil")}</Alerte>}
+        {etat.tache?.nom === "ia" && <Alerte ton="ia">{t("r.analyse_en_cours")}</Alerte>}
+        {!etat.ia && !actuel && !etat.tache && <Alerte ton="info">{t("r.conseil")}</Alerte>}
         {etat.a_valider > 0 && <Alerte ton="ia">{t("r.a_valider", { n: etat.a_valider })}</Alerte>}
         {perime && actuel && <Alerte ton="alerte">{actuel.modifie ? t("r.perime_garde") : t("r.perime")}</Alerte>}
 
@@ -114,10 +122,10 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
         ) : (
           <div className="flex flex-wrap items-center gap-3">
             <ChoixModele compact />
-            <Bouton variante={actuel && !perime ? "secondaire" : "primaire"} icone={actuel ? "rafraichir" : "ia"} disabled={!iaDispo} onClick={() => generer(true, !!actuel && !perime)}>
+            <Bouton variante={actuel && !perime ? "secondaire" : "primaire"} icone={actuel ? "rafraichir" : "ia"} disabled={!iaDispo || !!etat.tache} onClick={() => generer(true, !!actuel && !perime)}>
               {actuel ? t("r.regenerer") : t("r.generer")}
             </Bouton>
-            <Bouton variante="discret" onClick={() => generer(false)}>{t("r.generer_sans_ia")}</Bouton>
+            <Bouton variante="discret" disabled={!!etat.tache} onClick={() => generer(false)}>{t("r.generer_sans_ia")}</Bouton>
           </div>
         )}
 

@@ -85,6 +85,8 @@ Sous la zone de dépôt, les audits récents de l'historique se rouvrent d'un cl
 - **Remplir les cellules vides avec les propositions** (coché par défaut). Décoché, l'IA donne seulement son avis, sans rien remplir.
 - **Analyser N constat(s)** : le modèle local traite un constat à la fois, de quelques secondes à une minute chacun. Une barre de progression suit l'avancement.
 
+L'analyse continue si le designer change d'écran ou recharge la page : la barre de progression réapparaît au retour. Pendant ce temps, les propositions ne peuvent pas être validées, et le rapport ne peut pas être généré (un message l'indique). L'inverse vaut pendant la rédaction du rapport.
+
 Pour chaque constat, l'IA propose le critère principal (avec un niveau de confiance et sa justification), les critères secondaires, une recommandation et son type, et une gravité. Si le designer a déjà fait ses choix, elle donne son verdict sur son critère et sur sa recommandation.
 
 Les réponses sont **mémorisées** : un constat déjà analysé n'est pas recalculé (le résultat indique combien de constats ont été repris du cache). « Refaire sans le cache » force une nouvelle analyse.

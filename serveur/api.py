@@ -86,6 +86,8 @@ MESSAGES = {
     "sans_ia": ("IA indisponible : vérifiez la connexion au modèle.", "AI unavailable: check the model connection."),
     "vide": ("Le constat est vide.", "The finding is empty."),
     "pas_de_rapport": ("Générez d'abord le rapport.", "Generate the report first."),
+    "occupe": ("Une analyse est en cours sur cet audit : attendez qu'elle se termine.",
+               "An analysis is running on this audit: wait until it ends."),
 }
 
 
@@ -115,6 +117,7 @@ class Session:
     nom_sortie: str = ""
     rapport: object = None
     rapport_perime: bool = False  # l'audit a changé depuis la génération du rapport
+    tache: object = None  # Tache (analyse par l'IA ou rédaction du rapport) en cours sur cet audit ; non enregistrée
     verrou: threading.RLock = field(default_factory=threading.RLock)
 
     @property
@@ -186,17 +189,51 @@ class ChoixDuModele:
             await self.app(scope, receive, send)
 
 
+METHODES_SURES = {"GET", "HEAD", "OPTIONS"}
+
+
+class MemeOrigine:
+    """Refuse les requêtes qui modifient quelque chose (POST, PUT, PATCH, DELETE) envoyées par une autre page
+    web que l'application : un site ouvert dans le navigateur ne peut pas déposer un fichier, importer un
+    certificat ou changer les réglages. Middleware ASGI pur.
+
+    Le navigateur indique l'origine de la requête (en-têtes Sec-Fetch-Site et Origin) ; une requête sans ces
+    en-têtes (outil en ligne de commande, tests) n'est pas envoyée par une page web et reste acceptée."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] not in METHODES_SURES and not self.meme_origine(scope):
+            reponse = JSONResponse({"detail": "Requête refusée : elle ne vient pas de l'application."}, status_code=403)
+            return await reponse(scope, receive, send)
+        return await self.app(scope, receive, send)
+
+    @staticmethod
+    def meme_origine(scope):
+        entetes = dict(scope.get("headers") or [])
+        site = entetes.get(b"sec-fetch-site", b"").decode("latin-1").lower()
+        if site and site not in ("same-origin", "none"):
+            return False
+        origine = entetes.get(b"origin", b"").decode("latin-1")
+        if not origine:
+            return True
+        hote = entetes.get(b"host", b"").decode("latin-1").lower()
+        return urlparse(origine).netloc.lower() == hote
+
+
 def creer_app(ref=None, historique=None):
     ref = ref or Referentiel.charger()
     historique = historique or Historique.defaut()
     sessions: dict[str, Session] = {}
     taches = Taches()
+    verrou_taches = threading.Lock()  # une seule tâche à la fois par audit
     app = FastAPI(title="AuditErgo", docs_url=None, redoc_url=None, openapi_url=None)
     # Refuse les requêtes adressées à un autre nom que ce poste (protection contre le « DNS rebinding » :
     # une page web malveillante ne peut pas atteindre l'application par un nom de domaine qui pointe ici)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
     app.add_middleware(ChoixDuModele)
-
+    app.add_middleware(MemeOrigine)
     def client():
         """Client du modèle, ou None (IA désactivée). Lève HTTPException si la configuration est refusée."""
         try:
@@ -219,6 +256,34 @@ def creer_app(ref=None, historique=None):
             sessions[id_] = s
         return s
 
+    def en_cours(s):
+        return s.tache is not None and s.tache.etat == "en_cours"
+
+    def libre(s, lg):
+        """Refuse de modifier un audit pendant qu'une tâche le traite : son résultat écraserait la modification."""
+        if en_cours(s):
+            raise HTTPException(409, message("occupe", lg))
+
+    def lancer_sur(s, nom, lg, travail, resultat):
+        """Lance `travail(tache)` sur l'audit, puis renvoie `resultat()`. Une seule tâche à la fois par audit :
+        relancer la même (page rechargée, double clic) rejoint celle en cours ; une autre est refusée."""
+        with verrou_taches:
+            if en_cours(s):
+                if s.tache.nom == nom:
+                    return s.tache.vue()
+                raise HTTPException(409, message("occupe", lg))
+
+            def executer(tache):
+                with s.verrou:
+                    try:
+                        travail(tache)
+                    finally:
+                        s.tache = None
+                    return resultat()
+
+            s.tache = taches.lancer(nom, executer)
+            return s.tache.vue()
+
     def resume(s):
         """Ce qu'affiche la liste des audits enregistrés."""
         ctx, syn = s.audit.contexte, s.synthese
@@ -240,7 +305,9 @@ def creer_app(ref=None, historique=None):
             pass
 
     def etat(s):
-        return {**ser.etat_audit(s, ref), "persistant": historique.persistant}
+        tache = s.tache if en_cours(s) else None
+        return {**ser.etat_audit(s, ref), "persistant": historique.persistant,
+                "tache": None if tache is None else {"id": tache.id, "nom": tache.nom}}
 
     def recalculer(s, lg=None, perime=True):
         """Contrôles, synthèse et fichier annoté à partir de l'audit en mémoire (sans IA)."""
@@ -452,12 +519,14 @@ def creer_app(ref=None, historique=None):
     # --- Relire un audit -------------------------------------------------------------------------------
 
     @app.post("/api/audits")
-    async def deposer(fichier: UploadFile = File(...), langue: str = Form("")):
+    def deposer(fichier: UploadFile = File(...), langue: str = Form("")):
+        # Fonction ordinaire (pas « async ») : la lecture et l'export du fichier Excel tournent à part, sans
+        # bloquer le serveur (suivi des tâches, /health) pendant ce temps
         lg = _langue(langue)
         nom = Path(fichier.filename or "audit.xlsx").name
         if not nom.lower().endswith(".xlsx"):
             raise HTTPException(400, message("format", lg))
-        contenu = await fichier.read()
+        contenu = fichier.file.read(TAILLE_MAX + 1)
         if len(contenu) > TAILLE_MAX:
             raise HTTPException(413, message("trop_gros", lg))
         id_ = uuid.uuid4().hex
@@ -482,15 +551,19 @@ def creer_app(ref=None, historique=None):
     @app.get("/api/audits/{id_}")
     def lire(id_: str, langue: str = ""):
         s = session(id_, _langue(langue))
-        with s.verrou:
-            if langue and _langue(langue) != s.langue:  # messages et annotations dans la nouvelle langue
+        # Pendant une analyse, l'audit s'ouvre tel quel, sans attendre la fin : la langue changera ensuite
+        if langue and _langue(langue) != s.langue and not en_cours(s):
+            with s.verrou:  # messages et annotations dans la nouvelle langue
                 recalculer(s, langue, perime=False)
                 sauver(s)
-            return etat(s)
+        return etat(s)
 
     @app.delete("/api/audits/{id_}")
     def supprimer(id_: str):
         """Supprime l'audit de ce poste (fichier déposé, relecture et rapport)."""
+        s = sessions.get(id_)
+        if s is not None:
+            libre(s, s.langue)
         sessions.pop(id_, None)
         historique.supprimer(id_)
         return {"ok": True}
@@ -526,14 +599,12 @@ def creer_app(ref=None, historique=None):
         if cl is None:
             raise HTTPException(400, message("sans_ia", lg))
 
-        def executer(tache):
-            with s.verrou:
-                s.langue = lg
-                analyser(s, cl, tache.progression, d.forcer, d.remplir)
-                sauver(s)
-                return etat(s)
+        def travail(tache):
+            s.langue = lg
+            analyser(s, cl, tache.progression, d.forcer, d.remplir)
+            sauver(s)
 
-        return taches.lancer("ia", executer).vue()
+        return lancer_sur(s, "ia", lg, travail, lambda: etat(s))
 
     class Decision(BaseModel):
         ligne: int
@@ -549,6 +620,7 @@ def creer_app(ref=None, historique=None):
     def decisions(id_: str, d: Decisions):
         lg = _langue(d.langue)
         s = session(id_, lg)
+        libre(s, lg)
         with s.verrou:
             for dec in d.decisions:
                 try:
@@ -578,14 +650,12 @@ def creer_app(ref=None, historique=None):
         s = session(id_, lg)
         cl = client() if d.ia else None
 
-        def executer(tache):
-            with s.verrou:
-                s.rapport = rediger(s.audit, ref, cl, lg, forcer=d.forcer, progression=tache.progression)
-                s.rapport_perime = False
-                sauver(s)
-                return ser.rapport(s.rapport, ref)
+        def travail(tache):
+            s.rapport = rediger(s.audit, ref, cl, lg, forcer=d.forcer, progression=tache.progression)
+            s.rapport_perime = False
+            sauver(s)
 
-        return taches.lancer("rapport", executer).vue()
+        return lancer_sur(s, "rapport", lg, travail, lambda: ser.rapport(s.rapport, ref))
 
     @app.get("/api/audits/{id_}/rapport")
     def lire_rapport(id_: str):
@@ -604,6 +674,7 @@ def creer_app(ref=None, historique=None):
         s = session(id_)
         if s.rapport is None:
             raise HTTPException(404, message("pas_de_rapport", s.langue))
+        libre(s, s.langue)
         with s.verrou:
             try:
                 modifier_rapport(s.rapport, m.chemin, m.valeur)

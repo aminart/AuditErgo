@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, attendre } from "../api";
+import type { Dispatch, SetStateAction } from "react";
+import { api } from "../api";
+import { useSuiviTache } from "../suiviTache";
 import { useLangue, useT } from "../i18n";
 import type { Anomalie, Config, Constat, EtatAudit, ResumeAudit } from "../types";
 import ChoixModele from "../components/ChoixModele";
@@ -211,7 +213,7 @@ type Onglet = "constats" | "anomalies" | "couverture" | "gravite";
 type Filtre = "tous" | "a_valider" | "avec_anomalie" | "a_revoir";
 
 export default function PageRelecture({ config, etat, setEtat, allerRapport, ouvrir, allerHistorique }: {
-  config: Config; etat: EtatAudit | null; setEtat: (e: EtatAudit | null) => void; allerRapport: () => void;
+  config: Config; etat: EtatAudit | null; setEtat: Dispatch<SetStateAction<EtatAudit | null>>; allerRapport: () => void;
   ouvrir: (id: string) => void; allerHistorique: () => void;
 }) {
   const t = useT();
@@ -219,13 +221,18 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
   const ref = config.referentiel;
   const [depot, setDepot] = useState(false);
   const [erreur, setErreur] = useState("");
-  const [analyse, setAnalyse] = useState<{ fait: number; total: number } | null>(null);
   const [remplir, setRemplir] = useState(true);
   const [occupe, setOccupe] = useState(false);
   const [onglet, setOnglet] = useState<Onglet>("constats");
   const [filtre, setFiltre] = useState<Filtre>("tous");
   const [recherche, setRecherche] = useState("");
   const [niveaux, setNiveaux] = useState<string[]>(["bloquant", "avertissement", "info"]);
+  // Analyse par l'IA : son suivi reprend au retour sur cet écran ou après un rechargement de la page
+  const { progression: analyse, setProgression: setAnalyse, suivre } = useSuiviTache<EtatAudit>("ia", etat?.tache, setEtat, (e) => {
+    setErreur(e.message);
+    setEtat((p) => p && { ...p, tache: null });
+  });
+  const tacheEnCours = !!etat?.tache;
 
   const deposer = async (f: File) => {
     setErreur(""); setDepot(true);
@@ -241,9 +248,9 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
     setErreur(""); setAnalyse({ fait: 0, total: 0 });
     try {
       const tache = await api.analyserIA(etat.id, remplir, forcer, lg);
-      setEtat(await attendre(tache, (fait, total) => setAnalyse({ fait, total })));
-    } catch (e) { setErreur((e as Error).message); }
-    setAnalyse(null);
+      setEtat((p) => p && { ...p, tache: { id: tache.id, nom: "ia" } });
+      await suivre(tache);
+    } catch (e) { setErreur((e as Error).message); setAnalyse(null); }
   };
 
   const decider = async (d: Decision[]) => {
@@ -322,10 +329,11 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
       </header>
 
       {erreur && <Alerte ton="danger">{erreur}</Alerte>}
+      {etat.tache?.nom === "rapport" && <Alerte ton="ia">{t("rel.rapport_en_cours")}</Alerte>}
       {depot && <Alerte ton="info"><span className="inline-flex items-center gap-2"><Spinner /> {t("rel.lecture")}</span></Alerte>}
 
       <Alerte ton={s.pret ? "ok" : "danger"} titre={s.pret ? t("rel.pret") : t("rel.bloquants", { n: s.nb_bloquants })}
-        action={etat.a_valider > 0 ? <Bouton variante="discret" className="text-xs" disabled={occupe} onClick={() => decider(aValiderTous)}><Icone nom="check" className="size-3.5" />{t("c.tout_valider_audit", { n: etat.a_valider })}</Bouton> : undefined}>
+        action={etat.a_valider > 0 ? <Bouton variante="discret" className="text-xs" disabled={occupe || tacheEnCours} onClick={() => decider(aValiderTous)}><Icone nom="check" className="size-3.5" />{t("c.tout_valider_audit", { n: etat.a_valider })}</Bouton> : undefined}>
         {etat.a_valider > 0 && t("c.a_valider", { n: etat.a_valider })}
       </Alerte>
 
@@ -350,14 +358,14 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
               {etat.ia.erreurs > 0 && <> · <span className="text-danger">{t("ia.erreurs", { n: etat.ia.erreurs })}</span></>}
               {etat.ia.depuis_cache > 0 && <> · {t("ia.depuis_cache", { n: etat.ia.depuis_cache })}</>}
             </p>
-            {etat.ia.depuis_cache > 0 && <><ChoixModele compact /><Bouton variante="discret" icone="rafraichir" onClick={() => lancerIA(true)}>{t("ia.refaire")}</Bouton></>}
+            {etat.ia.depuis_cache > 0 && <><ChoixModele compact /><Bouton variante="discret" icone="rafraichir" disabled={tacheEnCours} onClick={() => lancerIA(true)}>{t("ia.refaire")}</Bouton></>}
           </div>
         ) : (
           <div className="space-y-3">
             {champsVides.length > 0 && <p className="text-sm">{t("ia.vides", { liste: champsVides.map((c) => (ref.champs[c] ?? c).toLowerCase()).join(", ") })}</p>}
             <ChoixModele compact />
             <div className="flex flex-wrap items-center gap-4">
-              <Bouton variante="ia" icone="ia" disabled={!config.ia.active} onClick={() => lancerIA()}>{t("ia.lancer", { n: nbAnalysables })}</Bouton>
+              <Bouton variante="ia" icone="ia" disabled={!config.ia.active || tacheEnCours} onClick={() => lancerIA()}>{t("ia.lancer", { n: nbAnalysables })}</Bouton>
               <label className="flex items-center gap-2 text-sm text-texte-2" title={t("ia.remplir_aide")}>
                 <input type="checkbox" className="accent-[var(--ia)]" checked={remplir} onChange={(e) => setRemplir(e.target.checked)} />
                 {t("ia.remplir")}
@@ -393,7 +401,7 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
                   ))}
                 </div>
               </div>
-              {constats.length ? constats.map((c) => <CarteConstat key={c.ligne} c={c} config={config} decider={decider} occupe={occupe} />)
+              {constats.length ? constats.map((c) => <CarteConstat key={c.ligne} c={c} config={config} decider={decider} occupe={occupe || tacheEnCours} />)
                 : <p className="py-10 text-center text-sm text-texte-3">{t("f.aucun")}</p>}
             </div>
           )}

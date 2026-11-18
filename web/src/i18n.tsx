@@ -186,6 +186,8 @@ const TEXTES = {
   "r.intro": ["Rapport à remettre à l'équipe produit : synthèse et maturité UX, problèmes regroupés par thématique, grands chantiers hiérarchisés, quick wins et suites. Les chiffres sont calculés à partir de l'audit ; l'IA rédige les analyses.", "Report for the product team: summary and UX maturity, issues grouped by theme, prioritised initiatives, quick wins and next steps. Figures are computed from the audit; the AI writes the analysis."],
   "r.sans_audit": ["Déposez d'abord un audit dans « Relire un audit ».", "First drop an audit in “Review an audit”."],
   "r.aller_relecture": ["Aller à la relecture", "Go to the review"],
+  "r.analyse_en_cours": ["Analyse par l'IA en cours sur cet audit : le rapport pourra être généré quand elle sera terminée.", "AI analysis running on this audit: the report can be generated once it has finished."],
+  "rel.rapport_en_cours": ["Rédaction du rapport en cours : les décisions et l'analyse reprendront quand elle sera terminée.", "Report being written: decisions and analysis will be available once it has finished."],
   "r.conseil": ["Conseil : lancez d'abord l'analyse par l'IA, pour que le rapport parte d'un audit complet.", "Tip: run the AI analysis first, so the report starts from a complete audit."],
   "r.a_valider": ["{n} proposition(s) de l'IA ne sont pas encore validées : elles figurent quand même dans le rapport.", "{n} AI proposal(s) are not validated yet: they are still included in the report."],
   "r.generer": ["Générer le rapport", "Generate the report"],

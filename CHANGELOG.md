@@ -5,6 +5,20 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
+### Corrigé
+
+- Recharger la page pendant une analyse par l'IA ne bloque plus l'application jusqu'à la fin de l'analyse : l'audit
+  s'ouvre tout de suite.
+- Changer d'écran pendant l'analyse par l'IA ou la rédaction du rapport ne fait plus perdre la progression : elle
+  réapparaît au retour, même après un rechargement. Une seule tâche à la fois par audit : relancer l'analyse rejoint
+  celle en cours, et les décisions ou le rapport attendent sa fin.
+- Le dépôt d'un audit ne bloque plus le reste de l'application pendant sa lecture.
+
+### Sécurité
+
+- Les requêtes qui modifient quelque chose (dépôt, réglages, certificat, suppression…) sont refusées si elles
+  viennent d'une autre page web que l'application.
+
 ## [1.3.0] — 2026-11-17
 
 ### Ajouté
