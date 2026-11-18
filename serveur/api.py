@@ -19,10 +19,10 @@ from pydantic import BaseModel, Field
 from audit_ergo import ErreurLecture, Referentiel, parametres, relire
 from audit_ergo.cache import CacheSuggestions
 from audit_ergo.chemins import ressources
-from audit_ergo.completion import decider
+from audit_ergo.completion import adopter, decider
 from audit_ergo.controles import controler
 from audit_ergo.export import exporter
-from audit_ergo.i18n import LANGUES, langue_defaut, lire_gravite
+from audit_ergo.i18n import LANGUES, langue_defaut, libelle_gravite, lire_gravite, t
 from audit_ergo.rapport import ecrire_docx, faits, maturite_indicative, rediger
 from audit_ergo.suggestion import (FICHIER_ENV, ErreurSuggestion, client_ou_none, connexion, est_locale,
                                    ia_configuree, suggerer)
@@ -674,6 +674,27 @@ def creer_app(ref=None, historique=None):
         decisions: list[Decision]
         langue: str = ""
 
+    def adopter_avis(s, ligne, champ, lg):
+        """Le designer remplace sa saisie (critère, recommandation ou gravité) par l'avis de l'IA."""
+        r = (s.ia or {}).get(ligne)
+        if r is None or isinstance(r, ErreurSuggestion):
+            raise KeyError(f"Pas d'avis de l'IA pour la ligne {ligne}.")
+        lf = s.audit.langue  # les valeurs écrites suivent la langue du fichier
+        if champ == "critere":
+            valeurs = {"critere": ref.libelle_critere(r.code, lf),
+                       "categorie": ref.libelle_categorie(ref.criteres[r.code]["categorie"], lf)}
+            if r.regle and r.regle != "aucune":
+                valeurs["regle"] = r.regle
+        elif champ == "recommandation" and r.reco_a_retenir:
+            valeurs = {"recommandation": r.reco_a_retenir}
+        elif champ == "gravite" and r.gravite:
+            valeurs = {"gravite": libelle_gravite(r.gravite, lf)}
+        else:
+            raise ValueError(f"Aucun avis de l'IA à adopter pour {champ}.")
+        constat = next(c for c in s.audit.constats if c.ligne == ligne)
+        avant = ser.valeur(constat.valeurs.get(champ))
+        adopter(s.audit, ligne, valeurs, t("compl.adopte", lg, avant=avant if avant not in (None, "") else "—"))
+
     @app.post("/api/audits/{id_}/decisions")
     def decisions(id_: str, d: Decisions):
         lg = _langue(d.langue)
@@ -682,7 +703,10 @@ def creer_app(ref=None, historique=None):
         with s.verrou:
             for dec in d.decisions:
                 try:
-                    decider(s.audit, dec.ligne, dec.champ, dec.action, dec.valeur)
+                    if dec.action == "adopter":
+                        adopter_avis(s, dec.ligne, dec.champ, lg)
+                    else:
+                        decider(s.audit, dec.ligne, dec.champ, dec.action, dec.valeur)
                 except (KeyError, ValueError, StopIteration) as e:
                     raise HTTPException(400, str(e)) from e
             recalculer(s, lg)

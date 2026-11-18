@@ -10,9 +10,22 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 - **Nouvelle version du fichier** : un audit corrigé dans Excel se recharge dans le même audit, au lieu d'être
   déposé comme un nouveau document. L'analyse par l'IA se relance seule, et seuls les constats modifiés repartent
   vers le modèle, y compris quand on recharge le fichier complété téléchargé depuis l'application.
+- **Prendre l'avis de l'IA** en un clic quand elle propose un autre critère, une autre recommandation ou une autre
+  gravité que le designer ; « Revenir à votre saisie » rétablit la valeur d'origine.
+- Relecture : filtre « Bloquants », tri par urgence, bandeau d'état et chiffres clés cliquables.
+- Temps restant estimé pendant l'analyse par l'IA ; titre de l'onglet et notification quand elle se termine.
+- Lien vers le template vierge sur l'écran de dépôt.
+- Rapport : sommaire qui reste visible pendant la lecture, avec la partie en cours.
+
+### Modifié
+
+- Les décisions (Valider, Modifier, Refuser) s'affichent tout de suite, sans bloquer les autres boutons.
+- La gravité s'affiche partout sous la forme « 3 · Élevée ».
+- Le nombre de critères à revoir et de recommandations à améliorer ne compte plus les avis déjà adoptés.
 
 ### Corrigé
 
+- Les liens du sommaire du rapport ne renvoient plus vers l'écran Relecture.
 - Recharger la page pendant une analyse par l'IA ne bloque plus l'application jusqu'à la fin de l'analyse : l'audit
   s'ouvre tout de suite.
 - Changer d'écran pendant l'analyse par l'IA ou la rédaction du rapport ne fait plus perdre la progression : elle

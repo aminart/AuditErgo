@@ -84,14 +84,24 @@ export function Alerte({ ton = "info", titre, children, action }: { ton?: Ton; t
   );
 }
 
-export function Metrique({ libelle, valeur, detail, aide }: { libelle: string; valeur: ReactNode; detail?: ReactNode; aide?: string }) {
-  return (
-    <div className="carte px-4 py-3.5" title={aide}>
+export function Metrique({ libelle, valeur, detail, aide, onClick, actif }: {
+  libelle: string; valeur: ReactNode; detail?: ReactNode; aide?: string; onClick?: () => void; actif?: boolean;
+}) {
+  const contenu = (
+    <>
       <div className="text-xs font-medium text-texte-2">{libelle}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{valeur}</div>
       {detail && <div className="mt-0.5 text-xs text-texte-3">{detail}</div>}
-    </div>
+    </>
   );
+  // Cliquable : filtre la liste des constats sur ce que mesure le chiffre
+  return onClick ? (
+    <button type="button" onClick={onClick} title={aide} aria-pressed={actif}
+      className={cx("carte px-4 py-3.5 text-left transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        actif && "border-accent ring-2 ring-accent-soft")}>
+      {contenu}
+    </button>
+  ) : <div className="carte px-4 py-3.5" title={aide}>{contenu}</div>;
 }
 
 export function Progression({ fait, total, libelle }: { fait: number; total: number; libelle: string }) {

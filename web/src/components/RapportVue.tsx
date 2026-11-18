@@ -1,5 +1,5 @@
-import { createContext, useContext } from "react";
-import { formater } from "../i18n";
+import { createContext, useContext, useEffect, useState } from "react";
+import { formater, useT } from "../i18n";
 import type { Probleme, Rapport } from "../types";
 import { BarreRepartition, BarresHorizontales, EchelleMaturite, PastilleGravite, couleurGravite } from "./graphiques";
 import { cx } from "./ui";
@@ -10,6 +10,25 @@ export type Modifier = (chemin: string, valeur: string | number | string[]) => v
 
 const Edition = createContext<{ actif: boolean; modifier: Modifier; aRediger: string }>({ actif: false, modifier: () => undefined, aRediger: "" });
 const CHAMP_EDITION = "w-full resize-none rounded-md border border-dashed border-accent bg-info-doux/40 px-3 py-2 text-[15px] leading-relaxed text-texte focus:border-solid focus:outline-none focus:ring-2 focus:ring-accent/25";
+
+/** Section du rapport en cours de lecture (la dernière dont le titre est passé sous le sommaire). */
+function useSectionVisible(ids: string[]) {
+  const [actif, setActif] = useState(ids[0]);
+  useEffect(() => {
+    const surveiller = () => {
+      let courant = ids[0];
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top < 160) courant = id;
+      }
+      setActif(courant);
+    };
+    surveiller();
+    window.addEventListener("scroll", surveiller, { passive: true });
+    return () => window.removeEventListener("scroll", surveiller);
+  }, [ids.join()]); // eslint-disable-line
+  return actif;
+}
 
 function ajuster(el: HTMLTextAreaElement | null) {
   if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight + 2}px`; }
@@ -88,11 +107,28 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
   ];
   const niveauxGravite = ["1", "2", "3", "4", ...(f.gravites.aucune ? ["aucune"] : [])];
   const sommaire = [["s1", "1"], ["s2", "2"], ["s3", "3"], ["s4", "4"], ["annexes", ""]] as const;
+  const t = useT();
+  const actif = useSectionVisible(sommaire.map(([cle]) => `r-${cle}`));
+  // Dans l'application, l'adresse (#relecture, #rapport…) désigne l'écran : on défile sans la changer.
+  // Dans le rapport HTML exporté, le lien ordinaire (#r-s1…) fonctionne.
+  const aller = (e: React.MouseEvent, cle: string) => {
+    e.preventDefault();
+    document.getElementById(`r-${cle}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const recurrents = r.themes.filter((th) => th.recurrent);
   const tries = [...f.problemes].sort((a, b) => (b.gravite ?? 0) - (a.gravite ?? 0) || a.ecran.localeCompare(b.ecran));
 
   return (
     <Edition.Provider value={{ actif: edition, modifier, aRediger: L("a_rediger") }}>
+    {/* Sommaire qui reste visible pendant la lecture (hors impression et hors export HTML) */}
+    <nav aria-label={t("r.sommaire")} className="no-print sticky top-16 z-20 mx-auto mb-4 flex max-w-4xl gap-1 overflow-x-auto rounded-full border border-bord bg-surface/95 p-1 text-sm shadow-sm backdrop-blur">
+      {sommaire.map(([cle, n]) => (
+        <a key={cle} href={`#r-${cle}`} onClick={(e) => aller(e, cle)} aria-current={actif === `r-${cle}` ? "location" : undefined}
+          className={cx("shrink-0 rounded-full px-3 py-1 whitespace-nowrap", actif === `r-${cle}` ? "bg-marque-doux font-medium text-marque" : "text-texte-2 hover:bg-surface-2 hover:text-texte")}>
+          {n && `${n}. `}{L(cle)}
+        </a>
+      ))}
+    </nav>
     <article id="rapport" className="rapport carte mx-auto max-w-4xl space-y-12 px-6 py-10 text-[15px] text-texte sm:px-12 sm:py-14">
       {/* Page de titre */}
       <header className="border-b border-bord pb-10">
@@ -107,12 +143,12 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
         <p className="mt-6 text-xs text-texte-3 italic">{r.ia ? L("redaction_ia", { m: r.modele }) : L("redaction_sans_ia")}</p>
         {r.erreur && <p className="mt-1 text-xs text-danger italic">{L("erreur_ia", { e: r.erreur })}</p>}
         <nav className="no-print mt-8 flex flex-wrap gap-2 text-sm">
-          {sommaire.map(([cle, n]) => <a key={cle} href={`#r-${cle}`} className="rounded-full border border-bord px-3 py-1 text-texte-2 hover:bg-surface-2 hover:text-texte">{n && `${n}. `}{L(cle)}</a>)}
+          {sommaire.map(([cle, n]) => <a key={cle} href={`#r-${cle}`} onClick={(e) => aller(e, cle)} className="rounded-full border border-bord px-3 py-1 text-texte-2 hover:bg-surface-2 hover:text-texte">{n && `${n}. `}{L(cle)}</a>)}
         </nav>
       </header>
 
       {/* 1. Synthèse générale */}
-      <section id="r-s1" className="space-y-8">
+      <section id="r-s1" className="scroll-mt-32 space-y-8">
         <h2>1. {L("s1")}</h2>
         <div className="bloc rounded-lg border-l-4 border-marque bg-marque-doux px-5 py-4">
           <h3 className="mb-1">{L("en_bref")}</h3>
@@ -158,7 +194,7 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
       </section>
 
       {/* 2. Problèmes UX principaux */}
-      <section id="r-s2" className="saut-page space-y-8">
+      <section id="r-s2" className="scroll-mt-32 saut-page space-y-8">
         <h2>2. {L("s2")}</h2>
         <p className="text-texte-2">{L("s2_intro", { n: f.problemes.length, t: r.themes.length })}</p>
         {r.themes.length > 0 && (
@@ -211,7 +247,7 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
       </section>
 
       {/* 3. Recommandations */}
-      <section id="r-s3" className="saut-page space-y-8">
+      <section id="r-s3" className="scroll-mt-32 saut-page space-y-8">
         <h2>3. {L("s3")}</h2>
         <p className="text-texte-2">{L("s3_intro")}</p>
         {r.recommandations.length > 0 && (
@@ -239,7 +275,7 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
       </section>
 
       {/* 4. Prochaines étapes */}
-      <section id="r-s4" className="saut-page space-y-8">
+      <section id="r-s4" className="scroll-mt-32 saut-page space-y-8">
         <h2>4. {L("s4")}</h2>
         <div className="space-y-3">
           <h3>4.1 {L("qw")}</h3>
@@ -276,7 +312,7 @@ export default function RapportVue({ r, edition = false, modifier = () => undefi
       </section>
 
       {/* Annexes */}
-      <section id="r-annexes" className="saut-page space-y-8">
+      <section id="r-annexes" className="scroll-mt-32 saut-page space-y-8">
         <h2>{L("annexes")}</h2>
         <div className="space-y-4">
           <h3>A. {L("methode")}</h3>

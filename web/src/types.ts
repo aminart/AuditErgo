@@ -119,6 +119,8 @@ export interface Completion {
   valeur: string | number | null;
   origine: "ia" | "auto" | "valide";
   explication: string;
+  /** Avis de l'IA adopté par le designer à la place de sa saisie (« refuser » y revient) */
+  adopte?: boolean;
 }
 
 export interface Constat {
@@ -130,6 +132,8 @@ export interface Constat {
   completions: Record<string, Completion>;
   anomalies: Anomalie[];
   ia: Suggestion | null;
+  /** Écarts encore ouverts entre la saisie du designer et l'avis de l'IA */
+  ecarts_ia: { critere: boolean; recommandation: boolean; gravite: boolean } | null;
 }
 
 export interface Synthese {

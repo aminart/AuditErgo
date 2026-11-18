@@ -82,15 +82,33 @@ def etat_audit(session, ref):
         if a.ligne:
             par_ligne.setdefault(a.ligne, []).append(anomalie(a))
     constats = []
+    remplacements = getattr(audit, "remplacements", {})
+    a_revoir, a_ameliorer = 0, 0
     for c in audit.constats:
         completes = audit.completions.get(c.ligne, {})
+        remplaces = remplacements.get(c.ligne, {})
+        r = ia.get(c.ligne) if ia else None
+        avis = None
+        if r is not None and not isinstance(r, ErreurSuggestion):
+            # Écarts encore ouverts entre la saisie du designer et l'avis de l'IA (un avis adopté n'en est plus un)
+            avis = {
+                "critere": r.verdict in ("a_revoir", "incorrect") and ref.trouver_critere(c["critere"]) != r.code,
+                "recommandation": (r.reco_statut in ("a_ameliorer", "hors_sujet") and bool(r.reco_a_retenir)
+                                   and (c["recommandation"] or "") != r.reco_a_retenir),
+                "gravite": (bool(r.gravite) and lire_gravite(c["gravite"]) is not None
+                            and lire_gravite(c["gravite"]) != r.gravite),
+            }
+            a_revoir += avis["critere"]
+            a_ameliorer += avis["recommandation"]
         constats.append({
             "ligne": c.ligne, "ref": str(c.ref),
             "valeurs": {champ: valeur(v) for champ, v in c.valeurs.items()},
             "gravite": lire_gravite(c["gravite"]),
             "critere_code": ref.trouver_critere(c["critere"]),
-            "completions": {champ: {"valeur": valeur(v), "origine": origine, "explication": explication}
+            "completions": {champ: {"valeur": valeur(v), "origine": origine, "explication": explication,
+                                    "adopte": champ in remplaces}
                             for champ, (v, origine, explication) in completes.items()},
+            "ecarts_ia": avis,
             "anomalies": par_ligne.get(c.ligne, []),
             "ia": suggestion(ia[c.ligne], ref, lg) if ia and c.ligne in ia else None,
         })
@@ -108,8 +126,8 @@ def etat_audit(session, ref):
         "ia": None if ia is None else {
             "analyses": len(ok), "erreurs": len(ia) - len(ok),
             "depuis_cache": sum(1 for r in ok if r.depuis_cache),
-            "criteres_a_revoir": sum(1 for r in ok if r.verdict in ("a_revoir", "incorrect")),
-            "recos_a_ameliorer": sum(1 for r in ok if r.reco_statut in ("a_ameliorer", "hors_sujet")),
+            "criteres_a_revoir": a_revoir,
+            "recos_a_ameliorer": a_ameliorer,
         },
         "nb_completions": sum(len(a) for a in audit.completions.values()),
         "a_valider": sum(1 for a in audit.completions.values() for (_, o, _) in a.values() if o != "valide"),

@@ -275,3 +275,42 @@ def test_nouvelle_version_du_fichier(ref, monkeypatch, audit_xlsx):
         assert client.put(f"/api/audits/{e['id']}/fichier", files={"fichier": (faux.name, f)}).status_code == 400
     garde = client.get(f"/api/audits/{e['id']}").json()
     assert garde["ia"]["analyses"] == 2 and garde["synthese"]["nb_constats"] == 2
+
+
+def test_adopter_l_avis_de_l_ia(client, audit_xlsx, tmp_path):
+    """Le designer remplace son critère et sa gravité par l'avis de l'IA, puis revient à sa saisie."""
+    constat = {**CONSTAT_VALIDE, "critere": "GUI-01 – Incitation (Prompting)", "gravite": 2, "regle": "R4"}
+    e = deposer(client, audit_xlsx([constat])).json()
+    e = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    c = e["constats"][0]
+    assert c["ecarts_ia"] == {"critere": True, "recommandation": False, "gravite": True}
+    assert e["ia"]["criteres_a_revoir"] == 1
+
+    def decider(*decisions):
+        r = client.post(f"/api/audits/{e['id']}/decisions", json={"langue": "fr", "decisions": [
+            {"ligne": c["ligne"], "champ": champ, "action": action} for champ, action in decisions]})
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    a = decider(("critere", "adopter"), ("gravite", "adopter"))
+    ca = a["constats"][0]
+    assert ca["critere_code"] == "GUI-03" and ca["gravite"] == 3
+    assert ca["valeurs"]["regle"] == "R1" and ca["valeurs"]["categorie"].startswith("GUI")
+    assert ca["completions"]["critere"]["adopte"] and ca["completions"]["critere"]["origine"] == "valide"
+    assert "GUI-01" in ca["completions"]["critere"]["explication"]
+    assert ca["ecarts_ia"] == {"critere": False, "recommandation": False, "gravite": False}
+    assert a["ia"]["criteres_a_revoir"] == 0 and a["a_valider"] == e["a_valider"]
+    sortie = tmp_path / "sortie.xlsx"
+    sortie.write_bytes(client.get(f"/api/audits/{e['id']}/fichier").content)
+    ws = load_workbook(sortie)["Audit"]
+    entetes = {nom_colonne(cell.value): cell.column for cell in ws[3] if cell.value}
+    assert ws.cell(row=c["ligne"], column=entetes["critere"]).value.startswith("GUI-03")
+
+    # « Revenir à votre saisie » : critère, catégorie et règle d'origine
+    r = decider(("critere", "refuser"))["constats"][0]
+    assert r["critere_code"] == "GUI-01" and r["valeurs"]["regle"] == "R4" and "critere" not in r["completions"]
+    assert r["ecarts_ia"]["critere"] and r["gravite"] == 3
+
+    # Pas d'avis de l'IA sur ce champ : refusé
+    assert client.post(f"/api/audits/{e['id']}/decisions", json={"decisions": [
+        {"ligne": c["ligne"], "champ": "ecran", "action": "adopter"}]}).status_code == 400

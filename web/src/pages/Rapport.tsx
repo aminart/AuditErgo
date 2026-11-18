@@ -1,6 +1,6 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { api } from "../api";
-import { useSuiviTache } from "../suiviTache";
+import { demanderNotification, useSuiviTache } from "../suiviTache";
 import { useLangue, useT } from "../i18n";
 import type { Config, EtatAudit, Rapport } from "../types";
 import ChoixModele from "../components/ChoixModele";
@@ -39,7 +39,7 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
   }, (e) => {
     setErreur(e.message);
     setEtat((p) => p && { ...p, tache: null });
-  });
+  }, t("r.termine"));
   const [edition, setEdition] = useState(false);
   const [enregistre, setEnregistre] = useState(false);
 
@@ -69,7 +69,8 @@ export default function PageRapport({ config, etat, rapport, setRapport, setEtat
   const generer = async (avecIA: boolean, forcer = false) => {
     if (rapport?.modifie && !window.confirm(t("r.confirmer"))) return;
     setEdition(false);
-    setErreur(""); setProgression({ fait: 0, total: avecIA ? 2 : 0 });
+    setErreur(""); setProgression({ fait: 0, total: avecIA ? 2 : 0, restant: null });
+    if (avecIA) demanderNotification();
     try {
       const tache = await api.genererRapport(etat.id, avecIA, forcer, lg);
       setEtat((p) => p && { ...p, tache: { id: tache.id, nom: "rapport" } });
