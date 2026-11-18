@@ -243,6 +243,22 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
     setDepot(false);
   };
 
+  // Nouvelle version du fichier (modifié dans Excel) : remplace la précédente dans le même audit
+  const [version, setVersion] = useState("");
+  useEffect(() => { setVersion(""); }, [etat?.id]);
+  const nouvelleVersion = async (f: File) => {
+    if (!etat) return;
+    setErreur(""); setVersion(""); setDepot(true);
+    try {
+      const e = await api.nouvelleVersion(etat.id, f, lg);
+      setEtat(e);
+      const relancer = e.ia_avant && config.ia.active;
+      setVersion([t(relancer ? "rel.version_ia" : "rel.version_ok"), e.rapport === "perime" ? t("rel.version_rapport") : ""].filter(Boolean).join(" "));
+      setDepot(false);
+      if (relancer) await lancerIA();
+    } catch (e) { setErreur((e as Error).message); setDepot(false); }
+  };
+
   const lancerIA = async (forcer = false) => {
     if (!etat) return;
     setErreur(""); setAnalyse({ fait: 0, total: 0 });
@@ -318,6 +334,11 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <label className="btn-secondaire cursor-pointer" title={t("rel.version_aide")}>
+            <Icone nom="rafraichir" className="size-4" />{t("rel.version")}
+            <input type="file" accept=".xlsx" className="hidden" disabled={tacheEnCours || depot}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) nouvelleVersion(f); e.target.value = ""; }} />
+          </label>
           <label className="btn-secondaire cursor-pointer">
             <Icone nom="importer" className="size-4" />{t("rel.autre")}
             <input type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) deposer(f); e.target.value = ""; }} />
@@ -330,6 +351,7 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
 
       {erreur && <Alerte ton="danger">{erreur}</Alerte>}
       {etat.tache?.nom === "rapport" && <Alerte ton="ia">{t("rel.rapport_en_cours")}</Alerte>}
+      {version && <Alerte ton="ok">{version}</Alerte>}
       {depot && <Alerte ton="info"><span className="inline-flex items-center gap-2"><Spinner /> {t("rel.lecture")}</span></Alerte>}
 
       <Alerte ton={s.pret ? "ok" : "danger"} titre={s.pret ? t("rel.pret") : t("rel.bloquants", { n: s.nb_bloquants })}

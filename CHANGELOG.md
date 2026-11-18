@@ -5,6 +5,12 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
+### Ajouté
+
+- **Nouvelle version du fichier** : un audit corrigé dans Excel se recharge dans le même audit, au lieu d'être
+  déposé comme un nouveau document. L'analyse par l'IA se relance seule, et seuls les constats modifiés repartent
+  vers le modèle, y compris quand on recharge le fichier complété téléchargé depuis l'application.
+
 ### Corrigé
 
 - Recharger la page pendant une analyse par l'IA ne bloque plus l'application jusqu'à la fin de l'analyse : l'audit

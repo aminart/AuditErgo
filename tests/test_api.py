@@ -226,3 +226,52 @@ def test_requetes_d_un_autre_site_refusees(client, audit_xlsx):
     # L'application elle-même, et la lecture depuis n'importe où, restent possibles
     assert depot(Origin="http://testserver", **{"Sec-Fetch-Site": "same-origin"}).status_code == 200
     assert client.get("/api/config", headers={"Sec-Fetch-Site": "cross-site"}).status_code == 200
+
+
+def test_nouvelle_version_du_fichier(ref, monkeypatch, audit_xlsx):
+    """Le designer corrige son audit dans Excel et le redépose sur le même audit : pas de nouvel audit dans
+    l'historique, et seuls les constats modifiés repartent vers le modèle."""
+    modele = FauxModele(SUGGESTION, prompt_tokens=20000)
+    monkeypatch.setattr(api, "client_ou_none", lambda *a, **k: modele)
+    monkeypatch.setattr(api, "ia_configuree", lambda: True)
+    client = TestClient(api.creer_app(ref))
+    autre = {**CONSTAT_VALIDE, "ecran": "Panier", "constat": "Le total du panier n'est pas visible avant la validation."}
+    e = deposer(client, audit_xlsx([CONSTAT_VALIDE, autre])).json()
+    e = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    attendre(client, client.post(f"/api/audits/{e['id']}/rapport", json={"langue": "fr", "ia": False}).json())
+    appels = len(modele.appels)
+
+    # Le second constat change de critère dans Excel ; le fichier garde un autre nom (export « complété »)
+    modifie = audit_xlsx([CONSTAT_VALIDE, {**autre, "critere": "GUI-01"}], nom="audit_complete.xlsx")
+    with open(modifie, "rb") as f:
+        r = client.put(f"/api/audits/{e['id']}/fichier", files={"fichier": (modifie.name, f)}, data={"langue": "fr"})
+    v2 = r.json()
+    assert r.status_code == 200 and v2["id"] == e["id"] and v2["nom"] == e["nom"]
+    assert v2["ia"] is None and v2["ia_avant"] and v2["rapport"] == "perime"
+    assert [c["valeurs"]["critere"] for c in v2["constats"]][1] != e["constats"][1]["valeurs"]["critere"]
+    assert len(client.get("/api/audits").json()["audits"]) == 1
+
+    v2 = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    assert len(modele.appels) == appels + 1  # seul le constat modifié est réanalysé
+    assert v2["ia"]["analyses"] == 2 and v2["ia"]["depuis_cache"] == 1
+
+    # Le fichier « complété » téléchargé, rechargé tel quel : les propositions de l'IA y sont devenues des
+    # valeurs du fichier, mais rien n'a changé, donc aucun constat ne repart vers le modèle
+    complete = modifie.with_name("audit_complete2.xlsx")
+    complete.write_bytes(client.get(f"/api/audits/{e['id']}/fichier").content)
+    with open(complete, "rb") as f:
+        assert client.put(f"/api/audits/{e['id']}/fichier", files={"fichier": (complete.name, f)}).status_code == 200
+    appels = len(modele.appels)
+    v3 = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    assert len(modele.appels) == appels and v3["ia"]["analyses"] == 2 and v3["ia"]["depuis_cache"] == 2
+    # « Refaire sans le cache » interroge de nouveau le modèle
+    attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr", "forcer": True}).json())
+    assert len(modele.appels) == appels + 2
+
+    # Un fichier illisible laisse la version précédente en place
+    faux = modifie.with_name("faux.xlsx")
+    faux.write_bytes(b"pas un fichier Excel")
+    with open(faux, "rb") as f:
+        assert client.put(f"/api/audits/{e['id']}/fichier", files={"fichier": (faux.name, f)}).status_code == 400
+    garde = client.get(f"/api/audits/{e['id']}").json()
+    assert garde["ia"]["analyses"] == 2 and garde["synthese"]["nb_constats"] == 2

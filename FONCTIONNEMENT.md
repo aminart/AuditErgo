@@ -72,6 +72,8 @@ Sous la zone de dépôt, les audits récents de l'historique se rouvrent d'un cl
 - les chiffres clés : nombre de constats (problèmes et points forts), constats sans anomalie bloquante, constats sans aucune remarque, champs facultatifs remplis, critères cités ;
 - le bouton **Télécharger l'audit annoté** (ou **complété**, après l'IA).
 
+**Nouvelle version du fichier.** Quand le designer a corrigé son audit dans Excel (par exemple le fichier complété, après avoir changé des critères), il le recharge avec **Nouvelle version du fichier** : la nouvelle version remplace la précédente dans le même audit, sans en créer un nouveau dans l'historique. Les contrôles sont refaits. Si l'audit avait été analysé par l'IA, l'analyse se relance d'elle-même, mais seuls les constats modifiés repartent vers le modèle : les autres gardent l'avis déjà rendu (comptés « repris du cache »). Le rapport est conservé, signalé comme à régénérer. Un fichier illisible laisse la version précédente en place.
+
 **Les contrôles de forme (sans IA).** Chaque constat est vérifié selon trois niveaux :
 
 | Niveau | Exemples |

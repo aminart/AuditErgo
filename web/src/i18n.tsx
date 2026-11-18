@@ -104,6 +104,11 @@ const TEXTES = {
   "rel.parcourir": ["Choisir un fichier .xlsx", "Choose an .xlsx file"],
   "rel.lecture": ["Lecture et contrôle du fichier…", "Reading and checking the file…"],
   "rel.autre": ["Déposer un autre audit", "Drop another audit"],
+  "rel.version": ["Nouvelle version du fichier", "New version of the file"],
+  "rel.version_aide": ["Vous avez modifié cet audit dans Excel : rechargez-le ici, il remplace la version précédente sans créer de nouvel audit.", "You edited this audit in Excel: reload it here, it replaces the previous version without creating a new audit."],
+  "rel.version_ok": ["Nouvelle version chargée : les contrôles sont refaits.", "New version loaded: checks have been run again."],
+  "rel.version_ia": ["Nouvelle version chargée. L'IA réanalyse seulement les constats modifiés ; les autres sont repris du cache.", "New version loaded. The AI only re-analyses the modified findings; the others come from the cache."],
+  "rel.version_rapport": ["Le rapport est conservé mais signalé comme à régénérer.", "The report is kept but flagged for regeneration."],
   "rel.exemple": ["Pas d'audit sous la main ? Le dossier « exemples » contient un audit fictif.", "No audit at hand? The “exemples” folder contains a fictitious audit."],
   "rel.contexte_vide": ["Onglet « Contexte » non renseigné", "“Context” sheet not filled in"],
 

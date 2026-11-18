@@ -22,7 +22,7 @@ from audit_ergo.chemins import ressources
 from audit_ergo.completion import decider
 from audit_ergo.controles import controler
 from audit_ergo.export import exporter
-from audit_ergo.i18n import LANGUES, langue_defaut
+from audit_ergo.i18n import LANGUES, langue_defaut, lire_gravite
 from audit_ergo.rapport import ecrire_docx, faits, maturite_indicative, rediger
 from audit_ergo.suggestion import (FICHIER_ENV, ErreurSuggestion, client_ou_none, connexion, est_locale,
                                    ia_configuree, suggerer)
@@ -117,6 +117,7 @@ class Session:
     nom_sortie: str = ""
     rapport: object = None
     rapport_perime: bool = False  # l'audit a changé depuis la génération du rapport
+    reprises: dict = field(default_factory=dict)  # avis de l'IA gardés d'une version précédente du fichier
     tache: object = None  # Tache (analyse par l'IA ou rédaction du rapport) en cours sur cet audit ; non enregistrée
     verrou: threading.RLock = field(default_factory=threading.RLock)
 
@@ -284,6 +285,25 @@ def creer_app(ref=None, historique=None):
             s.tache = taches.lancer(nom, executer)
             return s.tache.vue()
 
+    def empreinte(c):
+        """Ce qui est soumis à l'IA pour un constat : si rien n'a changé, son avis reste valable."""
+        texte = lambda v: " ".join(str(v).split()) if v is not None else ""  # noqa: E731
+        return (texte(c["constat"]), texte(c["ecran"]), ref.trouver_critere(c["critere"]),
+                texte(c["recommandation"]), lire_gravite(c["gravite"]))
+
+    def avis_inchanges(audit_avant, ia_avant, audit):
+        """{ligne: Suggestion} : avis de l'IA sur la version précédente, pour les constats restés identiques
+        (comparés à la version précédente telle qu'elle était dans l'application, propositions de l'IA
+        comprises : un fichier « complété » rechargé tel quel ne repart pas vers le modèle)."""
+        if not ia_avant or audit_avant is None:
+            return {}
+        avant = {}
+        for c in audit_avant.constats:
+            r = ia_avant.get(c.ligne)
+            if c["constat"] and r is not None and not isinstance(r, ErreurSuggestion):
+                avant.setdefault(empreinte(c), r)
+        return {c.ligne: avant[empreinte(c)] for c in audit.constats if c["constat"] and empreinte(c) in avant}
+
     def resume(s):
         """Ce qu'affiche la liste des audits enregistrés."""
         ctx, syn = s.audit.contexte, s.synthese
@@ -323,7 +343,9 @@ def creer_app(ref=None, historique=None):
 
     def analyser(s, cl=None, progression=None, forcer=False, remplir=True):
         audit, anomalies, synthese, sortie, ia = relire(s.entree, s.sortie, ref, cl, progression, forcer, remplir,
-                                                        s.langue)
+                                                        s.langue, s.reprises if cl is not None else None)
+        if cl is not None:
+            s.reprises = {}
         s.audit, s.anomalies, s.synthese, s.ia = audit, anomalies, synthese, ia
         s.fichier = Path(sortie).read_bytes()
         s.nom_sortie = f"{s.stem}_complete.xlsx" if audit.completions else f"{s.stem}_relu.xlsx"
@@ -518,17 +540,22 @@ def creer_app(ref=None, historique=None):
 
     # --- Relire un audit -------------------------------------------------------------------------------
 
-    @app.post("/api/audits")
-    def deposer(fichier: UploadFile = File(...), langue: str = Form("")):
-        # Fonction ordinaire (pas « async ») : la lecture et l'export du fichier Excel tournent à part, sans
-        # bloquer le serveur (suivi des tâches, /health) pendant ce temps
-        lg = _langue(langue)
+    def fichier_depose(fichier, lg):
+        """(nom, contenu) d'un fichier Excel déposé, ou HTTPException s'il n'est pas acceptable."""
         nom = Path(fichier.filename or "audit.xlsx").name
         if not nom.lower().endswith(".xlsx"):
             raise HTTPException(400, message("format", lg))
         contenu = fichier.file.read(TAILLE_MAX + 1)
         if len(contenu) > TAILLE_MAX:
             raise HTTPException(413, message("trop_gros", lg))
+        return nom, contenu
+
+    @app.post("/api/audits")
+    def deposer(fichier: UploadFile = File(...), langue: str = Form("")):
+        # Fonction ordinaire (pas « async ») : la lecture et l'export du fichier Excel tournent à part, sans
+        # bloquer le serveur (suivi des tâches, /health) pendant ce temps
+        lg = _langue(langue)
+        nom, contenu = fichier_depose(fichier, lg)
         id_ = uuid.uuid4().hex
         s = Session(id=id_, nom=nom, dossier=historique.dossier(id_), langue=lg, cree=maintenant())
         s.entree.write_bytes(contenu)
@@ -543,6 +570,37 @@ def creer_app(ref=None, historique=None):
         sessions[s.id] = s
         sauver(s)
         return etat(s)
+
+    @app.put("/api/audits/{id_}/fichier")
+    def nouvelle_version(id_: str, fichier: UploadFile = File(...), langue: str = Form("")):
+        """Nouvelle version du fichier d'un audit (le designer l'a modifié dans Excel) : elle remplace la
+        précédente dans le même audit de l'historique, au lieu d'en créer un nouveau. Les contrôles sont refaits ;
+        les avis de l'IA sont à redemander, mais les constats inchangés sont repris du cache sans rappeler le
+        modèle : seuls les constats modifiés sont réanalysés. Le rapport est gardé, signalé comme périmé."""
+        lg = _langue(langue)
+        s = session(id_, lg)
+        libre(s, lg)
+        _, contenu = fichier_depose(fichier, lg)
+        with s.verrou:
+            precedent = s.entree.read_bytes() if s.entree.exists() else None
+            avant = {c: getattr(s, c) for c in ("audit", "anomalies", "synthese", "ia", "fichier", "nom_sortie",
+                                                "rapport_perime", "reprises")}
+            s.entree.write_bytes(contenu)
+            try:
+                s.langue = lg
+                analyser(s)
+                s.reprises = avis_inchanges(avant["audit"], avant["ia"], s.audit)
+            except Exception as e:  # noqa: BLE001 : fichier illisible ou corrompu : la version précédente reste
+                if precedent is not None:
+                    s.entree.write_bytes(precedent)
+                for c, v in avant.items():
+                    setattr(s, c, v)
+                if s.fichier:
+                    s.sortie.write_bytes(s.fichier)
+                cle = "illisible" if isinstance(e, ErreurLecture) else "corrompu"
+                raise HTTPException(400, message(cle, lg, e=e if cle == "illisible" else type(e).__name__)) from e
+            sauver(s)
+            return {**etat(s), "ia_avant": avant["ia"] is not None}
 
     @app.get("/api/audits")
     def lister():

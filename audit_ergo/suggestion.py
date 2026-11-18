@@ -16,7 +16,7 @@ import os
 import re
 import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -574,10 +574,12 @@ def suggerer(client, ref, constat, ecran=None, critere_designer=None, contexte=N
     return suggestion
 
 
-def verifier_audit(client, ref, audit, progression=None, paralleles=None, forcer=False, langue=None):
+def verifier_audit(client, ref, audit, progression=None, paralleles=None, forcer=False, langue=None, reprises=None):
     """Suggestion pour chaque constat de l'audit. Renvoie {ligne: Suggestion | ErreurSuggestion}.
 
-    Les constats déjà analysés sont repris du cache local, sauf `forcer=True`.
+    Les constats déjà analysés sont repris du cache local, sauf `forcer=True`. `reprises` ({ligne: Suggestion}) :
+    avis déjà rendus sur une version précédente du fichier, pour les constats restés identiques ; ils sont
+    gardés tels quels, sans appeler le modèle (sauf `forcer=True`).
     """
     from .i18n import lire_gravite
 
@@ -585,6 +587,13 @@ def verifier_audit(client, ref, audit, progression=None, paralleles=None, forcer
     contexte = {k: audit.contexte.get(k) for k in ("produit", "cible", "plateforme", "contexte_usage")}
     a_traiter = [c for c in audit.constats if c["constat"]]
     resultats = {}
+    if reprises and not forcer:
+        for c in a_traiter:
+            if c.ligne in reprises:
+                resultats[c.ligne] = replace(reprises[c.ligne], depuis_cache=True)
+        a_traiter = [c for c in a_traiter if c.ligne not in resultats]
+    deja = len(resultats)
+    total = deja + len(a_traiter)
 
     def une(c):
         try:
@@ -595,10 +604,10 @@ def verifier_audit(client, ref, audit, progression=None, paralleles=None, forcer
 
     with ThreadPoolExecutor(max_workers=paralleles or PARALLELE) as pool:
         futures = {pool.submit(une, c): c.ligne for c in a_traiter}
-        for i, f in enumerate(as_completed(futures), 1):
+        for i, f in enumerate(as_completed(futures), deja + 1):
             resultats[futures[f]] = f.result()
             if progression:
-                progression(i, len(a_traiter))
+                progression(i, total)
     return resultats
 
 
