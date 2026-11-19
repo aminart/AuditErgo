@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* Les tests ne sont pas de l'interface : leurs mots (« container »…) ne doivent pas créer de classes */
+@source not "./**/*.test.tsx";
+@source not "./test";
 
 @import "night-navy/night-navy.css";
 @import "night-navy/tailwind-v4.css";

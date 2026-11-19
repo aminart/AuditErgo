@@ -258,6 +258,8 @@ function urgence(c: Constat) {
   return 0;
 }
 
+const lireNiveau = (v: string | undefined) => { const n = Number(/^\s*(\d)\b/.exec(v ?? "")?.[1]); return n >= 1 && n <= 4 ? n : null; };
+
 /** Décisions appliquées tout de suite à l'écran, avant la réponse du serveur (qui fait foi ensuite) */
 function appliquer(etat: EtatAudit, decisions: Decision[]): EtatAudit {
   const constats = etat.constats.map((c) => {
@@ -265,14 +267,17 @@ function appliquer(etat: EtatAudit, decisions: Decision[]): EtatAudit {
     if (!miennes.length) return c;
     const completions = { ...c.completions };
     const valeurs = { ...c.valeurs };
+    let gravite = c.gravite;
     for (const d of miennes) {
       const comp = completions[d.champ];
       if (!comp || comp.adopte) continue; // adopter, revenir à la saisie : le serveur calcule la valeur
       if (d.action === "valider") completions[d.champ] = { ...comp, origine: "valide" };
       else if (d.action === "modifier") { completions[d.champ] = { ...comp, origine: "valide", valeur: d.valeur ?? "" }; valeurs[d.champ] = d.valeur ?? ""; }
       else if (d.action === "refuser") { delete completions[d.champ]; valeurs[d.champ] = null; }
+      // Niveau affiché (« 3 · Élevée ») : suit la cellule, le serveur le relit ensuite (« 3 », « 3 – Élevée »…)
+      if (d.champ === "gravite" && d.action !== "valider") gravite = d.action === "modifier" ? lireNiveau(d.valeur) : null;
     }
-    return { ...c, completions, valeurs };
+    return { ...c, completions, valeurs, gravite };
   });
   const a_valider = constats.reduce((n, c) => n + Object.values(c.completions).filter((x) => x.origine !== "valide").length, 0);
   return { ...etat, constats, a_valider };

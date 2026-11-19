@@ -194,6 +194,12 @@ pip install -r requirements-dev.txt
 python3 -m pytest -q
 ```
 
+Interface (écran Relecture, avec un serveur factice : pas besoin de lancer l'API) :
+
+```bash
+cd web && npm install && npm test
+```
+
 Les tests utilisent un faux serveur local : ils ne nécessitent ni modèle ni réseau.
 
 ## Contenu
