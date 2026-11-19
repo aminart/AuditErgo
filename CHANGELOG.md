@@ -16,6 +16,8 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 - Temps restant estimé pendant l'analyse par l'IA ; titre de l'onglet et notification quand elle se termine.
 - Lien vers le template vierge sur l'écran de dépôt.
 - Rapport : sommaire qui reste visible pendant la lecture, avec la partie en cours.
+- Tests de l'interface sur l'écran Relecture (décisions affichées sans attente, suivi de l'analyse repris),
+  lancés par la CI avec ceux du serveur.
 
 ### Modifié
 
@@ -32,6 +34,8 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
   réapparaît au retour, même après un rechargement. Une seule tâche à la fois par audit : relancer l'analyse rejoint
   celle en cours, et les décisions ou le rapport attendent sa fin.
 - Le dépôt d'un audit ne bloque plus le reste de l'application pendant sa lecture.
+- Modifier ou refuser une gravité proposée met tout de suite à jour le niveau affiché (« 3 · Élevée »), au lieu
+  de montrer l'ancien jusqu'à la réponse du serveur.
 
 ### Sécurité
 
