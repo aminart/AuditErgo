@@ -5,6 +5,8 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
+## [1.4.0] — 2026-11-19
+
 ### Ajouté
 
 - **Nouvelle version du fichier** : un audit corrigé dans Excel se recharge dans le même audit, au lieu d'être
