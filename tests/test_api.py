@@ -1,4 +1,5 @@
 """Tests de l'API de l'application (serveur FastAPI), avec un faux modèle : ni modèle ni réseau nécessaires."""
+import threading
 import time
 
 import pytest
@@ -169,3 +170,147 @@ def test_interface_servie(client):
     assert "<div id=\"root\">" in client.get("/").text
     assert "<div id=\"root\">" in client.get("/rapport").text  # navigation côté navigateur
     assert client.get("/api/inconnu").status_code == 404
+
+
+class ModeleLent(FauxModele):
+    """Faux modèle qui attend un signal avant de répondre : l'analyse reste en cours pendant le test."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.reprendre = threading.Event()
+
+    def _create(self, **requete):
+        assert self.reprendre.wait(10)
+        return super()._create(**requete)
+
+
+def test_audit_utilisable_pendant_une_analyse(ref, monkeypatch, audit_xlsx):
+    modele = ModeleLent(SUGGESTION, prompt_tokens=20000)
+    monkeypatch.setattr(api, "client_ou_none", lambda *a, **k: modele)
+    monkeypatch.setattr(api, "ia_configuree", lambda: True)
+    client = TestClient(api.creer_app(ref))
+    e = deposer(client, audit_xlsx([CONSTAT_VALIDE])).json()
+    tache = client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json()
+    try:
+        # Rouvrir l'audit (page rechargée, autre langue) répond tout de suite et signale l'analyse en cours
+        debut = time.monotonic()
+        ouvert = client.get(f"/api/audits/{e['id']}?langue=en").json()
+        assert time.monotonic() - debut < 2
+        assert ouvert["tache"] == {"id": tache["id"], "nom": "ia"}
+        # Relancer l'analyse rejoint celle en cours ; le rapport et les décisions attendent la fin
+        assert client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json()["id"] == tache["id"]
+        assert client.post(f"/api/audits/{e['id']}/rapport", json={"langue": "fr"}).status_code == 409
+        assert client.post(f"/api/audits/{e['id']}/decisions", json={"decisions": []}).status_code == 409
+        assert client.delete(f"/api/audits/{e['id']}").status_code == 409
+    finally:
+        modele.reprendre.set()
+    fini = attendre(client, tache)
+    assert fini["tache"] is None and fini["ia"]["analyses"] == 1
+    assert client.get(f"/api/audits/{e['id']}").json()["tache"] is None
+    assert client.post(f"/api/audits/{e['id']}/decisions", json={"decisions": []}).status_code == 200
+
+
+def test_requetes_d_un_autre_site_refusees(client, audit_xlsx):
+    """Une page web ouverte dans le navigateur ne peut rien modifier dans l'application."""
+    chemin = audit_xlsx([CONSTAT_VALIDE])
+
+    def depot(**entetes):
+        with open(chemin, "rb") as f:
+            return client.post("/api/audits", files={"fichier": (chemin.name, f)}, headers=entetes)
+
+    assert depot(Origin="https://exemple.com").status_code == 403
+    assert depot(**{"Sec-Fetch-Site": "cross-site"}).status_code == 403
+    assert depot(Origin="null").status_code == 403
+    assert client.put("/api/settings", json={"api_base": "http://pirate"},
+                      headers={"Origin": "http://localhost:9999"}).status_code == 403
+    # L'application elle-même, et la lecture depuis n'importe où, restent possibles
+    assert depot(Origin="http://testserver", **{"Sec-Fetch-Site": "same-origin"}).status_code == 200
+    assert client.get("/api/config", headers={"Sec-Fetch-Site": "cross-site"}).status_code == 200
+
+
+def test_nouvelle_version_du_fichier(ref, monkeypatch, audit_xlsx):
+    """Le designer corrige son audit dans Excel et le redépose sur le même audit : pas de nouvel audit dans
+    l'historique, et seuls les constats modifiés repartent vers le modèle."""
+    modele = FauxModele(SUGGESTION, prompt_tokens=20000)
+    monkeypatch.setattr(api, "client_ou_none", lambda *a, **k: modele)
+    monkeypatch.setattr(api, "ia_configuree", lambda: True)
+    client = TestClient(api.creer_app(ref))
+    autre = {**CONSTAT_VALIDE, "ecran": "Panier", "constat": "Le total du panier n'est pas visible avant la validation."}
+    e = deposer(client, audit_xlsx([CONSTAT_VALIDE, autre])).json()
+    e = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    attendre(client, client.post(f"/api/audits/{e['id']}/rapport", json={"langue": "fr", "ia": False}).json())
+    appels = len(modele.appels)
+
+    # Le second constat change de critère dans Excel ; le fichier garde un autre nom (export « complété »)
+    modifie = audit_xlsx([CONSTAT_VALIDE, {**autre, "critere": "GUI-01"}], nom="audit_complete.xlsx")
+    with open(modifie, "rb") as f:
+        r = client.put(f"/api/audits/{e['id']}/fichier", files={"fichier": (modifie.name, f)}, data={"langue": "fr"})
+    v2 = r.json()
+    assert r.status_code == 200 and v2["id"] == e["id"] and v2["nom"] == e["nom"]
+    assert v2["ia"] is None and v2["ia_avant"] and v2["rapport"] == "perime"
+    assert [c["valeurs"]["critere"] for c in v2["constats"]][1] != e["constats"][1]["valeurs"]["critere"]
+    assert len(client.get("/api/audits").json()["audits"]) == 1
+
+    v2 = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    assert len(modele.appels) == appels + 1  # seul le constat modifié est réanalysé
+    assert v2["ia"]["analyses"] == 2 and v2["ia"]["depuis_cache"] == 1
+
+    # Le fichier « complété » téléchargé, rechargé tel quel : les propositions de l'IA y sont devenues des
+    # valeurs du fichier, mais rien n'a changé, donc aucun constat ne repart vers le modèle
+    complete = modifie.with_name("audit_complete2.xlsx")
+    complete.write_bytes(client.get(f"/api/audits/{e['id']}/fichier").content)
+    with open(complete, "rb") as f:
+        assert client.put(f"/api/audits/{e['id']}/fichier", files={"fichier": (complete.name, f)}).status_code == 200
+    appels = len(modele.appels)
+    v3 = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    assert len(modele.appels) == appels and v3["ia"]["analyses"] == 2 and v3["ia"]["depuis_cache"] == 2
+    # « Refaire sans le cache » interroge de nouveau le modèle
+    attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr", "forcer": True}).json())
+    assert len(modele.appels) == appels + 2
+
+    # Un fichier illisible laisse la version précédente en place
+    faux = modifie.with_name("faux.xlsx")
+    faux.write_bytes(b"pas un fichier Excel")
+    with open(faux, "rb") as f:
+        assert client.put(f"/api/audits/{e['id']}/fichier", files={"fichier": (faux.name, f)}).status_code == 400
+    garde = client.get(f"/api/audits/{e['id']}").json()
+    assert garde["ia"]["analyses"] == 2 and garde["synthese"]["nb_constats"] == 2
+
+
+def test_adopter_l_avis_de_l_ia(client, audit_xlsx, tmp_path):
+    """Le designer remplace son critère et sa gravité par l'avis de l'IA, puis revient à sa saisie."""
+    constat = {**CONSTAT_VALIDE, "critere": "GUI-01 – Incitation (Prompting)", "gravite": 2, "regle": "R4"}
+    e = deposer(client, audit_xlsx([constat])).json()
+    e = attendre(client, client.post(f"/api/audits/{e['id']}/ia", json={"langue": "fr"}).json())
+    c = e["constats"][0]
+    assert c["ecarts_ia"] == {"critere": True, "recommandation": False, "gravite": True}
+    assert e["ia"]["criteres_a_revoir"] == 1
+
+    def decider(*decisions):
+        r = client.post(f"/api/audits/{e['id']}/decisions", json={"langue": "fr", "decisions": [
+            {"ligne": c["ligne"], "champ": champ, "action": action} for champ, action in decisions]})
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    a = decider(("critere", "adopter"), ("gravite", "adopter"))
+    ca = a["constats"][0]
+    assert ca["critere_code"] == "GUI-03" and ca["gravite"] == 3
+    assert ca["valeurs"]["regle"] == "R1" and ca["valeurs"]["categorie"].startswith("GUI")
+    assert ca["completions"]["critere"]["adopte"] and ca["completions"]["critere"]["origine"] == "valide"
+    assert "GUI-01" in ca["completions"]["critere"]["explication"]
+    assert ca["ecarts_ia"] == {"critere": False, "recommandation": False, "gravite": False}
+    assert a["ia"]["criteres_a_revoir"] == 0 and a["a_valider"] == e["a_valider"]
+    sortie = tmp_path / "sortie.xlsx"
+    sortie.write_bytes(client.get(f"/api/audits/{e['id']}/fichier").content)
+    ws = load_workbook(sortie)["Audit"]
+    entetes = {nom_colonne(cell.value): cell.column for cell in ws[3] if cell.value}
+    assert ws.cell(row=c["ligne"], column=entetes["critere"]).value.startswith("GUI-03")
+
+    # « Revenir à votre saisie » : critère, catégorie et règle d'origine
+    r = decider(("critere", "refuser"))["constats"][0]
+    assert r["critere_code"] == "GUI-01" and r["valeurs"]["regle"] == "R4" and "critere" not in r["completions"]
+    assert r["ecarts_ia"]["critere"] and r["gravite"] == 3
+
+    # Pas d'avis de l'IA sur ce champ : refusé
+    assert client.post(f"/api/audits/{e['id']}/decisions", json={"decisions": [
+        {"ligne": c["ligne"], "champ": "ecran", "action": "adopter"}]}).status_code == 400

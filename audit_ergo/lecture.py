@@ -123,6 +123,9 @@ class Audit:
     contexte: dict = field(default_factory=dict)
     colonnes_inconnues: list = field(default_factory=list)
     completions: dict = field(default_factory=dict)  # {ligne: {champ: (valeur, origine, explication)}}
+    # Saisies du designer remplacées à sa demande par l'avis de l'IA : {ligne: {champ: (valeur, completion)}},
+    # pour pouvoir revenir en arrière (voir completion.adopter)
+    remplacements: dict = field(default_factory=dict)
     langue: str = "fr"  # langue du fichier (en-têtes, listes) : les valeurs complétées la suivent
 
     @property

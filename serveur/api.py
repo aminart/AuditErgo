@@ -19,10 +19,10 @@ from pydantic import BaseModel, Field
 from audit_ergo import ErreurLecture, Referentiel, parametres, relire
 from audit_ergo.cache import CacheSuggestions
 from audit_ergo.chemins import ressources
-from audit_ergo.completion import decider
+from audit_ergo.completion import adopter, decider
 from audit_ergo.controles import controler
 from audit_ergo.export import exporter
-from audit_ergo.i18n import LANGUES, langue_defaut
+from audit_ergo.i18n import LANGUES, langue_defaut, libelle_gravite, lire_gravite, t
 from audit_ergo.rapport import ecrire_docx, faits, maturite_indicative, rediger
 from audit_ergo.suggestion import (FICHIER_ENV, ErreurSuggestion, client_ou_none, connexion, est_locale,
                                    ia_configuree, suggerer)
@@ -86,6 +86,8 @@ MESSAGES = {
     "sans_ia": ("IA indisponible : vérifiez la connexion au modèle.", "AI unavailable: check the model connection."),
     "vide": ("Le constat est vide.", "The finding is empty."),
     "pas_de_rapport": ("Générez d'abord le rapport.", "Generate the report first."),
+    "occupe": ("Une analyse est en cours sur cet audit : attendez qu'elle se termine.",
+               "An analysis is running on this audit: wait until it ends."),
 }
 
 
@@ -115,6 +117,8 @@ class Session:
     nom_sortie: str = ""
     rapport: object = None
     rapport_perime: bool = False  # l'audit a changé depuis la génération du rapport
+    reprises: dict = field(default_factory=dict)  # avis de l'IA gardés d'une version précédente du fichier
+    tache: object = None  # Tache (analyse par l'IA ou rédaction du rapport) en cours sur cet audit ; non enregistrée
     verrou: threading.RLock = field(default_factory=threading.RLock)
 
     @property
@@ -186,17 +190,51 @@ class ChoixDuModele:
             await self.app(scope, receive, send)
 
 
+METHODES_SURES = {"GET", "HEAD", "OPTIONS"}
+
+
+class MemeOrigine:
+    """Refuse les requêtes qui modifient quelque chose (POST, PUT, PATCH, DELETE) envoyées par une autre page
+    web que l'application : un site ouvert dans le navigateur ne peut pas déposer un fichier, importer un
+    certificat ou changer les réglages. Middleware ASGI pur.
+
+    Le navigateur indique l'origine de la requête (en-têtes Sec-Fetch-Site et Origin) ; une requête sans ces
+    en-têtes (outil en ligne de commande, tests) n'est pas envoyée par une page web et reste acceptée."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] not in METHODES_SURES and not self.meme_origine(scope):
+            reponse = JSONResponse({"detail": "Requête refusée : elle ne vient pas de l'application."}, status_code=403)
+            return await reponse(scope, receive, send)
+        return await self.app(scope, receive, send)
+
+    @staticmethod
+    def meme_origine(scope):
+        entetes = dict(scope.get("headers") or [])
+        site = entetes.get(b"sec-fetch-site", b"").decode("latin-1").lower()
+        if site and site not in ("same-origin", "none"):
+            return False
+        origine = entetes.get(b"origin", b"").decode("latin-1")
+        if not origine:
+            return True
+        hote = entetes.get(b"host", b"").decode("latin-1").lower()
+        return urlparse(origine).netloc.lower() == hote
+
+
 def creer_app(ref=None, historique=None):
     ref = ref or Referentiel.charger()
     historique = historique or Historique.defaut()
     sessions: dict[str, Session] = {}
     taches = Taches()
+    verrou_taches = threading.Lock()  # une seule tâche à la fois par audit
     app = FastAPI(title="AuditErgo", docs_url=None, redoc_url=None, openapi_url=None)
     # Refuse les requêtes adressées à un autre nom que ce poste (protection contre le « DNS rebinding » :
     # une page web malveillante ne peut pas atteindre l'application par un nom de domaine qui pointe ici)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "testserver"])
     app.add_middleware(ChoixDuModele)
-
+    app.add_middleware(MemeOrigine)
     def client():
         """Client du modèle, ou None (IA désactivée). Lève HTTPException si la configuration est refusée."""
         try:
@@ -219,6 +257,53 @@ def creer_app(ref=None, historique=None):
             sessions[id_] = s
         return s
 
+    def en_cours(s):
+        return s.tache is not None and s.tache.etat == "en_cours"
+
+    def libre(s, lg):
+        """Refuse de modifier un audit pendant qu'une tâche le traite : son résultat écraserait la modification."""
+        if en_cours(s):
+            raise HTTPException(409, message("occupe", lg))
+
+    def lancer_sur(s, nom, lg, travail, resultat):
+        """Lance `travail(tache)` sur l'audit, puis renvoie `resultat()`. Une seule tâche à la fois par audit :
+        relancer la même (page rechargée, double clic) rejoint celle en cours ; une autre est refusée."""
+        with verrou_taches:
+            if en_cours(s):
+                if s.tache.nom == nom:
+                    return s.tache.vue()
+                raise HTTPException(409, message("occupe", lg))
+
+            def executer(tache):
+                with s.verrou:
+                    try:
+                        travail(tache)
+                    finally:
+                        s.tache = None
+                    return resultat()
+
+            s.tache = taches.lancer(nom, executer)
+            return s.tache.vue()
+
+    def empreinte(c):
+        """Ce qui est soumis à l'IA pour un constat : si rien n'a changé, son avis reste valable."""
+        texte = lambda v: " ".join(str(v).split()) if v is not None else ""  # noqa: E731
+        return (texte(c["constat"]), texte(c["ecran"]), ref.trouver_critere(c["critere"]),
+                texte(c["recommandation"]), lire_gravite(c["gravite"]))
+
+    def avis_inchanges(audit_avant, ia_avant, audit):
+        """{ligne: Suggestion} : avis de l'IA sur la version précédente, pour les constats restés identiques
+        (comparés à la version précédente telle qu'elle était dans l'application, propositions de l'IA
+        comprises : un fichier « complété » rechargé tel quel ne repart pas vers le modèle)."""
+        if not ia_avant or audit_avant is None:
+            return {}
+        avant = {}
+        for c in audit_avant.constats:
+            r = ia_avant.get(c.ligne)
+            if c["constat"] and r is not None and not isinstance(r, ErreurSuggestion):
+                avant.setdefault(empreinte(c), r)
+        return {c.ligne: avant[empreinte(c)] for c in audit.constats if c["constat"] and empreinte(c) in avant}
+
     def resume(s):
         """Ce qu'affiche la liste des audits enregistrés."""
         ctx, syn = s.audit.contexte, s.synthese
@@ -240,7 +325,9 @@ def creer_app(ref=None, historique=None):
             pass
 
     def etat(s):
-        return {**ser.etat_audit(s, ref), "persistant": historique.persistant}
+        tache = s.tache if en_cours(s) else None
+        return {**ser.etat_audit(s, ref), "persistant": historique.persistant,
+                "tache": None if tache is None else {"id": tache.id, "nom": tache.nom}}
 
     def recalculer(s, lg=None, perime=True):
         """Contrôles, synthèse et fichier annoté à partir de l'audit en mémoire (sans IA)."""
@@ -256,7 +343,9 @@ def creer_app(ref=None, historique=None):
 
     def analyser(s, cl=None, progression=None, forcer=False, remplir=True):
         audit, anomalies, synthese, sortie, ia = relire(s.entree, s.sortie, ref, cl, progression, forcer, remplir,
-                                                        s.langue)
+                                                        s.langue, s.reprises if cl is not None else None)
+        if cl is not None:
+            s.reprises = {}
         s.audit, s.anomalies, s.synthese, s.ia = audit, anomalies, synthese, ia
         s.fichier = Path(sortie).read_bytes()
         s.nom_sortie = f"{s.stem}_complete.xlsx" if audit.completions else f"{s.stem}_relu.xlsx"
@@ -451,15 +540,22 @@ def creer_app(ref=None, historique=None):
 
     # --- Relire un audit -------------------------------------------------------------------------------
 
-    @app.post("/api/audits")
-    async def deposer(fichier: UploadFile = File(...), langue: str = Form("")):
-        lg = _langue(langue)
+    def fichier_depose(fichier, lg):
+        """(nom, contenu) d'un fichier Excel déposé, ou HTTPException s'il n'est pas acceptable."""
         nom = Path(fichier.filename or "audit.xlsx").name
         if not nom.lower().endswith(".xlsx"):
             raise HTTPException(400, message("format", lg))
-        contenu = await fichier.read()
+        contenu = fichier.file.read(TAILLE_MAX + 1)
         if len(contenu) > TAILLE_MAX:
             raise HTTPException(413, message("trop_gros", lg))
+        return nom, contenu
+
+    @app.post("/api/audits")
+    def deposer(fichier: UploadFile = File(...), langue: str = Form("")):
+        # Fonction ordinaire (pas « async ») : la lecture et l'export du fichier Excel tournent à part, sans
+        # bloquer le serveur (suivi des tâches, /health) pendant ce temps
+        lg = _langue(langue)
+        nom, contenu = fichier_depose(fichier, lg)
         id_ = uuid.uuid4().hex
         s = Session(id=id_, nom=nom, dossier=historique.dossier(id_), langue=lg, cree=maintenant())
         s.entree.write_bytes(contenu)
@@ -475,6 +571,37 @@ def creer_app(ref=None, historique=None):
         sauver(s)
         return etat(s)
 
+    @app.put("/api/audits/{id_}/fichier")
+    def nouvelle_version(id_: str, fichier: UploadFile = File(...), langue: str = Form("")):
+        """Nouvelle version du fichier d'un audit (le designer l'a modifié dans Excel) : elle remplace la
+        précédente dans le même audit de l'historique, au lieu d'en créer un nouveau. Les contrôles sont refaits ;
+        les avis de l'IA sont à redemander, mais les constats inchangés sont repris du cache sans rappeler le
+        modèle : seuls les constats modifiés sont réanalysés. Le rapport est gardé, signalé comme périmé."""
+        lg = _langue(langue)
+        s = session(id_, lg)
+        libre(s, lg)
+        _, contenu = fichier_depose(fichier, lg)
+        with s.verrou:
+            precedent = s.entree.read_bytes() if s.entree.exists() else None
+            avant = {c: getattr(s, c) for c in ("audit", "anomalies", "synthese", "ia", "fichier", "nom_sortie",
+                                                "rapport_perime", "reprises")}
+            s.entree.write_bytes(contenu)
+            try:
+                s.langue = lg
+                analyser(s)
+                s.reprises = avis_inchanges(avant["audit"], avant["ia"], s.audit)
+            except Exception as e:  # noqa: BLE001 : fichier illisible ou corrompu : la version précédente reste
+                if precedent is not None:
+                    s.entree.write_bytes(precedent)
+                for c, v in avant.items():
+                    setattr(s, c, v)
+                if s.fichier:
+                    s.sortie.write_bytes(s.fichier)
+                cle = "illisible" if isinstance(e, ErreurLecture) else "corrompu"
+                raise HTTPException(400, message(cle, lg, e=e if cle == "illisible" else type(e).__name__)) from e
+            sauver(s)
+            return {**etat(s), "ia_avant": avant["ia"] is not None}
+
     @app.get("/api/audits")
     def lister():
         return {"audits": historique.lister(), "persistant": historique.persistant}
@@ -482,15 +609,19 @@ def creer_app(ref=None, historique=None):
     @app.get("/api/audits/{id_}")
     def lire(id_: str, langue: str = ""):
         s = session(id_, _langue(langue))
-        with s.verrou:
-            if langue and _langue(langue) != s.langue:  # messages et annotations dans la nouvelle langue
+        # Pendant une analyse, l'audit s'ouvre tel quel, sans attendre la fin : la langue changera ensuite
+        if langue and _langue(langue) != s.langue and not en_cours(s):
+            with s.verrou:  # messages et annotations dans la nouvelle langue
                 recalculer(s, langue, perime=False)
                 sauver(s)
-            return etat(s)
+        return etat(s)
 
     @app.delete("/api/audits/{id_}")
     def supprimer(id_: str):
         """Supprime l'audit de ce poste (fichier déposé, relecture et rapport)."""
+        s = sessions.get(id_)
+        if s is not None:
+            libre(s, s.langue)
         sessions.pop(id_, None)
         historique.supprimer(id_)
         return {"ok": True}
@@ -526,14 +657,12 @@ def creer_app(ref=None, historique=None):
         if cl is None:
             raise HTTPException(400, message("sans_ia", lg))
 
-        def executer(tache):
-            with s.verrou:
-                s.langue = lg
-                analyser(s, cl, tache.progression, d.forcer, d.remplir)
-                sauver(s)
-                return etat(s)
+        def travail(tache):
+            s.langue = lg
+            analyser(s, cl, tache.progression, d.forcer, d.remplir)
+            sauver(s)
 
-        return taches.lancer("ia", executer).vue()
+        return lancer_sur(s, "ia", lg, travail, lambda: etat(s))
 
     class Decision(BaseModel):
         ligne: int
@@ -545,14 +674,39 @@ def creer_app(ref=None, historique=None):
         decisions: list[Decision]
         langue: str = ""
 
+    def adopter_avis(s, ligne, champ, lg):
+        """Le designer remplace sa saisie (critère, recommandation ou gravité) par l'avis de l'IA."""
+        r = (s.ia or {}).get(ligne)
+        if r is None or isinstance(r, ErreurSuggestion):
+            raise KeyError(f"Pas d'avis de l'IA pour la ligne {ligne}.")
+        lf = s.audit.langue  # les valeurs écrites suivent la langue du fichier
+        if champ == "critere":
+            valeurs = {"critere": ref.libelle_critere(r.code, lf),
+                       "categorie": ref.libelle_categorie(ref.criteres[r.code]["categorie"], lf)}
+            if r.regle and r.regle != "aucune":
+                valeurs["regle"] = r.regle
+        elif champ == "recommandation" and r.reco_a_retenir:
+            valeurs = {"recommandation": r.reco_a_retenir}
+        elif champ == "gravite" and r.gravite:
+            valeurs = {"gravite": libelle_gravite(r.gravite, lf)}
+        else:
+            raise ValueError(f"Aucun avis de l'IA à adopter pour {champ}.")
+        constat = next(c for c in s.audit.constats if c.ligne == ligne)
+        avant = ser.valeur(constat.valeurs.get(champ))
+        adopter(s.audit, ligne, valeurs, t("compl.adopte", lg, avant=avant if avant not in (None, "") else "—"))
+
     @app.post("/api/audits/{id_}/decisions")
     def decisions(id_: str, d: Decisions):
         lg = _langue(d.langue)
         s = session(id_, lg)
+        libre(s, lg)
         with s.verrou:
             for dec in d.decisions:
                 try:
-                    decider(s.audit, dec.ligne, dec.champ, dec.action, dec.valeur)
+                    if dec.action == "adopter":
+                        adopter_avis(s, dec.ligne, dec.champ, lg)
+                    else:
+                        decider(s.audit, dec.ligne, dec.champ, dec.action, dec.valeur)
                 except (KeyError, ValueError, StopIteration) as e:
                     raise HTTPException(400, str(e)) from e
             recalculer(s, lg)
@@ -578,14 +732,12 @@ def creer_app(ref=None, historique=None):
         s = session(id_, lg)
         cl = client() if d.ia else None
 
-        def executer(tache):
-            with s.verrou:
-                s.rapport = rediger(s.audit, ref, cl, lg, forcer=d.forcer, progression=tache.progression)
-                s.rapport_perime = False
-                sauver(s)
-                return ser.rapport(s.rapport, ref)
+        def travail(tache):
+            s.rapport = rediger(s.audit, ref, cl, lg, forcer=d.forcer, progression=tache.progression)
+            s.rapport_perime = False
+            sauver(s)
 
-        return taches.lancer("rapport", executer).vue()
+        return lancer_sur(s, "rapport", lg, travail, lambda: ser.rapport(s.rapport, ref))
 
     @app.get("/api/audits/{id_}/rapport")
     def lire_rapport(id_: str):
@@ -604,6 +756,7 @@ def creer_app(ref=None, historique=None):
         s = session(id_)
         if s.rapport is None:
             raise HTTPException(404, message("pas_de_rapport", s.langue))
+        libre(s, s.langue)
         with s.verrou:
             try:
                 modifier_rapport(s.rapport, m.chemin, m.valeur)

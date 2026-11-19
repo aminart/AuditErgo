@@ -23,7 +23,8 @@ from audit_ergo.chemins import historique_defaut
 RACINE_DEFAUT = historique_defaut()
 DESACTIVE = {"0", "non", "false", "off"}
 VERSION = 1
-CHAMPS = ["nom", "langue", "audit", "anomalies", "synthese", "ia", "nom_sortie", "rapport", "rapport_perime", "cree"]
+CHAMPS = ["nom", "langue", "audit", "anomalies", "synthese", "ia", "nom_sortie", "rapport", "rapport_perime", "cree",
+          "reprises"]
 
 
 def maintenant():

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, attendre } from "../api";
+import type { Dispatch, SetStateAction } from "react";
+import { api } from "../api";
+import { demanderNotification, dureeRestante, useSuiviTache } from "../suiviTache";
 import { useLangue, useT } from "../i18n";
 import type { Anomalie, Config, Constat, EtatAudit, ResumeAudit } from "../types";
 import ChoixModele from "../components/ChoixModele";
@@ -14,12 +16,18 @@ const TON_RECO = { bonne: "ok", a_ameliorer: "alerte", hors_sujet: "danger", non
 type Decision = { ligne: number; champ: string; action: string; valeur?: string };
 
 const pct = (x: number) => `${Math.round(x * 100)} %`;
+/** Gravité affichée partout de la même façon : « 3 · Élevée » */
+const texteGravite = (niveau: number | null | undefined, config: Config, brut: unknown) => {
+  const g = config.referentiel.gravites.find((x) => x.niveau === niveau);
+  return g ? `${g.niveau} · ${g.libelle}` : String(brut ?? "");
+};
 const estVide = (v: unknown) => v === null || v === undefined || String(v).trim() === "";
 
 /* --- Dépôt du fichier ------------------------------------------------------------------------------ */
 
 function Depot({ deposer, enCours }: { deposer: (f: File) => void; enCours: boolean }) {
   const t = useT();
+  const lg = useLangue();
   const entree = useRef<HTMLInputElement>(null);
   const [survol, setSurvol] = useState(false);
   return (
@@ -38,7 +46,13 @@ function Depot({ deposer, enCours }: { deposer: (f: File) => void; enCours: bool
           <p className="my-2 text-sm text-texte-3">{t("rel.ou")}</p>
           <Bouton variante="primaire" onClick={() => entree.current?.click()}>{t("rel.parcourir")}</Bouton>
           <input ref={entree} type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) deposer(f); e.target.value = ""; }} />
-          <p className="mt-6 text-xs text-texte-3">{t("rel.exemple")}</p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-texte-3">
+            <span>{t("rel.pas_d_audit")}</span>
+            <a href={api.templateUrl(lg)} download className="inline-flex items-center gap-1 font-medium text-accent underline underline-offset-2 hover:no-underline">
+              <Icone nom="telecharger" className="size-3.5" />{t("rel.template")}
+            </a>
+          </div>
+          <p className="mt-1 text-xs text-texte-3">{t("rel.exemple")}</p>
         </div>
       )}
     </div>
@@ -49,8 +63,8 @@ function Depot({ deposer, enCours }: { deposer: (f: File) => void; enCours: bool
 
 const LONGS = ["recommandation", "justification", "constat"];
 
-function CelluleCompletee({ champ, libelle, c, decider, occupe }: {
-  champ: string; libelle: string; c: Constat; decider: (d: Decision[]) => void; occupe: boolean;
+function CelluleCompletee({ champ, libelle, c, decider, occupe, config }: {
+  champ: string; libelle: string; c: Constat; decider: (d: Decision[]) => void; occupe: boolean; config: Config;
 }) {
   const t = useT();
   const comp = c.completions[champ];
@@ -64,6 +78,7 @@ function CelluleCompletee({ champ, libelle, c, decider, occupe }: {
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="truncate text-xs font-semibold text-texte-2">{libelle}</span>
+          {comp.adopte && <Badge ton="ia">{t("c.adopte")}</Badge>}
           {valide ? <Icone nom="check" className="size-3.5 text-ok" />
             : <span title={comp.origine === "ia" ? t("c.ia_propose") : t("c.auto")}><Icone nom="ia" className="size-3.5 text-ia" /></span>}
         </div>
@@ -71,7 +86,7 @@ function CelluleCompletee({ champ, libelle, c, decider, occupe }: {
           <div className="-mr-1.5 flex shrink-0">
             {!valide && <button disabled={occupe} title={t("c.valider")} aria-label={`${t("c.valider")} : ${libelle}`} onClick={() => decider([{ ligne: c.ligne, champ, action: "valider" }])} className={cx(action, "hover:text-ok")}><Icone nom="check" className="size-4" /></button>}
             <button disabled={occupe} title={t("c.modifier")} aria-label={`${t("c.modifier")} : ${libelle}`} onClick={() => setEdition(true)} className={action}><Icone nom="crayon" className="size-4" /></button>
-            <button disabled={occupe} title={t("c.refuser")} aria-label={`${t("c.refuser")} : ${libelle}`} onClick={() => decider([{ ligne: c.ligne, champ, action: "refuser" }])} className={cx(action, "hover:text-danger")}><Icone nom="croix" className="size-4" /></button>
+            <button disabled={occupe} title={comp.adopte ? t("c.revenir") : t("c.refuser")} aria-label={`${comp.adopte ? t("c.revenir") : t("c.refuser")} : ${libelle}`} onClick={() => decider([{ ligne: c.ligne, champ, action: "refuser" }])} className={cx(action, "hover:text-danger")}><Icone nom={comp.adopte ? "rafraichir" : "croix"} className="size-4" /></button>
           </div>
         )}
       </div>
@@ -84,7 +99,7 @@ function CelluleCompletee({ champ, libelle, c, decider, occupe }: {
           </div>
         </div>
       ) : (
-        <p className="mt-0.5 text-sm whitespace-pre-wrap" title={valide ? undefined : comp.explication}>{String(comp.valeur)}</p>
+        <p className="mt-0.5 text-sm whitespace-pre-wrap" title={valide && !comp.adopte ? undefined : comp.explication}>{champ === "gravite" ? texteGravite(c.gravite, config, comp.valeur) : String(comp.valeur)}</p>
       )}
     </div>
   );
@@ -104,6 +119,7 @@ function CarteConstat({ c, config, decider, occupe }: { c: Constat; config: Conf
   const pire = c.anomalies.find((a) => a.niveau === "bloquant") ?? c.anomalies.find((a) => a.niveau === "avertissement");
   const [ouvert, setOuvert] = useState(false);
   const saisis = ["critere", "gravite", "recommandation"].filter((k) => !estVide(v[k]) && !c.completions[k]);
+  const ecarts = c.ecarts_ia && ia && !ia.erreur ? (["critere", "recommandation", "gravite"] as const).filter((k) => c.ecarts_ia![k]) : [];
 
   return (
     <article className={cx("carte overflow-hidden", pire?.niveau === "bloquant" && "border-l-4 border-l-danger")}>
@@ -128,7 +144,7 @@ function CarteConstat({ c, config, decider, occupe }: { c: Constat; config: Conf
             {saisis.map((k) => (
               <div key={k} className="contents">
                 <dt className="text-texte-3">{champs[k]}</dt>
-                <dd>{String(v[k])}</dd>
+                <dd>{k === "gravite" ? texteGravite(c.gravite, config, v[k]) : String(v[k])}</dd>
               </div>
             ))}
           </dl>
@@ -136,7 +152,7 @@ function CarteConstat({ c, config, decider, occupe }: { c: Constat; config: Conf
 
         {completes.length > 0 && (
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {completes.map((k) => <CelluleCompletee key={`${k}-${String(c.completions[k].valeur)}`} champ={k} libelle={champs[k] ?? k} c={c} decider={decider} occupe={occupe} />)}
+            {completes.map((k) => <CelluleCompletee key={`${k}-${String(c.completions[k].valeur)}`} champ={k} libelle={champs[k] ?? k} c={c} decider={decider} occupe={occupe} config={config} />)}
             {aValider.length > 1 && (
               <div className="flex justify-end sm:col-span-2">
                 <button disabled={occupe} className="btn-discret text-xs text-ok" onClick={() => decider(aValider.map((k) => ({ ligne: c.ligne, champ: k, action: "valider" })))}>
@@ -144,6 +160,28 @@ function CarteConstat({ c, config, decider, occupe }: { c: Constat; config: Conf
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {ecarts.length > 0 && ia && (
+          <div className="mt-4 space-y-2 rounded-md border border-alerte/40 bg-alerte-doux/40 px-3 py-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-texte-2"><Icone nom="ia" className="size-3.5 text-ia" />{t("c.ecarts")}</div>
+            {ecarts.map((k) => {
+              const proposition = k === "critere" ? ia.critere.libelle : k === "recommandation" ? ia.reco_a_retenir : `${ia.gravite} · ${ia.gravite_libelle}`;
+              const pourquoi = k === "critere" ? ia.commentaire_verdict || ia.justification : k === "recommandation" ? ia.reco_commentaire : ia.justification_gravite;
+              return (
+                <div key={k} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5 text-sm">
+                  <div className="min-w-0 flex-1 basis-80">
+                    <span className="text-texte-3">{champs[k]} · {t("c.ia_propose_court")} </span>
+                    <span className="font-medium">{proposition}</span>
+                    {pourquoi && <p className="text-texte-2">{pourquoi}</p>}
+                  </div>
+                  <Bouton variante="discret" className="shrink-0 text-xs" disabled={occupe} onClick={() => decider([{ ligne: c.ligne, champ: k, action: "adopter" }])}>
+                    <Icone nom="check" className="size-3.5" />{t("c.adopter")}
+                  </Bouton>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -167,8 +205,8 @@ function CarteConstat({ c, config, decider, occupe }: { c: Constat; config: Conf
             {ia.erreur ? <Badge ton="danger">{t("ia.erreurs", { n: 1 })}</Badge> : (
               <>
                 <Badge ton="marque">{ia.critere.code}</Badge>
-                {ia.verdict !== "non_fourni" && <Badge ton={TON_VERDICT[ia.verdict as keyof typeof TON_VERDICT]}>{t("c.verdict")} : {ia.verdict_libelle}</Badge>}
-                {ia.reco_statut !== "non_fournie" && <Badge ton={TON_RECO[ia.reco_statut as keyof typeof TON_RECO]}>{t("c.reco")} : {ia.reco_statut_libelle}</Badge>}
+                {ia.verdict !== "non_fourni" && (ia.verdict === "confirme" || c.ecarts_ia?.critere) && <Badge ton={TON_VERDICT[ia.verdict as keyof typeof TON_VERDICT]}>{t("c.verdict")} : {ia.verdict_libelle}</Badge>}
+                {ia.reco_statut !== "non_fournie" && (!["a_ameliorer", "hors_sujet"].includes(ia.reco_statut) || c.ecarts_ia?.recommandation) && <Badge ton={TON_RECO[ia.reco_statut as keyof typeof TON_RECO]}>{t("c.reco")} : {ia.reco_statut_libelle}</Badge>}
               </>
             )}
           </button>
@@ -208,10 +246,40 @@ function CarteConstat({ c, config, decider, occupe }: { c: Constat; config: Conf
 /* --- Page --------------------------------------------------------------------------------------- */
 
 type Onglet = "constats" | "anomalies" | "couverture" | "gravite";
-type Filtre = "tous" | "a_valider" | "avec_anomalie" | "a_revoir";
+type Filtre = "tous" | "bloquants" | "a_valider" | "avec_anomalie" | "a_revoir";
+type Tri = "urgence" | "fichier";
+
+/** Urgence d'un constat : anomalie bloquante, puis écart avec l'IA ou proposition à valider, puis avertissement */
+function urgence(c: Constat) {
+  if (c.anomalies.some((a) => a.niveau === "bloquant")) return 4;
+  if (c.ecarts_ia && Object.values(c.ecarts_ia).some(Boolean)) return 3;
+  if (Object.values(c.completions).some((x) => x.origine !== "valide")) return 2;
+  if (c.anomalies.some((a) => a.niveau === "avertissement")) return 1;
+  return 0;
+}
+
+/** Décisions appliquées tout de suite à l'écran, avant la réponse du serveur (qui fait foi ensuite) */
+function appliquer(etat: EtatAudit, decisions: Decision[]): EtatAudit {
+  const constats = etat.constats.map((c) => {
+    const miennes = decisions.filter((d) => d.ligne === c.ligne);
+    if (!miennes.length) return c;
+    const completions = { ...c.completions };
+    const valeurs = { ...c.valeurs };
+    for (const d of miennes) {
+      const comp = completions[d.champ];
+      if (!comp || comp.adopte) continue; // adopter, revenir à la saisie : le serveur calcule la valeur
+      if (d.action === "valider") completions[d.champ] = { ...comp, origine: "valide" };
+      else if (d.action === "modifier") { completions[d.champ] = { ...comp, origine: "valide", valeur: d.valeur ?? "" }; valeurs[d.champ] = d.valeur ?? ""; }
+      else if (d.action === "refuser") { delete completions[d.champ]; valeurs[d.champ] = null; }
+    }
+    return { ...c, completions, valeurs };
+  });
+  const a_valider = constats.reduce((n, c) => n + Object.values(c.completions).filter((x) => x.origine !== "valide").length, 0);
+  return { ...etat, constats, a_valider };
+}
 
 export default function PageRelecture({ config, etat, setEtat, allerRapport, ouvrir, allerHistorique }: {
-  config: Config; etat: EtatAudit | null; setEtat: (e: EtatAudit | null) => void; allerRapport: () => void;
+  config: Config; etat: EtatAudit | null; setEtat: Dispatch<SetStateAction<EtatAudit | null>>; allerRapport: () => void;
   ouvrir: (id: string) => void; allerHistorique: () => void;
 }) {
   const t = useT();
@@ -219,13 +287,25 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
   const ref = config.referentiel;
   const [depot, setDepot] = useState(false);
   const [erreur, setErreur] = useState("");
-  const [analyse, setAnalyse] = useState<{ fait: number; total: number } | null>(null);
   const [remplir, setRemplir] = useState(true);
   const [occupe, setOccupe] = useState(false);
   const [onglet, setOnglet] = useState<Onglet>("constats");
   const [filtre, setFiltre] = useState<Filtre>("tous");
+  const [tri, setTri] = useState<Tri>("urgence");
+  const liste = useRef<HTMLDivElement>(null);
+  /** Montre les constats concernés par un chiffre ou le bandeau : onglet Constats, filtre, défilement */
+  const montrer = (f: Filtre) => {
+    setOnglet("constats"); setFiltre(f); setRecherche("");
+    requestAnimationFrame(() => liste.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   const [recherche, setRecherche] = useState("");
   const [niveaux, setNiveaux] = useState<string[]>(["bloquant", "avertissement", "info"]);
+  // Analyse par l'IA : son suivi reprend au retour sur cet écran ou après un rechargement de la page
+  const { progression: analyse, setProgression: setAnalyse, suivre } = useSuiviTache<EtatAudit>("ia", etat?.tache, setEtat, (e) => {
+    setErreur(e.message);
+    setEtat((p) => p && { ...p, tache: null });
+  }, t("ia.terminee"));
+  const tacheEnCours = !!etat?.tache;
 
   const deposer = async (f: File) => {
     setErreur(""); setDepot(true);
@@ -236,35 +316,75 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
     setDepot(false);
   };
 
+  // Nouvelle version du fichier (modifié dans Excel) : remplace la précédente dans le même audit
+  const [version, setVersion] = useState("");
+  useEffect(() => { setVersion(""); }, [etat?.id]);
+  const nouvelleVersion = async (f: File) => {
+    if (!etat) return;
+    setErreur(""); setVersion(""); setDepot(true);
+    try {
+      const e = await api.nouvelleVersion(etat.id, f, lg);
+      setEtat(e);
+      const relancer = e.ia_avant && config.ia.active;
+      setVersion([t(relancer ? "rel.version_ia" : "rel.version_ok"), e.rapport === "perime" ? t("rel.version_rapport") : ""].filter(Boolean).join(" "));
+      setDepot(false);
+      if (relancer) await lancerIA();
+    } catch (e) { setErreur((e as Error).message); setDepot(false); }
+  };
+
   const lancerIA = async (forcer = false) => {
     if (!etat) return;
-    setErreur(""); setAnalyse({ fait: 0, total: 0 });
+    setErreur(""); setAnalyse({ fait: 0, total: 0, restant: null });
+    demanderNotification();
     try {
       const tache = await api.analyserIA(etat.id, remplir, forcer, lg);
-      setEtat(await attendre(tache, (fait, total) => setAnalyse({ fait, total })));
-    } catch (e) { setErreur((e as Error).message); }
-    setAnalyse(null);
+      setEtat((p) => p && { ...p, tache: { id: tache.id, nom: "ia" } });
+      await suivre(tache);
+    } catch (e) { setErreur((e as Error).message); setAnalyse(null); }
   };
 
-  const decider = async (d: Decision[]) => {
-    if (!etat) return;
-    setOccupe(true);
-    try { setEtat(await api.decider(etat.id, d, lg)); } catch (e) { setErreur((e as Error).message); }
-    setOccupe(false);
+  // Décisions : l'écran change tout de suite ; les requêtes partent l'une après l'autre, et la réponse de la
+  // dernière remplace l'état affiché (anomalies, synthèse et fichier recalculés par le serveur)
+  const file = useRef<Promise<unknown>>(Promise.resolve());
+  const enAttente = useRef(0);
+  const decider = (d: Decision[]) => {
+    if (!etat || !d.length) return;
+    const id = etat.id;
+    const optimiste = d.every((x) => x.action !== "adopter");
+    if (optimiste) setEtat((p) => p && p.id === id ? appliquer(p, d) : p);
+    else setOccupe(true);
+    enAttente.current += 1;
+    file.current = file.current.then(async () => {
+      try {
+        const reponse = await api.decider(id, d, lg);
+        if (enAttente.current === 1) setEtat((p) => p && p.id === id ? reponse : p);
+      } catch (e) {
+        setErreur((e as Error).message);
+        api.audit(id, lg).then((r) => setEtat((p) => p && p.id === id ? r : p)).catch(() => undefined);
+      } finally {
+        enAttente.current -= 1;
+        if (!optimiste) setOccupe(false);
+      }
+    });
   };
 
+  // Urgence figée quand on change de filtre ou d'audit : une carte ne saute pas ailleurs pendant qu'on la traite
+  const rangs = useMemo(() => new Map((etat?.constats ?? []).map((c) => [c.ligne, urgence(c)])),
+    [etat?.id, tri, filtre, etat?.ia?.analyses, etat?.synthese.nb_constats]); // eslint-disable-line
   const constats = useMemo(() => {
     if (!etat) return [];
     const q = recherche.trim().toLowerCase();
-    return etat.constats.filter((c) => {
+    const garde = etat.constats.filter((c) => {
       if (estVide(c.valeurs.constat)) return false;
       if (q && !Object.values(c.valeurs).some((v) => String(v ?? "").toLowerCase().includes(q))) return false;
+      if (filtre === "bloquants") return c.anomalies.some((a) => a.niveau === "bloquant");
       if (filtre === "a_valider") return Object.values(c.completions).some((x) => x.origine !== "valide");
       if (filtre === "avec_anomalie") return c.anomalies.some((a) => a.niveau !== "info");
-      if (filtre === "a_revoir") return !!c.ia && !c.ia.erreur && (["a_revoir", "incorrect"].includes(c.ia.verdict) || ["a_ameliorer", "hors_sujet"].includes(c.ia.reco_statut));
+      if (filtre === "a_revoir") return !!c.ecarts_ia && Object.values(c.ecarts_ia).some(Boolean);
       return true;
     });
-  }, [etat, filtre, recherche]);
+    return tri === "urgence" ? garde.sort((a, b) => (rangs.get(b.ligne) ?? 0) - (rangs.get(a.ligne) ?? 0) || a.ligne - b.ligne) : garde;
+  }, [etat, filtre, recherche, tri, rangs]);
 
   const [recents, setRecents] = useState<ResumeAudit[]>([]);
   useEffect(() => { if (!etat) api.lister().then((r) => setRecents(r.audits)).catch(() => undefined); }, [etat]);
@@ -311,6 +431,11 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <label className="btn-secondaire cursor-pointer" title={t("rel.version_aide")}>
+            <Icone nom="rafraichir" className="size-4" />{t("rel.version")}
+            <input type="file" accept=".xlsx" className="hidden" disabled={tacheEnCours || depot}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) nouvelleVersion(f); e.target.value = ""; }} />
+          </label>
           <label className="btn-secondaire cursor-pointer">
             <Icone nom="importer" className="size-4" />{t("rel.autre")}
             <input type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) deposer(f); e.target.value = ""; }} />
@@ -322,27 +447,37 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
       </header>
 
       {erreur && <Alerte ton="danger">{erreur}</Alerte>}
+      {etat.tache?.nom === "rapport" && <Alerte ton="ia">{t("rel.rapport_en_cours")}</Alerte>}
+      {version && <Alerte ton="ok">{version}</Alerte>}
       {depot && <Alerte ton="info"><span className="inline-flex items-center gap-2"><Spinner /> {t("rel.lecture")}</span></Alerte>}
 
       <Alerte ton={s.pret ? "ok" : "danger"} titre={s.pret ? t("rel.pret") : t("rel.bloquants", { n: s.nb_bloquants })}
-        action={etat.a_valider > 0 ? <Bouton variante="discret" className="text-xs" disabled={occupe} onClick={() => decider(aValiderTous)}><Icone nom="check" className="size-3.5" />{t("c.tout_valider_audit", { n: etat.a_valider })}</Bouton> : undefined}>
+        action={<span className="flex flex-wrap gap-1">
+          {!s.pret && <Bouton variante="discret" className="text-xs" onClick={() => montrer("bloquants")}>{t("rel.voir_bloquants")}<Icone nom="fleche" className="size-3.5" /></Bouton>}
+          {etat.a_valider > 0 && <Bouton variante="discret" className="text-xs" onClick={() => montrer("a_valider")}>{t("rel.voir_a_valider")}</Bouton>}
+          {etat.a_valider > 0 && <Bouton variante="discret" className="text-xs" disabled={occupe || tacheEnCours} onClick={() => decider(aValiderTous)}><Icone nom="check" className="size-3.5" />{t("c.tout_valider_audit", { n: etat.a_valider })}</Bouton>}
+        </span>}>
         {etat.a_valider > 0 && t("c.a_valider", { n: etat.a_valider })}
       </Alerte>
 
       {/* Chiffres */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Metrique libelle={t("rel.m.constats")} valeur={s.nb_constats} detail={t("rel.m.types", { p: s.nb_problemes, f: s.nb_points_forts })} />
-        <Metrique libelle={t("rel.m.conformes")} valeur={pct(s.conformes / n)} />
-        <Metrique libelle={t("rel.m.sans_remarque")} valeur={pct(s.sans_remarque / n)} />
+        <Metrique libelle={t("rel.m.constats")} valeur={s.nb_constats} detail={t("rel.m.types", { p: s.nb_problemes, f: s.nb_points_forts })}
+          onClick={() => montrer("tous")} actif={onglet === "constats" && filtre === "tous"} />
+        <Metrique libelle={t("rel.m.conformes")} valeur={pct(s.conformes / n)} detail={s.nb_constats - s.conformes ? t("rel.m.voir", { n: s.nb_constats - s.conformes }) : undefined}
+          onClick={() => montrer("bloquants")} actif={onglet === "constats" && filtre === "bloquants"} />
+        <Metrique libelle={t("rel.m.sans_remarque")} valeur={pct(s.sans_remarque / n)} detail={s.nb_constats - s.sans_remarque ? t("rel.m.voir", { n: s.nb_constats - s.sans_remarque }) : undefined}
+          onClick={() => montrer("avec_anomalie")} actif={onglet === "constats" && filtre === "avec_anomalie"} />
         <Metrique libelle={t("rel.m.facultatifs")} valeur={pct(s.completude_recommandee)} aide={t("rel.m.facultatifs_aide")} detail={t("rel.m.facultatifs_aide")} />
-        <Metrique libelle={t("rel.m.cites")} valeur={`${ref.criteres.length - s.non_couverts.length} / ${ref.criteres.length}`} />
+        <Metrique libelle={t("rel.m.cites")} valeur={`${ref.criteres.length - s.non_couverts.length} / ${ref.criteres.length}`} detail={t("rel.m.voir_couverture")}
+          onClick={() => { setOnglet("couverture"); requestAnimationFrame(() => liste.current?.scrollIntoView({ behavior: "smooth", block: "start" })); }} actif={onglet === "couverture"} />
       </div>
 
       {/* IA */}
       <Section titre={<span className="inline-flex items-center gap-2"><Icone nom="ia" className="size-5 text-ia" />{t("ia.panneau")}</span>} intro={etat.ia ? undefined : t("ia.panneau_intro")}
         action={etat.ia ? <Bouton variante="primaire" icone="rapport" onClick={allerRapport}>{t("r.titre")}</Bouton> : undefined}>
         {analyse ? (
-          <Progression fait={analyse.fait} total={analyse.total} libelle={analyse.total ? t("ia.progression", { f: analyse.fait, n: analyse.total }) : t("ia.demarrage")} />
+          <Progression fait={analyse.fait} total={analyse.total} libelle={analyse.total ? [t("ia.progression", { f: analyse.fait, n: analyse.total }), dureeRestante(analyse.restant, lg)].filter(Boolean).join(" · ") : t("ia.demarrage")} />
         ) : etat.ia ? (
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <p className="text-texte-2">
@@ -350,14 +485,14 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
               {etat.ia.erreurs > 0 && <> · <span className="text-danger">{t("ia.erreurs", { n: etat.ia.erreurs })}</span></>}
               {etat.ia.depuis_cache > 0 && <> · {t("ia.depuis_cache", { n: etat.ia.depuis_cache })}</>}
             </p>
-            {etat.ia.depuis_cache > 0 && <><ChoixModele compact /><Bouton variante="discret" icone="rafraichir" onClick={() => lancerIA(true)}>{t("ia.refaire")}</Bouton></>}
+            {etat.ia.depuis_cache > 0 && <><ChoixModele compact /><Bouton variante="discret" icone="rafraichir" disabled={tacheEnCours} onClick={() => lancerIA(true)}>{t("ia.refaire")}</Bouton></>}
           </div>
         ) : (
           <div className="space-y-3">
             {champsVides.length > 0 && <p className="text-sm">{t("ia.vides", { liste: champsVides.map((c) => (ref.champs[c] ?? c).toLowerCase()).join(", ") })}</p>}
             <ChoixModele compact />
             <div className="flex flex-wrap items-center gap-4">
-              <Bouton variante="ia" icone="ia" disabled={!config.ia.active} onClick={() => lancerIA()}>{t("ia.lancer", { n: nbAnalysables })}</Bouton>
+              <Bouton variante="ia" icone="ia" disabled={!config.ia.active || tacheEnCours} onClick={() => lancerIA()}>{t("ia.lancer", { n: nbAnalysables })}</Bouton>
               <label className="flex items-center gap-2 text-sm text-texte-2" title={t("ia.remplir_aide")}>
                 <input type="checkbox" className="accent-[var(--ia)]" checked={remplir} onChange={(e) => setRemplir(e.target.checked)} />
                 {t("ia.remplir")}
@@ -369,7 +504,7 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
       </Section>
 
       {/* Onglets */}
-      <div>
+      <div ref={liste} className="scroll-mt-20">
         <Onglets<Onglet> actif={onglet} choisir={setOnglet} onglets={[
           { id: "constats", libelle: t("o.constats"), compte: nbAnalysables },
           { id: "anomalies", libelle: t("o.anomalies"), compte: etat.anomalies.length },
@@ -385,15 +520,22 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
                   <input className="champ pl-9" placeholder={t("f.rechercher")} value={recherche} onChange={(e) => setRecherche(e.target.value)} aria-label={t("f.rechercher")} />
                 </div>
                 <div className="flex flex-wrap gap-1 rounded-md border border-bord bg-surface p-0.5">
-                  {(["tous", "a_valider", "avec_anomalie", ...(etat.ia ? ["a_revoir"] : [])] as Filtre[]).map((f) => (
+                  {(["tous", ...(s.pret ? [] : ["bloquants"]), "a_valider", "avec_anomalie", ...(etat.ia ? ["a_revoir"] : [])] as Filtre[]).map((f) => (
                     <button key={f} onClick={() => setFiltre(f)} aria-pressed={filtre === f}
                       className={cx("rounded-md px-2.5 py-1 text-xs font-medium", filtre === f ? "bg-marque-doux text-marque" : "text-texte-2 hover:text-texte")}>
                       {t(`f.${f}`)}
                     </button>
                   ))}
                 </div>
+                <label className="flex items-center gap-2 text-xs text-texte-2">
+                  {t("f.trier")}
+                  <select className="champ w-auto py-1 text-xs" value={tri} onChange={(e) => setTri(e.target.value as Tri)}>
+                    <option value="urgence">{t("f.tri_urgence")}</option>
+                    <option value="fichier">{t("f.tri_fichier")}</option>
+                  </select>
+                </label>
               </div>
-              {constats.length ? constats.map((c) => <CarteConstat key={c.ligne} c={c} config={config} decider={decider} occupe={occupe} />)
+              {constats.length ? constats.map((c) => <CarteConstat key={c.ligne} c={c} config={config} decider={decider} occupe={occupe || tacheEnCours} />)
                 : <p className="py-10 text-center text-sm text-texte-3">{t("f.aucun")}</p>}
             </div>
           )}

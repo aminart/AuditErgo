@@ -72,6 +72,8 @@ Sous la zone de dépôt, les audits récents de l'historique se rouvrent d'un cl
 - les chiffres clés : nombre de constats (problèmes et points forts), constats sans anomalie bloquante, constats sans aucune remarque, champs facultatifs remplis, critères cités ;
 - le bouton **Télécharger l'audit annoté** (ou **complété**, après l'IA).
 
+**Nouvelle version du fichier.** Quand le designer a corrigé son audit dans Excel (par exemple le fichier complété, après avoir changé des critères), il le recharge avec **Nouvelle version du fichier** : la nouvelle version remplace la précédente dans le même audit, sans en créer un nouveau dans l'historique. Les contrôles sont refaits. Si l'audit avait été analysé par l'IA, l'analyse se relance d'elle-même, mais seuls les constats modifiés repartent vers le modèle : les autres gardent l'avis déjà rendu (comptés « repris du cache »). Le rapport est conservé, signalé comme à régénérer. Un fichier illisible laisse la version précédente en place.
+
 **Les contrôles de forme (sans IA).** Chaque constat est vérifié selon trois niveaux :
 
 | Niveau | Exemples |
@@ -83,7 +85,9 @@ Sous la zone de dépôt, les audits récents de l'historique se rouvrent d'un cl
 **L'analyse par l'IA.** Le panneau « Compléter et corriger avec l'IA » indique ce qui manque (par exemple : des constats n'ont pas encore de critère ou de recommandation) et propose :
 
 - **Remplir les cellules vides avec les propositions** (coché par défaut). Décoché, l'IA donne seulement son avis, sans rien remplir.
-- **Analyser N constat(s)** : le modèle local traite un constat à la fois, de quelques secondes à une minute chacun. Une barre de progression suit l'avancement.
+- **Analyser N constat(s)** : le modèle local traite un constat à la fois, de quelques secondes à une minute chacun. Une barre de progression suit l'avancement, avec une estimation du temps restant. Si l'analyse se termine pendant que le designer est sur un autre onglet ou une autre application, le titre de l'onglet l'indique, ainsi qu'une notification du système (si le navigateur l'a autorisée au lancement).
+
+L'analyse continue si le designer change d'écran ou recharge la page : la barre de progression réapparaît au retour. Pendant ce temps, les propositions ne peuvent pas être validées, et le rapport ne peut pas être généré (un message l'indique). L'inverse vaut pendant la rédaction du rapport.
 
 Pour chaque constat, l'IA propose le critère principal (avec un niveau de confiance et sa justification), les critères secondaires, une recommandation et son type, et une gravité. Si le designer a déjà fait ses choix, elle donne son verdict sur son critère et sur sa recommandation.
 
@@ -91,7 +95,7 @@ Les réponses sont **mémorisées** : un constat déjà analysé n'est pas recal
 
 **Les onglets.**
 
-- **Constats** : une carte par constat, avec ses anomalies, l'avis de l'IA et les cellules proposées. Une recherche (constat, écran…) et des filtres : Tous, À valider, Avec anomalie, Avis IA à revoir.
+- **Constats** : une carte par constat, avec ses anomalies, l'avis de l'IA et les cellules proposées. Une recherche (constat, écran…) et des filtres : Tous, Bloquants, À valider, Avec anomalie, Avis IA à revoir. Les constats sont triés **par urgence** (anomalie bloquante, puis écart avec l'IA ou proposition à valider, puis avertissement), ou dans l'ordre du fichier. L'ordre ne bouge pas pendant qu'on traite les cartes.
 - **Anomalies** : la liste de toutes les anomalies, par niveau.
 - **Couverture** : le nombre de constats par critère (principal et secondaire), et les critères jamais cités. Un critère jamais cité n'est pas une erreur, mais invite à repasser sur sa checklist.
 - **Gravité** : la répartition des problèmes par gravité.
@@ -103,6 +107,12 @@ Les réponses sont **mémorisées** : un constat déjà analysé n'est pas recal
 | ✓ **Valider** | La cellule passe à « Validé » | Valeur écrite normalement (plus de violet, plus de commentaire) |
 | ✎ **Modifier** | Le designer corrige la valeur, qui est validée | Valeur corrigée, écrite normalement |
 | ✗ **Refuser** | La cellule redevient vide | Cellule vide |
+
+Les décisions s'affichent tout de suite, sans attendre l'enregistrement.
+
+**Prendre l'avis de l'IA.** Quand l'IA propose autre chose que la saisie du designer (critère à revoir, recommandation à améliorer, gravité différente), la carte l'affiche sans avoir à déplier l'avis, avec sa raison et un bouton **Prendre l'avis de l'IA**. La saisie du designer est alors remplacée (pour un critère, la catégorie et la règle de départage suivent) et marquée « Avis IA adopté ». Le bouton ↺ **Revenir à votre saisie** rétablit la valeur d'origine. C'est une décision du designer : la règle « l'IA n'écrase jamais une saisie » reste vraie.
+
+**Raccourcis.** Le bandeau d'état mène aux constats bloquants ou aux propositions à valider, et les chiffres clés sont cliquables : ils filtrent la liste sur les constats concernés (ou ouvrent l'onglet Couverture).
 
 On peut aussi valider d'un coup toutes les propositions d'un constat, ou de l'audit entier (« Tout valider »). Certaines cellules sont **déduites automatiquement**, sans IA (par exemple la catégorie, qui découle du critère).
 

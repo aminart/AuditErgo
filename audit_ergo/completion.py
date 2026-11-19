@@ -16,6 +16,8 @@ VALIDE = "valide"  # proposition relue dans l'application : validée telle quell
 SI_COLONNE = {"type", "type_reco"}
 
 ajouter({
+    "compl.adopte": {"fr": "Avis de l'IA adopté par le designer (sa saisie précédente : {avant}).",
+                     "en": "AI opinion adopted by the designer (previous entry: {avant})."},
     "compl.type": {"fr": "Type par défaut : un constat sans type est considéré comme un problème.",
                    "en": "Default type: a finding without a type is considered an issue."},
     "compl.categorie_designer": {"fr": "Catégorie déduite du critère choisi.",
@@ -99,6 +101,42 @@ def completer(audit, ia, ref, langue="fr"):
     return completions
 
 
+# Champs mis en cohérence avec le critère quand le designer adopte celui de l'IA
+LIES = {"critere": ["categorie", "regle"]}
+
+
+def _remplacements(audit):
+    if not hasattr(audit, "remplacements"):  # audit enregistré par une version précédente
+        audit.remplacements = {}
+    return audit.remplacements
+
+
+def _restaurer(audit, constat, champ, valeur, completion):
+    constat.valeurs[champ] = valeur
+    ajouts = audit.completions.setdefault(constat.ligne, {})
+    if completion is None:
+        ajouts.pop(champ, None)
+    else:
+        ajouts[champ] = completion
+    if not ajouts:
+        del audit.completions[constat.ligne]
+
+
+def adopter(audit, ligne, valeurs, explication):
+    """Le designer adopte l'avis de l'IA à la place de sa saisie : `valeurs` ({champ: valeur}) remplace les
+    cellules, même remplies par lui (c'est sa décision, pas celle de l'IA). La valeur précédente est gardée :
+    « refuser » ce champ y revient. Les cellules adoptées sont des valeurs validées, sans marque « à valider »."""
+    constat = next(c for c in audit.constats if c.ligne == ligne)
+    remplaces = _remplacements(audit).setdefault(ligne, {})
+    ajouts = audit.completions.setdefault(ligne, {})
+    for champ, valeur in valeurs.items():
+        if champ not in remplaces:
+            remplaces[champ] = (constat.valeurs.get(champ), ajouts.get(champ))
+        ajouts[champ] = (valeur, VALIDE, explication)
+        constat.valeurs[champ] = valeur
+        audit.colonnes.setdefault(champ, None)
+
+
 def decider(audit, ligne, champ, action, valeur=None):
     """Décision du designer sur une cellule complétée : « valider » (la proposition est gardée), « modifier »
     (remplacée par `valeur`) ou « refuser » (la cellule redevient vide, comme dans le fichier d'origine).
@@ -110,6 +148,14 @@ def decider(audit, ligne, champ, action, valeur=None):
         raise KeyError(f"Aucune proposition pour la ligne {ligne}, champ {champ}.")
     constat = next(c for c in audit.constats if c.ligne == ligne)
     actuelle, _, explication = ajouts[champ]
+    remplaces = _remplacements(audit).get(ligne, {})
+    if action == "refuser" and champ in remplaces:  # avis de l'IA adopté : retour à la saisie du designer
+        for lie in [champ] + LIES.get(champ, []):
+            if lie in remplaces:
+                _restaurer(audit, constat, lie, *remplaces.pop(lie))
+        if not remplaces:
+            del audit.remplacements[ligne]
+        return
     if action == "refuser":
         del ajouts[champ]
         constat.valeurs[champ] = None

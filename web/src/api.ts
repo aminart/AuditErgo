@@ -71,6 +71,12 @@ export const api = {
     corps.append("langue", lg);
     return requete<EtatAudit>("/api/audits", { method: "POST", body: corps });
   },
+  nouvelleVersion: (id: string, fichier: File, lg: Langue) => {
+    const corps = new FormData();
+    corps.append("fichier", fichier);
+    corps.append("langue", lg);
+    return requete<EtatAudit & { ia_avant: boolean }>(`/api/audits/${id}/fichier`, { method: "PUT", body: corps });
+  },
   audit: (id: string, lg: Langue) => requete<EtatAudit>(`/api/audits/${id}?langue=${lg}`),
   supprimer: (id: string) => requete<{ ok: boolean }>(`/api/audits/${id}`, { method: "DELETE" }),
   lister: () => requete<{ audits: ResumeAudit[]; persistant: boolean }>("/api/audits"),

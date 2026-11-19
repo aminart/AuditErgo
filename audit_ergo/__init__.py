@@ -14,19 +14,23 @@ from .synthese import synthetiser
 __all__ = ["relire", "generer_rapport", "Referentiel", "ErreurLecture"]
 
 
-def relire(chemin, sortie=None, ref=None, client=None, progression=None, forcer=False, remplir=True, langue=None):
+def relire(chemin, sortie=None, ref=None, client=None, progression=None, forcer=False, remplir=True, langue=None,
+           reprises=None):
     """Lit un audit, le contrôle et écrit le fichier annoté.
 
     Avec un `client` (modèle local), chaque constat est aussi soumis à l'IA : elle vérifie le critère, la
     recommandation et la gravité du designer, et (si `remplir`) complète les cellules vides avec ses
     propositions, sans jamais modifier une cellule déjà remplie. Les constats déjà analysés sont repris
-    du cache local, sauf `forcer=True`. Messages, annotations et textes de l'IA sont rédigés dans `langue`.
+    du cache local, sauf `forcer=True` ; `reprises` garde les avis rendus sur une version précédente du
+    fichier pour les constats inchangés (voir `verifier_audit`). Messages, annotations et textes de l'IA sont
+    rédigés dans `langue`.
     Renvoie (audit, anomalies, synthese, sortie, ia) ; `ia` vaut None sans client.
     """
     ref = ref or Referentiel.charger()
     langue = langue or langue_defaut()
     audit = lire_audit(chemin)
-    ia = verifier_audit(client, ref, audit, progression, forcer=forcer, langue=langue) if client is not None else None
+    ia = verifier_audit(client, ref, audit, progression, forcer=forcer, langue=langue,
+                        reprises=reprises) if client is not None else None
     if ia is not None and remplir:
         completer(audit, ia, ref, langue)  # avant les contrôles : ils portent sur l'audit complété
     anomalies = controler(audit, ref, langue)
