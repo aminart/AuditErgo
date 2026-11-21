@@ -49,6 +49,13 @@
 }
 :root[data-theme="dark"] { --g0: #6b6a64; --serie: #3987e5; }
 
+/* Case à cocher d'une option de l'IA : violet ia au lieu du bleu commun des cases Night Navy.
+   Règle hors @layer, comme celle du design system, pour passer devant elle (les classes Tailwind v4 n'y
+   arrivent pas). */
+.case-ia:checked { background-color: var(--ia); border-color: var(--ia); }
+.case-ia:checked::before { background-color: var(--nn-surface); }
+.case-ia:not(:disabled):hover { border-color: var(--ia); }
+
 @theme inline {
   --color-fond: var(--fond);
   --color-bord: var(--bord);
