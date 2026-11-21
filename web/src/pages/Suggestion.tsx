@@ -99,7 +99,7 @@ export default function PageSuggestion({ config }: { config: Config }) {
           </details>
           <ChoixModele />
           <label className="flex items-start gap-2 text-sm text-texte-2">
-            <input type="checkbox" className="mt-0.5 accent-[var(--marque)]" checked={f.forcer} onChange={maj("forcer")} />
+            <input type="checkbox" className="mt-0.5" checked={f.forcer} onChange={maj("forcer")} />
             {t("s.forcer")}
           </label>
           {erreur && <Alerte ton="danger">{erreur}</Alerte>}

@@ -36,7 +36,7 @@ export function ListeAudits({ audits, ouvert, ouvrir, supprimer, selection, basc
           <li key={a.id} className={cx("flex items-center gap-4 px-4 py-3", choisi && "bg-marque-doux/60")}>
             {basculer && (
               <input type="checkbox" checked={!!choisi} onChange={() => basculer(a.id)} aria-label={`${t("h.comparer")} : ${a.nom}`}
-                disabled={!choisi && (selection?.length ?? 0) >= 2} className="size-4 accent-[var(--marque)]" />
+                disabled={!choisi && (selection?.length ?? 0) >= 2} />
             )}
             <button onClick={() => ouvrir(a.id)} className="min-w-0 flex-1 text-left">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">

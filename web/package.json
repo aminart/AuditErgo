@@ -1,7 +1,7 @@
 {
   "name": "audit-ergo-web",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.4.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -23,7 +23,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.5.2",
     "jsdom": "^26.1.0",
-    "night-navy": "github:aminart/Design-system-#v1.1.0",
+    "night-navy": "github:aminart/Design-system-#v1.2.1",
     "tailwindcss": "^4.1.10",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
