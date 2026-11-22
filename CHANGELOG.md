@@ -5,6 +5,14 @@ le [versionnage sémantique](https://semver.org/lang/fr/) : voir README, « Vers
 
 ## [Non publié]
 
+## [1.4.1] — 2026-11-21
+
+### Modifié
+
+- Design system Night Navy 1.2.1 : les cases à cocher (Historique, Suggestion, Relecture) prennent le style
+  commun aux apps de la suite — contour gris foncé, coché en bleu marine, focus visible, clair et sombre. La case
+  « remplir » de la relecture par l'IA reste violette, la couleur de l'IA.
+
 ## [1.4.0] — 2026-11-19
 
 ### Ajouté

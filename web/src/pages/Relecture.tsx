@@ -499,7 +499,8 @@ export default function PageRelecture({ config, etat, setEtat, allerRapport, ouv
             <div className="flex flex-wrap items-center gap-4">
               <Bouton variante="ia" icone="ia" disabled={!config.ia.active || tacheEnCours} onClick={() => lancerIA()}>{t("ia.lancer", { n: nbAnalysables })}</Bouton>
               <label className="flex items-center gap-2 text-sm text-texte-2" title={t("ia.remplir_aide")}>
-                <input type="checkbox" className="accent-[var(--ia)]" checked={remplir} onChange={(e) => setRemplir(e.target.checked)} />
+                {/* Option de l'IA : la case garde le violet ia (classe case-ia, index.css) */}
+                <input type="checkbox" className="case-ia" checked={remplir} onChange={(e) => setRemplir(e.target.checked)} />
                 {t("ia.remplir")}
               </label>
             </div>
